@@ -1,7 +1,7 @@
 package influxdbwriter
 
 import (
-	"log"
+	"fmt"
 	"time"
     "strings"
     
@@ -32,15 +32,18 @@ type  Packet struct {
 }*/
 
 
+
+
 func WriteToInfluxdb(pk packetparse.Packet) error {
 	// Make client
-	clt, err := client.NewUDPClient(host)
+	clt, err := client.NewHTTPClient( client.UDPConfig{Addr: host} )
 	if err != nil {
 		panic(err.Error())
 	}
 
 	// Create a new point batch
 	bp, _ := client.NewBatchPoints(client.BatchPointsConfig{
+        Database:  DB,
 		Precision: "s",
 	})
 
