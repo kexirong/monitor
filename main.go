@@ -2,7 +2,10 @@ package main
 
 import(
     "fmt"
-   . "opsAPI/packetparse"
+    
+    
+    . "github.com/kexirong/monitor/packetparse"
+    "github.com/kexirong/monitor/influxdbwriter"
    // "encoding/binary"
 )
 
@@ -32,14 +35,22 @@ func main (){
     if err != nil {
         fmt.Println(err.Error())
     }
-    //Network.BytesToUint16
+    
     fmt.Println(bb)//binary.LittleEndian.Uint16(bb[0:2]),Network.BytesToUint16(bb[2:4]))
     
     st, err :=Parse(bb)
     if err != nil {
         fmt.Println(err.Error())
     }
+    
     fmt.Println(st)
+    
+    err := influxdbwriter.WriteToInfluxdb(st)
+    
+    if err != nil {
+    
+        fmt.Println(err.Error())
+    }
     
 }
 

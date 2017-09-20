@@ -1,4 +1,5 @@
 {
+
 "_content":"fmt:[id,name,type]"
 "types":[[0x01,"hostname","string"],
          [0x02,"time","float64"],

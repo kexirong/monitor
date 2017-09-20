@@ -17,13 +17,13 @@ import(
 */
 
 type  Packet struct {
-    HostName  string        `json:"hostname"`
-    TimeStamp float64       `json:"timestamp"`
-    Plugin    string        `json:"plugin"`
-    Instance  string        `json:"instance"`
-    Type      string        `json:"type"`
+    HostName  string        `json:"hostname"`  //ops201
+    TimeStamp float64       `json:"timestamp"` //23123131.123131
+    Plugin    string        `json:"plugin"`    // cpu
+    Instance  string        `json:"instance"`  // 0,1,2,3 (0_idle,0_user,)
+    Type      string        `json:"type"`      //percent,counter,gauge,derive
     Value     []float64     `json:"value"`
-    VlTags    string        `json:"vltags"`
+    VlTags    string        `json:"vltags"`    // "idle:user:system"
     Message   string       ` json:"message"`
 }
 
