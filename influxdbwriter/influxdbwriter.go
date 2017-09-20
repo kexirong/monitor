@@ -36,7 +36,7 @@ type  Packet struct {
 
 func WriteToInfluxdb(pk packetparse.Packet) error {
 	// Make client
-	clt, err := client.NewHTTPClient( client.UDPConfig{Addr: host} )
+	clt, err := client.NewHTTPClient( client.HTTPConfig{Addr: host} )
 	if err != nil {
 		panic(err.Error())
 	}
@@ -53,14 +53,14 @@ func WriteToInfluxdb(pk packetparse.Packet) error {
         "instance":pk.Instance,
     }
 
-    fields := map[string]interface{}
+    fields := map[string]interface{}{}
 
     if len(pk.Value) == 1 {
         
         fields["value"] = pk.Value
         tags["type"] = pk.Type
         
-        pt, err := client.NewPoint(pk.Instance, tags, fields, time.Unix(int64(pt.TimeStamp),0))
+        pt, err := client.NewPoint(pk.Instance, tags, fields, time.Unix(int64(pk.TimeStamp),0))
         
         if err != nil {
             panic(err.Error())
@@ -83,7 +83,7 @@ func WriteToInfluxdb(pk packetparse.Packet) error {
             fields["value"] = value
             tags["type"] = pk.Type + sl[idx]
             
-            pt, err := client.NewPoint(pk.Instance, tags, fields, time.Unix(int64(pt.TimeStamp),0))
+            pt, err := client.NewPoint(pk.Instance, tags, fields, time.Unix(int64(pk.TimeStamp),0))
             
             if err != nil {
                 panic(err.Error())
