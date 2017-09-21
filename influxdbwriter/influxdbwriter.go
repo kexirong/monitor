@@ -14,7 +14,7 @@ const (
 	DB = "monitor"
 	username = "monitor"
 	password = "monitor"
-    host="10.1.1.201:8089"
+    host="http://10.1.1.201:8086"
 )
 
 
@@ -57,10 +57,10 @@ func WriteToInfluxdb(pk packetparse.Packet) error {
 
     if len(pk.Value) == 1 {
         
-        fields["value"] = pk.Value
+        fields["value"] = pk.Value[0]
         tags["type"] = pk.Type
         
-        pt, err := client.NewPoint(pk.Instance, tags, fields, time.Unix(int64(pk.TimeStamp),0))
+        pt, err := client.NewPoint(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp),0))
         
         if err != nil {
             panic(err.Error())
@@ -79,11 +79,11 @@ func WriteToInfluxdb(pk packetparse.Packet) error {
              return fmt.Errorf("value  and  vltags is not equals '' : %v")
         }
         
-        for idx, value := range sl {
+        for idx, value := range pk.Value {
             fields["value"] = value
-            tags["type"] = pk.Type + sl[idx]
+            tags["type"] = pk.Type +"_"+ sl[idx]
             
-            pt, err := client.NewPoint(pk.Instance, tags, fields, time.Unix(int64(pk.TimeStamp),0))
+            pt, err := client.NewPoint(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp),0))
             
             if err != nil {
                 panic(err.Error())
@@ -96,8 +96,9 @@ func WriteToInfluxdb(pk packetparse.Packet) error {
     }else{
         return fmt.Errorf("value error: %v" ,pk.Value)
     }
+    fmt.Println("writing...",bp)
 	clt.Write(bp)
-    
+    fmt.Println("write done.")
     return nil
     
 }

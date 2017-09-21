@@ -21,7 +21,6 @@ type network struct{}
 func (network) Float64ToBytes(f float64) []byte {
     bits :=  *(*uint64)(unsafe.Pointer(&f))
     b := make([]byte, 8)
-
     b[0] = byte(bits >> 56)
    	b[1] = byte(bits >> 48)
    	b[2] = byte(bits >> 40)
@@ -37,11 +36,11 @@ func (network) Float64ToBytes(f float64) []byte {
 //native(=little-Endian)
 func (network) BytesToFloat64(b []byte ) float64 {
 
-    bits :=  uint64(b[0]) | uint64(b[1])<<8 |
-             uint64(b[2])<<16 | uint64(b[3])<<24 |
-             uint64(b[4])<<32 | uint64(b[5])<<40 |
-             uint64(b[6])<<48 | uint64(b[7])<<56
-
+      bits :=  uint64(b[0])<<56| uint64(b[1])<<48|
+               uint64(b[2])<<40| uint64(b[3])<<32| 
+               uint64(b[4])<<24| uint64(b[5])<<16|
+               uint64(b[6])<<8 |uint64(b[7]) 
+            
     return *(*float64)(unsafe.Pointer(&bits))
 }
 
@@ -205,14 +204,14 @@ func Parse(b []byte) (Packet,error){
                 
             case "float64" :
                 f = Network.BytesToFloat64(buf)
-            
+                
             case "slice":
                 e:=8
                 for i:=0; i< int(l);i+=8{
                     f = Network.BytesToFloat64(buf[i:i+e])
                     sf=append(sf,f)
                 }
-            
+                
             default:
                 return packet,  fmt.Errorf("packet parse type error : n=%d, t=%d", n,t)
         }

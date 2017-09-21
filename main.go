@@ -22,12 +22,12 @@ func main (){
     
     var pp = Packet{
                  HostName  : "hostname",
-                 TimeStamp : 123123344,
-                 Plugin    : "plugin",
-                 Type      : "type",
+                 TimeStamp : 1232131123,
+                 Plugin    : "test", 
+                 Type      : "count",
                  Instance  : "instance",
-                 Value     : []float64{123,123123},
-                 VlTags    :"vltags",
+                 Value     : []float64{12.1237,128.123123,},
+                 VlTags    :"aa|bb",
             }
     
     bb,err := Package(pp)
@@ -45,12 +45,14 @@ func main (){
     
     fmt.Println(st)
     
-    err := influxdbwriter.WriteToInfluxdb(st)
+    err =  influxdbwriter.WriteToInfluxdb(st)
     
     if err != nil {
     
         fmt.Println(err.Error())
     }
+    
+
     
 }
 
