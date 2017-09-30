@@ -98,20 +98,20 @@ sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM )
 path = './agent.sock'
 if os.path.exists(path):
     os.unlink(path)
+
+
 sock.bind(path)
 sock.listen(1)
 conn,addr = sock.accept()
 data=""
 while True:
-#     conn,addr = sock.accept()
      msg = conn.recv(1)
      if msg  != "\n" :
          data+=msg
-         
      else:   
        print(data)
        data=''
-    # time.sleep(2)     
+
 
 '''
             
@@ -154,9 +154,15 @@ class  AFUNIX_TCP(object):
         while True:
             self.conn()
             self.epoll.register(self.sock.fileno(),select.EPOLLIN|select.EPOLLOUT)
-            
+  
             while True:
-                events = self.epoll.poll(1)
+                events = self.epoll.poll(15)
+
+                if not events :
+                    break
+
+                print("events:",events)
+                time.sleep(2)
                 for fileno, event in events:
                     if event&select.EPOLLIN:
                         rec=self.recv()
@@ -167,8 +173,8 @@ class  AFUNIX_TCP(object):
                         while not VAL_QUEUE.empty():
                             msg=VAL_QUEUE.get()
                             self.send(msg)
-                    
-                if event==select.EPOLLHUP:
+
+                if event==select.EPOLLHUP :
                     self.epoll.unregister(fileno)
                     self.close()
                     break
@@ -217,7 +223,7 @@ def loadplugin(name):
     
 
 def mian():
-    dirlist=os.listdir('./')
+    dirlist=os.listdir(PATH)
     for i in dirlist:
         if not i.endswith(".py"):
             continue
