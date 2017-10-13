@@ -51,7 +51,7 @@ func init(){
         parseMap[vl]=key
     }
     
-    var packet = Packet{}
+    var packet  Packet
     t := reflect.TypeOf(packet)
     v := reflect.ValueOf(packet)
     
