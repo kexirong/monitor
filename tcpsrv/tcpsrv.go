@@ -11,15 +11,19 @@ import (
 
 
 
-func UDPsrv() {
+func TCPsrv() {
     service := ":5000"
     udpAddr, err := net.ResolveTCPAddr("tcp4", service)
     checkErr(err)
-    conn, err := net.ListenTCP("tcp4", udpAddr)
+    listen, err := net.ListenTCP("tcp4", udpAddr)
     checkErr(err)
    // conn_chan := make(chan net.Conn)
     
     for {
+        conn, err := listen.Accept()
+        if err != nil {
+            continue
+        }
         go handleFunc(conn)
     }
 }

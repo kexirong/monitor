@@ -134,14 +134,16 @@ func Package(packet Packet) ([]byte ,error){
     /*if value.Field(num-1) == "" {
         num = num -1
     }*/
+    
     for i := 0; i < num; i++ {
         v := value.Field(i)
-        fmt.Printf("Field %d: %v\n", i, v )
+ 
         //content
 
         switch v.Interface() {
 
             case "", float64(0) ,nil:
+                
                 if !(uint16(i) == packMap["vltags"] || uint16(i) == packMap["message"]) {
                     return nil,fmt.Errorf("Field: %d (%d) is empty",i ,packMap["message"] )
                 }

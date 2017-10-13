@@ -61,6 +61,4 @@ func init(){
 }
 
 
-func Run (){
-    fmt.Println(typesMap,packMap,parseMap)
-}
+
