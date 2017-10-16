@@ -70,8 +70,8 @@ func handleFunc(conn *net.UnixConn) {
     if (buf[0]  != 10) {
         data.Write(buf)
     }else{
-        
-        datab.Truncate(0)
+        data.Bytes()
+        data.Truncate(0)
     }
         
         fmt.Println("Receive from client", rAddr.String())
