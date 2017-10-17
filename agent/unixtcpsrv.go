@@ -2,6 +2,8 @@ package agent
 
 import (
 	"bytes"
+	"container/list"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -25,7 +27,7 @@ func checkErr(err error) {
 	}
 }
 
-func UnixTCPsrv() {
+func UnixTCPsrv(queue *list.List) {
 	if isExist(PATH) {
 		err := os.Remove(PATH)
 
@@ -42,7 +44,7 @@ func UnixTCPsrv() {
 	for {
 		conn, err := listen.AcceptUnix()
 		if err == nil {
-			go handleFunc(conn)
+			go handleFunc(conn, queue)
 		} else {
 
 			fmt.Fprintf(os.Stderr, "conn error: %s", err.Error())
@@ -51,25 +53,45 @@ func UnixTCPsrv() {
 	}
 }
 
-func handleFunc(conn *net.UnixConn) {
+func Package(queue *list.List, data []byte) error {
+
+	var packet packetparse.Packet
+	err := json.Unmarshal(data, &packet)
+	if err != nil {
+		return err
+	}
+
+	bdata, err := packetparse.Package(packet)
+
+	if err != nil {
+		return err
+	}
+	queue.PushBack(bdata)
+	return nil
+
+}
+
+func handleFunc(conn *net.UnixConn, queue *list.List) {
 	defer conn.Close()
 	var buf = make([]byte, 1)
 	data := new(bytes.Buffer)
+	var nn = 0
 	for {
-		n, rAddr, err := conn.ReadFromUnix(buf)
+		_, rAddr, err := conn.ReadFromUnix(buf)
 		if err != nil {
 			return
 		}
 
 		if buf[0] != 10 {
 			data.Write(buf)
+			nn++
 		} else {
-			data.Bytes()
+			go Package(queue, data.Bytes())
 			data.Truncate(0)
+			nn = 0
 		}
 
 		fmt.Println("Receive from client", rAddr.String())
-		st, err := packetparse.Parse(buf[0:n])
 
 	}
 }

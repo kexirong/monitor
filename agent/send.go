@@ -2,73 +2,84 @@ package agent
 
 import (
 	"container/list"
-	"encoding/json"
 	"net"
-
-	"github.com/kexirong/monitor/packetparse"
 )
 
-var servers = []string{"127.0.0.1:5000"}
+var SERVERS = []string{"127.0.0.1:5000"}
 
 type TCPConn struct {
 	conn    net.Conn
 	addr    *net.TCPAddr
-	wQueue  *list.List
 	isClose bool
 }
 
-func newTCPConn(addr *net.TCPAddr, wQueue *list.List) *TCPConn {
+func newTCPConn(addr *net.TCPAddr) *TCPConn {
 	return &TCPConn{
 		addr:    addr,
-		wQueue:  wQueue,
 		isClose: true,
 	}
 }
 
-func handleFunc() {
+func cHandleFunc(conn *TCPConn, wQueue *list.List) {
+	for {
+		if conn.IsClose() {
+			conn.Conn()
+		}
+		e := wQueue.Front()
+		a := e.Value.([]byte)
+		if err := send(conn.conn, a); err != nil {
+			conn.Close()
+
+		}
+	}
 
 }
 func Start(servers []string, wQueue *list.List) {
-	buf := make([]byte, 512)
+
 	for _, v := range servers {
 		tcpAddr, err := net.ResolveTCPAddr("tcp4", v)
 		checkErr(err)
-		tcpConn := newTCPConn(tcpAddr, wQueue)
-
-		conn, err := net.DialTCP("tcp", nil, tcpAddr)
-		tcpConn.conn = conn
-
+		tcpConn := newTCPConn(tcpAddr)
+		go cHandleFunc(tcpConn, wQueue)
 	}
-	/*
-		defer conn.Close()
-		checkErr(err)
-		rAddr := conn.RemoteAddr()
-		n, err := conn.Write([]byte("Hello server!"))
-		checkErr(err)
-		n, err = conn.Read(buf[0:])
-		checkErr(err)
-		fmt.Println("Reply from server ", rAddr.String(), string(buf[0:n]))
-		os.Exit(0)
 
-	*/
 }
 
 func (t *TCPConn) Conn() {
-	pass
+	conn, err := net.DialTCP("tcp", nil, t.addr)
+	if err == nil {
+		t.conn = conn
+
+		//bufio.NewReader(conn).ReadString('\n')
+		//	t.conn.SetDeadline()
+		t.isClose = false
+	}
 
 }
 
-func send(data []byte) error {
-	var packet packetparse.Packet
-	err := json.Unmarshal(data, &packet)
-	if err != nil {
-		return err
+func (t *TCPConn) IsClose() bool {
+	return t.isClose
+}
+
+func (t *TCPConn) Close() {
+	if t.isClose {
+		return
 	}
+	t.conn.Close()
+	t.isClose = true
 
-	bdata, err := packetparse.Package(packet)
+}
 
-	if err != nil {
-		return err
-	}
+func send(conn net.Conn, data []byte) error {
 
+	_, err := conn.Write(data)
+	return err
+
+}
+
+func read(conn net.Conn) ([]byte, error) {
+
+	buf := make([]byte, 512)
+	n, err := conn.Read(buf)
+	return buf[0:n], err
 }
