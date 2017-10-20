@@ -2,7 +2,6 @@ package agent
 
 import (
 	"fmt"
-	"math/rand"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -20,8 +19,8 @@ func testQueuePut(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGrou
 				fmt.Println(err.Error())
 			}
 		}
-		r := rand.Intn(100)
-		time.Sleep(time.Millisecond * time.Duration(r))
+		//r := rand.Intn(100)
+		//	time.Sleep(time.Millisecond * time.Duration(r))
 	}
 	wait.Done()
 
@@ -37,8 +36,8 @@ func testQueueGet(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGrou
 		} else {
 			fmt.Println(string(vl))
 		}
-		r := rand.Intn(100)
-		time.Sleep(time.Millisecond * time.Duration(r))
+		//r := rand.Intn(100)
+		//time.Sleep(time.Millisecond * time.Duration(r))
 	}
 	wait.Done()
 
@@ -51,7 +50,7 @@ func Test_QueueGetAndPut(t *testing.T) {
 	var perr, gerr uint32
 
 	total = 1000
-	bq := NewBtsQueue(1024)
+	bq := NewBtsQueue(10240)
 	start := time.Now()
 	for i := 0; i < runtime.NumCPU(); i++ {
 		waitGroup.Add(1)
@@ -64,8 +63,8 @@ func Test_QueueGetAndPut(t *testing.T) {
 	end := time.Now()
 	use := end.Sub(start)
 	total = total * runtime.NumCPU()
-	op := time.Duration(total) / use
-	fmt.Printf(" Grp: %3d, Times: %10d, perr:%6v,gerr:%6v, use: %12v, %8v/ops",
+	op := use / time.Duration(total)
+	fmt.Printf(" Grp: %3d, Times: %10d, perr:%6v,gerr:%6v, use: %12v, %8v/opn",
 		runtime.NumCPU(), total, perr, gerr, use, op)
 
 }
