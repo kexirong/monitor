@@ -2,12 +2,13 @@ package agent
 
 import (
 	"fmt"
+	"runtime"
 	"sync/atomic"
 	"time"
 )
 
 type data struct {
-	isNull bool
+	isFull bool
 	value  []byte
 }
 
@@ -21,6 +22,7 @@ type BytesQueue struct {
 }
 
 //NewBtsQueue cap转换为的2的n次幂-1数,建议直接传入2^n数
+//经测试有bug ，待修改； Wait 方法工作正常
 func NewBtsQueue(cap uint32) *BytesQueue {
 	bq := new(BytesQueue)
 	bq.ptrStd = minCap(cap)
@@ -77,45 +79,48 @@ func (bq *BytesQueue) Put(bs []byte) (bool, error) {
 	if !atomic.CompareAndSwapUint32(&bq.putPtr, putPtr, putPtr+1) {
 		return false, nil
 	}
-	if dt.isNull {
-		dt.isNull = false
+	if !dt.isFull {
+		dt.isFull = true
 		dt.value = bs
 		return true, nil
 	}
-	return false, fmt.Errorf("has happened logic error")
+	runtime.Gosched()
+	return false, fmt.Errorf("error: the put pointer excess roll  :%v, %v", putPtr, dt.value)
 
 }
 
 //Get is get value for queue
-func (bq *BytesQueue) Get() ([]byte, bool) {
+func (bq *BytesQueue) Get() ([]byte, bool, error) {
 	var leng, getPtr uint32
 	var dt *data
 	leng, getPtr, _ = bq.len()
 	if leng < 1 {
-		return nil, false
+		return nil, false, nil
 	}
 
 	dt = &bq.queue[getPtr&bq.ptrStd]
 	if !atomic.CompareAndSwapUint32(&bq.getPtr, getPtr, getPtr+1) {
-		return nil, false
+		return nil, false, nil
 	}
 
-	if !dt.isNull {
-		dt.isNull = true
-		return dt.value, true
+	if dt.isFull {
+		dt.isFull = false
+		vl := dt.value
+		dt.value = nil
+		return vl, true, nil
 	}
-
-	return nil, false
+	runtime.Gosched()
+	return nil, false, fmt.Errorf("error: the get pointer excess roll:  %v,%v", getPtr, dt.value)
 
 }
 
 // PutWait 阻塞型put,sec 最大等待秒数
-func (bq *BytesQueue) PutWait(bs []byte, sec ...int) error {
+func (bq *BytesQueue) PutWait(bs []byte, ms ...int) error {
 	var ok bool
-	var i = 30
+	var i = 500
 
-	if len(sec) > 0 {
-		i = sec[0] * 10
+	if len(ms) > 0 {
+		i = ms[0] / 10
 	}
 
 	for i = i * 10; i > 0; i-- {
@@ -123,25 +128,27 @@ func (bq *BytesQueue) PutWait(bs []byte, sec ...int) error {
 		if ok {
 			return nil
 		}
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 10)
 	}
 	return fmt.Errorf("time out")
 }
 
-// GetWait 阻塞型get, sec为 最大等待秒数
-func (bq *BytesQueue) GetWait(sec ...int) ([]byte, error) {
-	var i = 30
+// GetWait 阻塞型get, sec为 最大等待毫秒数
+func (bq *BytesQueue) GetWait(ms ...int) ([]byte, error) {
+	var i = 50
 
-	if len(sec) > 0 {
-		i = sec[0] * 10
+	if len(ms) > 0 {
+		i = ms[0] / 10
 	}
 
 	for i = i * 10; i > 0; i-- {
-		value, ok := bq.Get()
+		value, ok, _ := bq.Get()
 		if ok {
 			return value, nil
 		}
-		time.Sleep(time.Millisecond * 100)
+
+		time.Sleep(time.Millisecond * 10)
+
 	}
 	return nil, fmt.Errorf("time out")
 
