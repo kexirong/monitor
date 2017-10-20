@@ -125,7 +125,7 @@ func (bq *BytesQueue) PutWait(bs []byte, sec ...int) error {
 	return fmt.Errorf("time out")
 }
 
-// GetWait 阻塞型gett,sec 最大等待秒数
+// GetWait 阻塞型get,sec 最大等待秒数
 func (bq *BytesQueue) GetWait(sec ...int) ([]byte, error) {
 	var i = 30
 
