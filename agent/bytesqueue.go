@@ -1,8 +1,10 @@
 package agent
 
-import "sync/atomic"
-import "fmt"
-import "time"
+import (
+	"fmt"
+	"sync/atomic"
+	"time"
+)
 
 type data struct {
 	isNull bool
@@ -54,6 +56,7 @@ func (bq *BytesQueue) Len() uint32 {
 	return l
 }
 
+//Empty return queue was empty
 func (bq *BytesQueue) Empty() bool {
 	if bq.Len() > 0 {
 		return false
@@ -106,7 +109,7 @@ func (bq *BytesQueue) Get() ([]byte, bool) {
 
 }
 
-// PutWait 阻塞性put,sec 最大等待秒数
+// PutWait 阻塞型put,sec 最大等待秒数
 func (bq *BytesQueue) PutWait(bs []byte, sec ...int) error {
 	var ok bool
 	var i = 30
@@ -125,7 +128,7 @@ func (bq *BytesQueue) PutWait(bs []byte, sec ...int) error {
 	return fmt.Errorf("time out")
 }
 
-// GetWait 阻塞型get,sec 最大等待秒数
+// GetWait 阻塞型get, sec为 最大等待秒数
 func (bq *BytesQueue) GetWait(sec ...int) ([]byte, error) {
 	var i = 30
 
