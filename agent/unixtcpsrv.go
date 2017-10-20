@@ -39,7 +39,6 @@ func UnixTCPsrv(queue *list.List) {
 	checkErr(err)
 	listen, err := net.ListenUnix("unix", unixAddr)
 	checkErr(err)
-	//conn_chan := make(chan net.Conn)
 
 	for {
 		conn, err := listen.AcceptUnix()
@@ -75,7 +74,7 @@ func handleFunc(conn *net.UnixConn, queue *list.List) {
 	defer conn.Close()
 	var buf = make([]byte, 1)
 	data := new(bytes.Buffer)
-	var nn = 0
+	var cnt = 0
 	for {
 		_, rAddr, err := conn.ReadFromUnix(buf)
 		if err != nil {
@@ -84,11 +83,11 @@ func handleFunc(conn *net.UnixConn, queue *list.List) {
 
 		if buf[0] != 10 {
 			data.Write(buf)
-			nn++
+			cnt++
 		} else {
 			go Package(queue, data.Bytes())
 			data.Truncate(0)
-			nn = 0
+			cnt = 0
 		}
 
 		fmt.Println("Receive from client", rAddr.String())
