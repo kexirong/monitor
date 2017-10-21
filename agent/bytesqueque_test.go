@@ -88,8 +88,7 @@ func testQueueGet(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGrou
 			if err != nil {
 				fmt.Println(err.Error())
 			}
-		}
-		if vl == nil {
+		} else if vl == nil {
 			fmt.Print("fuck the value is nil")
 		}
 
@@ -117,12 +116,13 @@ func testQueuePutWait(bq *BytesQueue, times int, errors *uint32, wait *sync.Wait
 func testQueueGetWait(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGroup) {
 
 	for i := 0; i < times; i++ {
-		_, err := bq.GetWait()
+		vl, err := bq.GetWait()
 		if err != nil {
 			atomic.AddUint32(errors, 1)
 
-		} else {
-
+			if vl == nil {
+				fmt.Println("fuck value is nil")
+			}
 		}
 
 	}
