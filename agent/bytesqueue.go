@@ -44,9 +44,8 @@ func minCap(u uint32) uint32 { //溢出环形计算需要，得出一个2的n次
 }
 
 func (bq *BytesQueue) len() (leng, getPtr, putPtr uint32) {
-
-	getPtr = atomic.LoadUint32(&bq.getPtr)
 	putPtr = atomic.LoadUint32(&bq.putPtr)
+	getPtr = atomic.LoadUint32(&bq.getPtr)
 	if putPtr >= getPtr {
 		return putPtr - getPtr, getPtr, putPtr
 	}
