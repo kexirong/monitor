@@ -23,7 +23,8 @@ type BytesQueue struct {
 }
 
 //NewBtsQueue cap转换为的2的n次幂-1数,建议直接传入2^n数
-//
+//如出现 error0: the get pointer excess roll 说明需要加大队列容量(其它的非nil error 说明有bug)
+//非 阻塞型 put get 竞争失败时会立即返回
 func NewBtsQueue(cap uint32) *BytesQueue {
 	bq := new(BytesQueue)
 	bq.ptrStd = minCap(cap)
@@ -91,7 +92,7 @@ func (bq *BytesQueue) Put(bs []byte) (bool, error) {
 		case 3: //读取中
 			runtime.Gosched() //出让cpu
 		default:
-			return false, fmt.Errorf("error%v: the put pointer excess roll  :%v, %v", stat, putPtr, dt.value)
+			return false, fmt.Errorf("error%v: the put pointer excess roll  :%v, %s", stat, putPtr, dt.value)
 		}
 	}
 
