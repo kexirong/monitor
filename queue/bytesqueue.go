@@ -9,7 +9,7 @@ import (
 
 type data struct {
 	//isFull bool
-	stat  uint32 //isFull(读写指针相同时有bug) 改为 stat ,通过 &3 运算得到 0(可写), 1(写入中), 2(可读)，3(读取中)
+	stat  uint32 //isFull(读写指针相同时有bug) 改为 stat , 0(可写), 1(写入中), 2(可读)，3(读取中)
 	value []byte
 }
 
@@ -91,7 +91,8 @@ func (bq *BytesQueue) Put(bs []byte) (bool, error) {
 		case 3: //读取中
 			runtime.Gosched() //出让cpu
 		default:
-			return false, fmt.Errorf("error%v: the put pointer excess roll  :%v, %s", stat, putPtr, dt.value)
+
+			return false, fmt.Errorf("error%v: the put pointer excess roll  :%v, %s,newstat: %v,putptr: %v", stat, putPtr, dt.value, atomic.LoadUint32(&dt.stat), atomic.LoadUint32(&bq.getPtr))
 		}
 	}
 
@@ -113,18 +114,18 @@ func (bq *BytesQueue) Get() ([]byte, bool, error) {
 	}
 
 	for {
-		stat = atomic.LoadUint32(&dt.stat) & 3
+		stat = atomic.LoadUint32(&dt.stat)
 		switch stat {
 		case 2: //可读
-			atomic.AddUint32(&dt.stat, 1)
+			atomic.AddUint32(&dt.stat, 1) // change stat to 读取中
 			bs = dt.value
 			dt.value = nil
-			atomic.AddUint32(&dt.stat, 1)
+			atomic.StoreUint32(&dt.stat, 0) //重置stat为0
 			return bs, true, nil
 		case 1: //写入中
 			runtime.Gosched()
 		default:
-			return nil, false, fmt.Errorf("error%v: the get pointer excess roll  :%v, %v", stat, getPtr, dt.value)
+			return nil, false, fmt.Errorf("error%v: the get pointer excess roll  :%v, %s,newstat: %v,putptr: %v", stat, getPtr, dt.value, atomic.LoadUint32(&dt.stat), atomic.LoadUint32(&bq.putPtr))
 		}
 	}
 

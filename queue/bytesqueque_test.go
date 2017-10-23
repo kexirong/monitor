@@ -16,8 +16,8 @@ func Test_QueueGetAndPut(t *testing.T) {
 	var total int
 	var perr, gerr uint32
 
-	total = 10000
-	bq := NewBtsQueue(102400)
+	total = 100000
+	bq := NewBtsQueue(4096)
 	start := time.Now()
 	for i := 0; i < runtime.NumCPU(); i++ {
 		waitGroup.Add(1)

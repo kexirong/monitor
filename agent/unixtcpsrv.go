@@ -2,13 +2,13 @@ package agent
 
 import (
 	"bytes"
-	"container/list"
 	"encoding/json"
 	"fmt"
 	"net"
 	"os"
 
 	"github.com/kexirong/monitor/packetparse"
+	"github.com/kexirong/monitor/queue"
 )
 
 const (
@@ -27,7 +27,7 @@ func checkErr(err error) {
 	}
 }
 
-func UnixTCPsrv(queue *list.List) {
+func UnixTCPsrv(queue *queue.BytesQueue) {
 	if isExist(PATH) {
 		err := os.Remove(PATH)
 
@@ -52,7 +52,7 @@ func UnixTCPsrv(queue *list.List) {
 	}
 }
 
-func Package(queue *list.List, data []byte) error {
+func Package(queue *queue.BytesQueue, data []byte) error {
 
 	var packet packetparse.Packet
 	err := json.Unmarshal(data, &packet)
@@ -65,12 +65,14 @@ func Package(queue *list.List, data []byte) error {
 	if err != nil {
 		return err
 	}
-	queue.PushBack(bdata)
+	if err:=queue.PutWait(bdata, 200);err!=nil{
+		
+	}
 	return nil
 
 }
 
-func handleFunc(conn *net.UnixConn, queue *list.List) {
+func handleFunc(conn *net.UnixConn, queue *queue.BytesQueue) {
 	defer conn.Close()
 	var buf = make([]byte, 1)
 	data := new(bytes.Buffer)

@@ -1,8 +1,10 @@
 package agent
 
 import (
-	"container/list"
+	"fmt"
 	"net"
+
+	"github.com/kexirong/monitor/queue"
 )
 
 var SERVERS = []string{"127.0.0.1:5000"}
@@ -20,27 +22,31 @@ func newTCPConn(addr *net.TCPAddr) *TCPConn {
 	}
 }
 
-func cHandleFunc(conn *TCPConn, wQueue *list.List) {
+func cHandleFunc(conn *TCPConn, queue *queue.BytesQueue) {
 	for {
 		if conn.IsClose() {
 			conn.Conn()
 		}
-		e := wQueue.Front()
-		a := e.Value.([]byte)
-		if err := send(conn.conn, a); err != nil {
+		vl, ok, err := queue.Get()
+		if !ok {
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			continue
+		}
+		if err := send(conn.conn, vl); err != nil {
 			conn.Close()
-
 		}
 	}
 
 }
-func Start(servers []string, wQueue *list.List) {
+func Start(servers []string, queue *queue.BytesQueue) {
 
 	for _, v := range servers {
 		tcpAddr, err := net.ResolveTCPAddr("tcp4", v)
 		checkErr(err)
 		tcpConn := newTCPConn(tcpAddr)
-		go cHandleFunc(tcpConn, wQueue)
+		go cHandleFunc(tcpConn, queue)
 	}
 
 }
