@@ -59,113 +59,120 @@ func (bq *BytesQueue) Empty() bool {
 
 //Put method
 func (bq *BytesQueue) Put(bs []byte) (bool, error) {
-	var putPtr, stat uint32
+	var putPtr, stat, leng uint32
 	var dt *data
 
 	putPtr = atomic.LoadUint32(&bq.putPtr)
-	if bq.Len() >= bq.cap {
+
+	leng = bq.Len()
+	if leng >= bq.ptrStd {
 		return false, nil
 	}
 
 	if !atomic.CompareAndSwapUint32(&bq.putPtr, putPtr, putPtr+1) {
 		return false, nil
 	}
-
+	atomic.AddUint32(&bq.len, 1)
 	dt = &bq.queue[putPtr&bq.ptrStd]
 
 	for {
 		stat = atomic.LoadUint32(&dt.stat) & 3
-		switch stat {
-		case 0: //可写
-			atomic.AddUint32(&bq.len, 1)
+		if stat == 0 {
+			//可写
+
 			atomic.AddUint32(&dt.stat, 1)
 			dt.value = bs
 			atomic.AddUint32(&dt.stat, 1)
 			return true, nil
-		case 3: //读取中
-			runtime.Gosched() //出让cpu
-		default:
-
-			return false, fmt.Errorf("error%v:  put pointer excess roll;  putptr:%v, value:%s, newstat:%v, getptr:%v, leng:%v",
-				stat, putPtr&bq.ptrStd, dt.value, atomic.LoadUint32(&dt.stat), atomic.LoadUint32(&bq.getPtr)&bq.ptrStd, atomic.LoadUint32(&bq.len))
 		}
+		runtime.Gosched()
+
 	}
 
 }
 
 //Get method
 func (bq *BytesQueue) Get() ([]byte, bool, error) {
-	var getPtr, stat uint32
+	var getPtr, stat, leng uint32
 	var dt *data
+
 	var bs []byte //中间变量，保障数据完整性
 
 	getPtr = atomic.LoadUint32(&bq.getPtr)
-	if bq.Len() < 1 {
+
+	leng = bq.Len()
+	if leng < 1 {
 		return nil, false, nil
 	}
 
 	if !atomic.CompareAndSwapUint32(&bq.getPtr, getPtr, getPtr+1) {
 		return nil, false, nil
 	}
-
+	atomic.AddUint32(&bq.len, 4294967295) //^uint32(-1-1)==uint32(0)-uint32(1)
 	dt = &bq.queue[getPtr&bq.ptrStd]
 
 	for {
 		stat = atomic.LoadUint32(&dt.stat)
-		switch stat {
-		case 2: //可读
-			atomic.AddUint32(&bq.len, 4294967295) //^uint32(1-1)==uint32(0)-uint32(1)
-			atomic.AddUint32(&dt.stat, 1)         // change stat to 读取中
+		if stat == 2 {
+			//可读
+			atomic.AddUint32(&dt.stat, 1) // change stat to 读取中
 			bs = dt.value
 			dt.value = nil
 			atomic.StoreUint32(&dt.stat, 0) //重置stat为0
 			return bs, true, nil
-		case 1: //写入中
-			runtime.Gosched()
-		default:
-			return nil, false, fmt.Errorf("error%v:  get pointer excess roll getptr:%v, value:%s, newstat:%v, putptr: %v, leng:%v",
-				stat, getPtr&bq.ptrStd, dt.value, atomic.LoadUint32(&dt.stat), atomic.LoadUint32(&bq.putPtr)&bq.ptrStd, atomic.LoadUint32(&bq.len))
+
 		}
+		runtime.Gosched()
+
 	}
 
 }
 
 // PutWait 阻塞型put,ms 最大等待豪秒数
-func (bq *BytesQueue) PutWait(bs []byte, ms ...int) error {
+func (bq *BytesQueue) PutWait(bs []byte, ms ...time.Duration) error {
 	var ok bool
-	var i = 50
-
+	var end time.Time
+	end = time.Now()
 	if len(ms) > 0 {
-		i = ms[0] / 10
+		end.Add(time.Microsecond * ms[0])
+	} else {
+		end.Add(time.Microsecond * 500)
 	}
-
-	for ; i > 0; i-- {
+	for {
 		ok, _ = bq.Put(bs)
 		if ok {
 			return nil
 		}
-		time.Sleep(time.Millisecond * 10)
+		time.Sleep(time.Millisecond)
+		if time.Now().Before(end) {
+			return fmt.Errorf("put time out")
+		}
 	}
-	return fmt.Errorf("put time out")
+
 }
 
-// GetWait 阻塞型get, ms为 最大等待毫秒数
-func (bq *BytesQueue) GetWait(ms ...int) ([]byte, error) {
-	var i = 50
-
+// GetWait 阻塞型get, ms为 等待毫秒 默认500
+func (bq *BytesQueue) GetWait(ms ...time.Duration) ([]byte, error) {
+	var ok bool
+	var value []byte
+	var end time.Time
+	end = time.Now()
 	if len(ms) > 0 {
-		i = ms[0] / 10
+		end.Add(time.Microsecond * ms[0])
+	} else {
+		end.Add(time.Microsecond * 500)
 	}
 
-	for ; i > 0; i-- {
-		value, ok, _ := bq.Get()
+	for {
+		value, ok, _ = bq.Get()
 		if ok {
 			return value, nil
 		}
-
-		time.Sleep(time.Millisecond * 10)
+		time.Sleep(time.Millisecond)
+		if time.Now().Before(end) {
+			return nil, fmt.Errorf("put time out")
+		}
 
 	}
-	return nil, fmt.Errorf("get time out")
 
 }

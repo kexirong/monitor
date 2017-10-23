@@ -20,21 +20,21 @@ func Test_QueueGetAndPut(t *testing.T) {
 	var perr, gerr uint32
 
 	total = 10000
-	bq := NewBtsQueue(40960)
+	bq := NewBtsQueue(2000)
 
 	start := time.Now()
+	for i := 0; i < 2; i++ {
+		waitGroup.Add(2)
+		go testQueuePut(bq, total, &perr, waitGroup, t)
 
-	waitGroup.Add(1)
-	go testQueuePut(bq, total, &perr, waitGroup)
-	waitGroup.Add(1)
-	go testQueueGet(bq, total, &gerr, waitGroup)
-
+		go testQueueGet(bq, total, &gerr, waitGroup, t)
+	}
 	waitGroup.Wait()
 	end := time.Now()
 	use := end.Sub(start)
 
 	op := use / time.Duration(total)
-	fmt.Printf(" Grp: %3d, Times: %10d, perr:%6v,gerr:%6v, use: %12v, %8v/opn",
+	t.Logf(" Grp: %3d, Times: %10d, perr:%6v,gerr:%6v, use: %12v, %8v/opn",
 		runtime.NumCPU(), total, perr, gerr, use, op)
 
 }
@@ -52,12 +52,10 @@ func Test_QueueWaitGetAndPut(t *testing.T) {
 	bq := NewBtsQueue(10240)
 	start := time.Now()
 	for i := 0; i < num; i++ {
+		waitGroup.Add(2)
+		go testQueuePutWait(bq, total, &perr, waitGroup, t)
 
-		waitGroup.Add(1)
-		go testQueuePutWait(bq, total, &perr, waitGroup)
-		waitGroup.Add(1)
-		go testQueueGetWait(bq, total, &gerr, waitGroup, cnt, i)
-
+		go testQueueGetWait(bq, total, &gerr, waitGroup, cnt, i, t)
 	}
 	waitGroup.Wait()
 	end := time.Now()
@@ -65,7 +63,7 @@ func Test_QueueWaitGetAndPut(t *testing.T) {
 	total = total * num
 	op := use / time.Duration(total*num)
 	//fmt.Println(cnt)
-	fmt.Printf(" Grp: %3d, Times: %10d, perr:%6v,gerr:%6v, use: %12v, %8v/opn",
+	t.Logf(" Grp: %3d, Times: %10d, perr:%6v,gerr:%6v, use: %12v, %8v/opn",
 		num, total, perr, gerr, use, op)
 	conter := make(map[string]int)
 	for _, v := range cnt {
@@ -78,22 +76,22 @@ func Test_QueueWaitGetAndPut(t *testing.T) {
 	for k, v := range conter {
 		ii += v
 		//	fmt.Printf("%v----%v\n", k, v)
-		if v != 4 {
-			fmt.Println("errorsss:", k)
+		if v != num {
+			t.Log("errorsss:", k)
 		}
 
 	}
-	fmt.Println(ii)
+	t.Log(ii)
 }
 
-func testQueuePut(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGroup) {
+func testQueuePut(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGroup, t *testing.T) {
 
 	for i := 0; i < times; i++ {
 		ok, err := bq.Put([]byte(fmt.Sprintf("element %d", i)))
 		if !ok {
 			atomic.AddUint32(errors, 1)
 			if err != nil {
-				fmt.Println(err.Error())
+				t.Log(err.Error())
 			}
 		}
 
@@ -102,17 +100,17 @@ func testQueuePut(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGrou
 
 }
 
-func testQueueGet(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGroup) {
+func testQueueGet(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGroup, t *testing.T) {
 
 	for i := 0; i < times; i++ {
 		vl, ok, err := bq.Get() //Wait(10)
 		if !ok {
 			atomic.AddUint32(errors, 1)
 			if err != nil {
-				fmt.Println(err.Error(), i)
+				t.Log(err.Error(), i)
 			}
 		} else if vl == nil {
-			fmt.Print("fuck the value is nil")
+			t.Log("fuck the value is nil")
 		}
 
 	}
@@ -120,10 +118,10 @@ func testQueueGet(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGrou
 
 }
 
-func testQueuePutWait(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGroup) {
+func testQueuePutWait(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGroup, t *testing.T) {
 
 	for i := 0; i < times; i++ {
-		err := bq.PutWait([]byte(fmt.Sprintf("element %d", i)), 500)
+		err := bq.PutWait([]byte(fmt.Sprintf("element %d", i)))
 		if err != nil {
 			atomic.AddUint32(errors, 1)
 
@@ -136,17 +134,17 @@ func testQueuePutWait(bq *BytesQueue, times int, errors *uint32, wait *sync.Wait
 
 }
 
-func testQueueGetWait(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGroup, cnt []map[string]int, i int) {
+func testQueueGetWait(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGroup, cnt []map[string]int, i int, t *testing.T) {
 	nt := make(map[string]int)
 	for i := 0; i < times; i++ {
-		vl, err := bq.GetWait(500)
+		vl, err := bq.GetWait()
 		if err != nil {
-			fmt.Println(err.Error(), i)
+			t.Log(err.Error(), i)
 			atomic.AddUint32(errors, 1)
 
 		} else {
 			if vl == nil {
-				fmt.Println("fuck value is nil")
+				t.Log("fuck value is nil")
 				continue
 			}
 			nt[string(vl)]++
