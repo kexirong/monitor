@@ -10,8 +10,8 @@ import (
 )
 
 func Test_QueueGetAndPut(t *testing.T) {
-
-	runtime.GOMAXPROCS(2)
+	num := runtime.NumCPU()
+	runtime.GOMAXPROCS(num)
 
 	//cnt := make([]map[string]int, 4)
 
@@ -20,10 +20,10 @@ func Test_QueueGetAndPut(t *testing.T) {
 	var perr, gerr uint32
 
 	total = 10000
-	bq := NewBtsQueue(2000)
+	bq := NewBtsQueue(20000)
 
 	start := time.Now()
-	for i := 0; i < 2; i++ {
+	for i := 0; i < num; i++ {
 		waitGroup.Add(2)
 		go testQueuePut(bq, total, &perr, waitGroup, t)
 
@@ -32,10 +32,13 @@ func Test_QueueGetAndPut(t *testing.T) {
 	waitGroup.Wait()
 	end := time.Now()
 	use := end.Sub(start)
-
-	op := use / time.Duration(total)
+	test := end.Add(time.Second * 3)
+	if time.Now().After(test) {
+		fmt.Println("........................................")
+	}
+	op := use / time.Duration(total*num*2)
 	t.Logf(" Grp: %3d, Times: %10d, perr:%6v,gerr:%6v, use: %12v, %8v/opn",
-		runtime.NumCPU(), total, perr, gerr, use, op)
+		runtime.NumCPU(), total*num, perr, gerr, use, op)
 
 }
 
@@ -51,6 +54,7 @@ func Test_QueueWaitGetAndPut(t *testing.T) {
 	total = 10000
 	bq := NewBtsQueue(10240)
 	start := time.Now()
+
 	for i := 0; i < num; i++ {
 		waitGroup.Add(2)
 		go testQueuePutWait(bq, total, &perr, waitGroup, t)
@@ -60,11 +64,11 @@ func Test_QueueWaitGetAndPut(t *testing.T) {
 	waitGroup.Wait()
 	end := time.Now()
 	use := end.Sub(start)
-	total = total * num
-	op := use / time.Duration(total*num)
+
+	op := use / time.Duration(total*num*2)
 	//fmt.Println(cnt)
 	t.Logf(" Grp: %3d, Times: %10d, perr:%6v,gerr:%6v, use: %12v, %8v/opn",
-		num, total, perr, gerr, use, op)
+		num, total*num, perr, gerr, use, op)
 	conter := make(map[string]int)
 	for _, v := range cnt {
 		for k, l := range v {
@@ -121,7 +125,7 @@ func testQueueGet(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGrou
 func testQueuePutWait(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGroup, t *testing.T) {
 
 	for i := 0; i < times; i++ {
-		err := bq.PutWait([]byte(fmt.Sprintf("element %d", i)))
+		err := bq.PutWait([]byte(fmt.Sprintf("element %d", i)), 500)
 		if err != nil {
 			atomic.AddUint32(errors, 1)
 
@@ -137,7 +141,7 @@ func testQueuePutWait(bq *BytesQueue, times int, errors *uint32, wait *sync.Wait
 func testQueueGetWait(bq *BytesQueue, times int, errors *uint32, wait *sync.WaitGroup, cnt []map[string]int, i int, t *testing.T) {
 	nt := make(map[string]int)
 	for i := 0; i < times; i++ {
-		vl, err := bq.GetWait()
+		vl, err := bq.GetWait(500)
 		if err != nil {
 			t.Log(err.Error(), i)
 			atomic.AddUint32(errors, 1)

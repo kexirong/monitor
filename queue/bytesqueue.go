@@ -59,13 +59,12 @@ func (bq *BytesQueue) Empty() bool {
 
 //Put method
 func (bq *BytesQueue) Put(bs []byte) (bool, error) {
-	var putPtr, stat, leng uint32
+	var putPtr, stat uint32
 	var dt *data
 
 	putPtr = atomic.LoadUint32(&bq.putPtr)
 
-	leng = bq.Len()
-	if leng >= bq.ptrStd {
+	if bq.Len() >= bq.ptrStd {
 		return false, nil
 	}
 
@@ -93,15 +92,14 @@ func (bq *BytesQueue) Put(bs []byte) (bool, error) {
 
 //Get method
 func (bq *BytesQueue) Get() ([]byte, bool, error) {
-	var getPtr, stat, leng uint32
+	var getPtr, stat uint32
 	var dt *data
 
 	var bs []byte //中间变量，保障数据完整性
 
 	getPtr = atomic.LoadUint32(&bq.getPtr)
 
-	leng = bq.Len()
-	if leng < 1 {
+	if bq.Len() < 1 {
 		return nil, false, nil
 	}
 
@@ -128,39 +126,43 @@ func (bq *BytesQueue) Get() ([]byte, bool, error) {
 
 }
 
-// PutWait 阻塞型put,ms 最大等待豪秒数
+// PutWait 阻塞型put,ms 最大等待豪秒数,默认 1000
 func (bq *BytesQueue) PutWait(bs []byte, ms ...time.Duration) error {
 	var ok bool
-	var end time.Time
-	end = time.Now()
+	var start, end time.Time
+
+	start = time.Now()
+	end = start.Add(time.Millisecond * 1000)
 	if len(ms) > 0 {
-		end.Add(time.Microsecond * ms[0])
-	} else {
-		end.Add(time.Microsecond * 500)
+		end = end.Add(time.Millisecond * ms[0])
 	}
+
 	for {
 		ok, _ = bq.Put(bs)
 		if ok {
 			return nil
 		}
-		time.Sleep(time.Millisecond)
-		if time.Now().Before(end) {
-			return fmt.Errorf("put time out")
+
+		if time.Now().After(end) {
+			return fmt.Errorf("put time out,end:%v,start:%v", end, start)
 		}
+
+		time.Sleep(time.Millisecond * 100)
+
 	}
 
 }
 
-// GetWait 阻塞型get, ms为 等待毫秒 默认500
+// GetWait 阻塞型get, ms为 等待毫秒 默认1000
 func (bq *BytesQueue) GetWait(ms ...time.Duration) ([]byte, error) {
 	var ok bool
 	var value []byte
-	var end time.Time
-	end = time.Now()
+	var start, end time.Time
+
+	start = time.Now()
+	end = start.Add(time.Millisecond * 1000)
 	if len(ms) > 0 {
-		end.Add(time.Microsecond * ms[0])
-	} else {
-		end.Add(time.Microsecond * 500)
+		end = start.Add(time.Millisecond * ms[0])
 	}
 
 	for {
@@ -168,10 +170,12 @@ func (bq *BytesQueue) GetWait(ms ...time.Duration) ([]byte, error) {
 		if ok {
 			return value, nil
 		}
-		time.Sleep(time.Millisecond)
-		if time.Now().Before(end) {
-			return nil, fmt.Errorf("put time out")
+
+		if time.Now().After(end) {
+			return nil, fmt.Errorf("gett time out,end:%v,start:%v", end, start)
 		}
+
+		time.Sleep(time.Millisecond * 100)
 
 	}
 
