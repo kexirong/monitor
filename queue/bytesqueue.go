@@ -1,4 +1,4 @@
-package agent
+package queue
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ type BytesQueue struct {
 
 //NewBtsQueue cap转换为的2的n次幂-1数,建议直接传入2^n数
 //如出现 error0: the get pointer excess roll 说明需要加大队列容量(其它的非nil error 说明有bug)
-//非 阻塞型 put get 竞争失败时会立即返回
+//非 阻塞型的 put get方法 竞争失败时会立即返回
 func NewBtsQueue(cap uint32) *BytesQueue {
 	bq := new(BytesQueue)
 	bq.ptrStd = minCap(cap)
