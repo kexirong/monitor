@@ -147,8 +147,6 @@ func (bq *BytesQueue) PutWait(bs []byte, ms ...time.Duration) error {
 			return fmt.Errorf("put time out,end:%v,start:%v", end, start)
 		}
 
-		//	time.Sleep(time.Millisecond * 100)
-
 	}
 
 }
@@ -174,8 +172,6 @@ func (bq *BytesQueue) GetWait(ms ...time.Duration) ([]byte, error) {
 		if time.Now().After(end) {
 			return nil, fmt.Errorf("gett time out,end:%v,start:%v", end, start)
 		}
-
-		//	time.Sleep(time.Millisecond * 100)
 
 	}
 
