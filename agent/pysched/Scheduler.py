@@ -7,7 +7,7 @@ import socket
 import json
 
 VAL_QUEUE=Queue.Queue()
-PATH="./pythscript/"
+PATH= os.path.dirname(os.path.realpath(__file__))+"/pythscript/"
 
 
 PLUGINMAP={}

@@ -1,7 +1,6 @@
-package agent
+package main
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/kexirong/monitor/queue"
@@ -9,38 +8,7 @@ import (
 
 var SERVERS = []string{"127.0.0.1:5000"}
 
-type TCPConn struct {
-	conn    net.Conn
-	addr    *net.TCPAddr
-	isClose bool
-}
-
-func newTCPConn(addr *net.TCPAddr) *TCPConn {
-	return &TCPConn{
-		addr:    addr,
-		isClose: true,
-	}
-}
-
-func cHandleFunc(conn *TCPConn, queue *queue.BytesQueue) {
-	for {
-		if conn.IsClose() {
-			conn.Conn()
-		}
-		vl, ok, err := queue.Get()
-		if !ok {
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-			continue
-		}
-		if err := send(conn.conn, vl); err != nil {
-			conn.Close()
-		}
-	}
-
-}
-func Start(servers []string, queue *queue.BytesQueue) {
+func sendStart(servers []string, queue *queue.BytesQueue) {
 
 	for _, v := range servers {
 		tcpAddr, err := net.ResolveTCPAddr("tcp4", v)
@@ -51,23 +19,53 @@ func Start(servers []string, queue *queue.BytesQueue) {
 
 }
 
-func (t *TCPConn) Conn() {
+type tcpConn struct {
+	conn    net.Conn
+	addr    *net.TCPAddr
+	isClose bool
+}
+
+func newTCPConn(addr *net.TCPAddr) *tcpConn {
+	return &tcpConn{
+		addr:    addr,
+		isClose: true,
+	}
+}
+
+func cHandleFunc(conn *tcpConn, queue *queue.BytesQueue) {
+	for {
+		if conn.IsClose() {
+			conn.Conn()
+		}
+		vl, err := queue.GetWait()
+
+		if err != nil {
+			Logger.Error.Println(err.Error())
+
+			continue
+		}
+		if err := send(conn.conn, vl); err != nil {
+			Logger.Error.Printf("server:%s,error:%s", conn.addr, err.Error())
+			conn.Close()
+		}
+	}
+
+}
+
+func (t *tcpConn) Conn() {
 	conn, err := net.DialTCP("tcp", nil, t.addr)
 	if err == nil {
 		t.conn = conn
-
-		//bufio.NewReader(conn).ReadString('\n')
-		//	t.conn.SetDeadline()
 		t.isClose = false
 	}
 
 }
 
-func (t *TCPConn) IsClose() bool {
+func (t *tcpConn) IsClose() bool {
 	return t.isClose
 }
 
-func (t *TCPConn) Close() {
+func (t *tcpConn) Close() {
 	if t.isClose {
 		return
 	}

@@ -1,9 +1,8 @@
-package agent
+package main
 
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net"
 	"os"
 
@@ -12,6 +11,7 @@ import (
 )
 
 const (
+	//PATH sock 文件
 	PATH = "./pysched/agent.sock"
 )
 
@@ -22,11 +22,12 @@ func isExist(path string) bool {
 
 func checkErr(err error) {
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s, exit!", err.Error())
+		Logger.Error.Panicf("error: %s, exit!", err.Error())
 		os.Exit(1)
 	}
 }
 
+//UnixTCPsrv 接收插件数据
 func UnixTCPsrv(queue *queue.BytesQueue) {
 	if isExist(PATH) {
 		err := os.Remove(PATH)
@@ -46,13 +47,13 @@ func UnixTCPsrv(queue *queue.BytesQueue) {
 			go handleFunc(conn, queue)
 		} else {
 
-			fmt.Fprintf(os.Stderr, "conn error: %s", err.Error())
+			Logger.Error.Printf("conn error: %s", err.Error())
 
 		}
 	}
 }
 
-func Package(queue *queue.BytesQueue, data []byte) error {
+func pkg(queue *queue.BytesQueue, data []byte) error {
 
 	var packet packetparse.Packet
 	err := json.Unmarshal(data, &packet)
@@ -65,8 +66,8 @@ func Package(queue *queue.BytesQueue, data []byte) error {
 	if err != nil {
 		return err
 	}
-	if err:=queue.PutWait(bdata, 200);err!=nil{
-		
+	if err := queue.PutWait(bdata); err != nil {
+
 	}
 	return nil
 
@@ -82,17 +83,16 @@ func handleFunc(conn *net.UnixConn, queue *queue.BytesQueue) {
 		if err != nil {
 			return
 		}
+		Logger.Info.Printf("Receive from client:%s", rAddr.String())
 
 		if buf[0] != 10 {
 			data.Write(buf)
 			cnt++
 		} else {
-			go Package(queue, data.Bytes())
+			go pkg(queue, data.Bytes())
 			data.Truncate(0)
 			cnt = 0
 		}
-
-		fmt.Println("Receive from client", rAddr.String())
 
 	}
 }

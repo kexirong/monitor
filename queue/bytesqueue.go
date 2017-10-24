@@ -170,7 +170,7 @@ func (bq *BytesQueue) GetWait(ms ...time.Duration) ([]byte, error) {
 		}
 
 		if time.Now().After(end) {
-			return nil, fmt.Errorf("gett time out,end:%v,start:%v", end, start)
+			return nil, fmt.Errorf("get time out,end:%v,start:%v", end, start)
 		}
 
 	}
