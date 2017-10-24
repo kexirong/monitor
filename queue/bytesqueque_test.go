@@ -12,7 +12,7 @@ import (
 func Test_QueueGetAndPut(t *testing.T) {
 	num := runtime.NumCPU()
 	runtime.GOMAXPROCS(num)
-
+	num = 1
 	//cnt := make([]map[string]int, 4)
 
 	var waitGroup = new(sync.WaitGroup)
@@ -20,7 +20,7 @@ func Test_QueueGetAndPut(t *testing.T) {
 	var perr, gerr uint32
 
 	total = 10000
-	bq := NewBtsQueue(20000)
+	bq := NewBtsQueue(2048)
 
 	start := time.Now()
 	for i := 0; i < num; i++ {
@@ -32,10 +32,7 @@ func Test_QueueGetAndPut(t *testing.T) {
 	waitGroup.Wait()
 	end := time.Now()
 	use := end.Sub(start)
-	test := end.Add(time.Second * 3)
-	if time.Now().After(test) {
-		fmt.Println("........................................")
-	}
+
 	op := use / time.Duration(total*num*2)
 	t.Logf(" Grp: %3d, Times: %10d, perr:%6v,gerr:%6v, use: %12v, %8v/opn",
 		runtime.NumCPU(), total*num, perr, gerr, use, op)
@@ -44,7 +41,9 @@ func Test_QueueGetAndPut(t *testing.T) {
 
 func Test_QueueWaitGetAndPut(t *testing.T) {
 	num := runtime.NumCPU()
+
 	runtime.GOMAXPROCS(num)
+	num = 1
 
 	cnt := make([]map[string]int, 4)
 	var waitGroup = new(sync.WaitGroup)
@@ -52,7 +51,7 @@ func Test_QueueWaitGetAndPut(t *testing.T) {
 	var perr, gerr uint32
 
 	total = 10000
-	bq := NewBtsQueue(10240)
+	bq := NewBtsQueue(2048)
 	start := time.Now()
 
 	for i := 0; i < num; i++ {
