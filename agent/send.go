@@ -40,7 +40,7 @@ func cHandleFunc(conn *tcpConn, queue *queue.BytesQueue) {
 		vl, err := queue.GetWait()
 
 		if err != nil {
-			Logger.Error.Println(err.Error())
+			Logger.Warning.Println(err.Error())
 
 			continue
 		}

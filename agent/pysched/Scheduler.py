@@ -1,16 +1,24 @@
+#!/bin/env python
 import os
 import time
 import Queue
 import threading
 import select
+import sys
 import socket
 import json
 
 VAL_QUEUE=Queue.Queue()
-PATH= os.path.dirname(os.path.realpath(__file__))+"/pythscript/"
+PATH= os.path.dirname(os.path.realpath(__file__))+"/pythscript"
+
+
 
 
 PLUGINMAP={}
+
+F=open (r'SchecdOut.log','w')
+
+print >>F ,PATH
 
 class Plugin(object):
     __slots__ = {"name",'step','instan'}
@@ -18,6 +26,7 @@ class Plugin(object):
         self.name = None
         self.step = None
         self.instan = None
+       
 
 
     
@@ -42,12 +51,15 @@ def plugin_run(instan):
     try:
         value=getattr(instan.instan,"getvalue")()
         VAL_QUEUE.put(value)
-        print(value)
+        print >>F, value
     except AttributeError,e:
-        print(dir(instan))
+
+
+
+        print >>F, dir(instan)
         
     except Exception,e:
-        print(instan.name,e)
+        print >>F, instan.name,e
        
  
  
@@ -68,10 +80,10 @@ class Cron(object):
             
             for i in PLUGINMAP: # key is int type,so...
                 timewant=int(time.time())-self.timerec[i]
-                print("############:",i,timewant)
+                print >>F, "############:",i,timewant
                 
                 if timewant < i:
-                    print("sleep...")
+                    print >> F ,"sleep..."
                     time.sleep(i-timewant)
                     
                 self.timerec[i]=int(time.time())
@@ -99,7 +111,7 @@ class  AFUNIX_TCP(object):
         self.sock.setblocking(0)
         self.epoll=select.epoll()
     
-    def conn(self,path='./agent.sock'):
+    def conn(self,path='../agent.sock'):
         while True:
             if os.path.exists(path):
                 try:
@@ -109,7 +121,7 @@ class  AFUNIX_TCP(object):
                     continue
                 break
             else:
-                print("waiting server...")
+                print >> F,"waiting server..."
                 time.sleep(5)
 
     def send(self,msg):
@@ -137,7 +149,7 @@ class  AFUNIX_TCP(object):
                 if not events :
                     break
 
-                print("events:",events)
+                print >>F,"events:",events
 
                 for fileno, event in events:
                     if event&select.EPOLLIN:
@@ -179,18 +191,19 @@ def parse(recv):
     try:
         cmd=json.loads(recv)
     except ValueError:
-        print(recv)
+        print >>F,recv
         cmd=None
     return cmd
     
 def loadplugin(name):
     try:
         plugin=Plugin()
+        
         plugin.instan=__import__(name)
         plugin.name=plugin.instan.name
         plugin.step=plugin.instan.step
     except Exception,e:
-        print(e)
+        print >>F,e
         plugin=None
         
     return plugin
@@ -199,6 +212,8 @@ def loadplugin(name):
     
 
 def mian():
+    sys.path.append(PATH) 
+    print >>F,"cur....dir",sys.path
     dirlist=os.listdir(PATH)
     for i in dirlist:
         if not i.endswith(".py"):
@@ -207,11 +222,11 @@ def mian():
         if plugin:
             instance_add(plugin)
    
-    print('start AFUNIX_TCP client ')  
+    print >>F, 'start AFUNIX_TCP client '
     t=threading.Thread(target=AFUNIX_TCP().transfer) 
     t.setDaemon(1)
     t.start()
-    print('run cron... ')
+    print >>F ,'run cron... '
     
     Cron().cron()
     
