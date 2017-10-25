@@ -9,7 +9,7 @@ import socket
 import json
 
 VAL_QUEUE=Queue.Queue()
-PATH= os.path.dirname(os.path.realpath(__file__))+"/pythscript"
+PATH= "./pysched/pythscript"
 
 
 
@@ -111,7 +111,7 @@ class  AFUNIX_TCP(object):
         self.sock.setblocking(0)
         self.epoll=select.epoll()
     
-    def conn(self,path='../agent.sock'):
+    def conn(self,path='pysched/agent.sock'):
         while True:
             if os.path.exists(path):
                 try:
@@ -208,13 +208,11 @@ def loadplugin(name):
         
     return plugin
     
-    
-    
 
 def mian():
     sys.path.append(PATH) 
-    print >>F,"cur....dir",sys.path
     dirlist=os.listdir(PATH)
+    print >>F,"cur....dir",sys.path,dirlist
     for i in dirlist:
         if not i.endswith(".py"):
             continue

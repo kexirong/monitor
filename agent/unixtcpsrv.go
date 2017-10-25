@@ -20,13 +20,6 @@ func isExist(path string) bool {
 	return err == nil || os.IsExist(err)
 }
 
-func checkErr(err error) {
-	if err != nil {
-		Logger.Error.Panicf("error: %s, exit!", err.Error())
-		os.Exit(1)
-	}
-}
-
 //UnixTCPsrv 接收插件数据
 func UnixTCPsrv(queue *queue.BytesQueue) {
 	if isExist(PATH) {
@@ -79,17 +72,22 @@ func handleFunc(conn *net.UnixConn, queue *queue.BytesQueue) {
 	data := new(bytes.Buffer)
 	var cnt = 0
 	for {
-		_, rAddr, err := conn.ReadFromUnix(buf)
+		_, _, err := conn.ReadFromUnix(buf)
 		if err != nil {
 			return
 		}
-		Logger.Info.Printf("Receive from client:%s", rAddr.String())
 
-		if buf[0] != 10 {
+		if buf[0] != '\n' {
 			data.Write(buf)
 			cnt++
 		} else {
-			go pkg(queue, data.Bytes())
+			tmp := data.Bytes()
+			go func(data []byte) {
+				err := pkg(queue, data)
+				if err != nil {
+					Logger.Error.Printf("pkg the data: %s , error:%s", data, err.Error())
+				}
+			}(tmp)
 			data.Truncate(0)
 			cnt = 0
 		}

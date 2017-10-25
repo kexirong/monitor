@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -28,8 +30,8 @@ func main() {
 	go UnixTCPsrv(btq)
 	go sendStart(servers, btq)
 	go func() {
-
-		cmd := exec.Command("/usr/bin/python", "/var/golang/src/opsAPI/agent/pysched/Scheduler.py")
+		path := getCurrentPath()
+		cmd := exec.Command("/usr/bin/python", fmt.Sprintf("%s/pysched/Scheduler.py", path))
 
 		if err := cmd.Start(); err != nil {
 
@@ -38,10 +40,31 @@ func main() {
 
 		if err := cmd.Wait(); err != nil {
 
-			Logger.Error.Println(err.Error())
+			Logger.Error.Println(err.Error(), cmd.Args)
 		}
 	}()
 
 	waitGroup.Wait()
 
+}
+
+func getCurrentPath() string {
+
+	path, err := os.Getwd()
+	checkErr(err)
+	/*
+		i := strings.LastIndex(path, "/")
+		if i < 0 {
+			Logger.Error.Fatalln("get the path error")
+		}
+		path = string(path[0:i])
+	*/
+	return path
+}
+
+func checkErr(err error) {
+	if err != nil {
+		Logger.Error.Panicf("error: %s, exit!", err.Error())
+		os.Exit(1)
+	}
 }
