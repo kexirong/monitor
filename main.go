@@ -1,16 +1,16 @@
-package main
+package temp
 
 import (
 	"fmt"
 
 	"github.com/kexirong/monitor/influxdbwriter"
-	. "github.com/kexirong/monitor/packetparse"
+	"github.com/kexirong/monitor/packetparse"
 	// "encoding/binary"
 )
 
 func main() {
 
-	var pp = Packet{
+	var pp = packetparse.Packet{
 		HostName:  "hostname",
 		TimeStamp: 1232131123,
 		Plugin:    "test",
@@ -20,7 +20,7 @@ func main() {
 		VlTags:    "aa|bb",
 	}
 
-	bb, err := Package(pp)
+	bb, err := packetparse.Package(pp)
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -28,7 +28,7 @@ func main() {
 
 	fmt.Println(bb) //binary.LittleEndian.Uint16(bb[0:2]),Network.BytesToUint16(bb[2:4]))
 
-	st, err := Parse(bb)
+	st, err := packetparse.Parse(bb)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
