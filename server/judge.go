@@ -3,6 +3,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+
+	"github.com/kexirong/monitor/packetparse"
 )
 
 /*
@@ -28,8 +31,38 @@ type judge struct {
 
 var judgemap judgeMap
 
-func ss() {
-	judgemap = judgemapStore()
+func alarmJudge(pk packetparse.Packet) error {
 	fmt.Println(judgemap)
+
+	if len(pk.Value) <= 0 {
+		return fmt.Errorf("value error: %v", pk.Value)
+	}
+
+	if len(pk.Value) == 1 {
+
+	} else {
+
+		if pk.VlTags == "" {
+			return fmt.Errorf("value gt 0 but vltags is '' ")
+		}
+
+		sl := strings.Split(pk.VlTags, "|")
+
+		if len(sl) != len(pk.Value) {
+			return fmt.Errorf("value  and  vltags is not equals ")
+		}
+
+		for idx, value := range pk.Value {
+
+			tags["type"] = pk.Type + "_" + sl[idx]
+
+			if err != nil {
+
+				return err
+			}
+
+		}
+
+	}
 
 }

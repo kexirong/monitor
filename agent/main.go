@@ -22,11 +22,13 @@ func main() {
 	}
 
 	servers := strings.Split(*addr, ",")
-
 	btq := queue.NewBtsQueue(4096)
+
 	var waitGroup = new(sync.WaitGroup)
 	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	waitGroup.Add(1)
+
 	go UnixTCPsrv(btq)
 	go sendStart(servers, btq)
 	go func() {

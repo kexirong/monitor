@@ -8,7 +8,6 @@ func checkErr(err error) {
 
 func main() {
 
-	judgemap = judgemapStore()
-
 	ss()
+
 }

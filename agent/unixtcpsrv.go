@@ -48,13 +48,13 @@ func UnixTCPsrv(queue *queue.BytesQueue) {
 
 func pkg(queue *queue.BytesQueue, data []byte) error {
 
-	var packet packetparse.Packet
-	err := json.Unmarshal(data, &packet)
+	var pk packetparse.Packet
+	err := json.Unmarshal(data, &pk)
 	if err != nil {
 		return err
 	}
 
-	bdata, err := packetparse.Package(packet)
+	bdata, err := packetparse.Package(pk)
 
 	if err != nil {
 		return err

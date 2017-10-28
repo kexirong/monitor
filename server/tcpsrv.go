@@ -32,7 +32,7 @@ func handleFunc(conn *net.TCPConn) {
 			return
 		}
 		Logger.Info.Println("Receive from client:", conn.RemoteAddr())
-		pt, err := packetparse.Parse(buf[0:n])
+		pk, err := packetparse.Parse(buf[0:n])
 		if err != nil {
 			Logger.Error.Println("packetparse.Parse error:", err.Error())
 			continue
@@ -42,7 +42,7 @@ func handleFunc(conn *net.TCPConn) {
 			if err != nil {
 				Logger.Error.Println("writeToInfluxdb error:", err.Error())
 			}
-		}(pt)
+		}(pk)
 
 	}
 }

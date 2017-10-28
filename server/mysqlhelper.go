@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -39,8 +38,6 @@ func judgemapStore() judgeMap {
 			level3: l3,
 		}
 	}
-
-	fmt.Println("init", judgemap)
 
 	//rows.Close()
 	return judgemap

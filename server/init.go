@@ -19,6 +19,7 @@ func init() {
 	checkErr(err)
 	mysql.SetMaxOpenConns(2000)
 	mysql.SetMaxIdleConns(500)
-	//judge init
+
+	//judge init 需要在 mysql init 后面
 	judgemap = judgemapStore()
 }
