@@ -19,7 +19,7 @@ type Packet struct {
 	TimeStamp float64   `json:"timestamp"` //23123131.123131
 	Plugin    string    `json:"plugin"`    // cpu
 	Instance  string    `json:"instance"`  // 0,1,2,3 (0_idle,0_user,)
-	Type      string    `json:"type"`      //percent,counter,gauge,derive
+	Type      string    `json:"type"`      //percent(百分比),counter(正数速率,主要是趋势),gauge(原值),derive(速率)
 	Value     []float64 `json:"value"`
 	VlTags    string    `json:"vltags"` // "idle:user:system"
 	Message   string    ` json:"message"`

@@ -19,7 +19,7 @@ type BytesQueue struct {
 	len    uint32 //队列长度
 	ptrStd uint32 //ptr基准(cap-1)
 	putPtr uint32 // queue[putPtr].stat must < 2
-	getPtr uint32 // queue[putPtr].stat may < 2
+	getPtr uint32 // queue[getPtr].stat may < 2
 	queue  []data //队列
 }
 

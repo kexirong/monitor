@@ -47,7 +47,7 @@ func WriteToInfluxdb(pk packetparse.Packet) error {
 		"instance": pk.Instance,
 	}
 
-	fields := map[string]interface{}{}
+	fields := make(map[string]interface{})
 
 	if len(pk.Value) == 1 {
 

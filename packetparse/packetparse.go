@@ -52,7 +52,6 @@ func (network) Uint16ToBytes(u uint16) []byte {
 }
 
 func (network) BytesToUint16(b []byte) uint16 {
-
 	return uint16(b[1]) | uint16(b[0])<<8
 
 }
