@@ -46,6 +46,7 @@ func writeToInfluxdb(pk packetparse.Packet) error {
 	tags := map[string]string{
 		"hostname": pk.HostName,
 		"instance": pk.Instance,
+		"type":     pk.Type,
 	}
 
 	fields := make(map[string]interface{})
@@ -57,7 +58,6 @@ func writeToInfluxdb(pk packetparse.Packet) error {
 	if len(pk.Value) == 1 {
 
 		fields["value"] = pk.Value[0]
-		tags["type"] = pk.Type
 
 		pt, err := client.NewPoint(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp), 0))
 
@@ -80,7 +80,7 @@ func writeToInfluxdb(pk packetparse.Packet) error {
 
 		for idx, value := range pk.Value {
 			fields["value"] = value
-			tags["type"] = pk.Type + "_" + sl[idx]
+			tags["instance"] = pk.Instance + "_" + sl[idx]
 
 			pt, err := client.NewPoint(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp), 0))
 

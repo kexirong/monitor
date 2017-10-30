@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/kexirong/monitor/packetparse"
 )
@@ -31,38 +32,106 @@ type judge struct {
 
 var judgemap judgeMap
 
-func alarmJudge(pk packetparse.Packet) error {
-	fmt.Println(judgemap)
+func doJudge(av alarmValue) string {
+	iv, ok := judgemap[av.Plugin]
+	var cmp func(x, y float64) bool
+	if !ok {
+		return ""
+	}
+	jv, ok := iv[av.Instance]
+	if !ok {
+		return ""
+	}
+	switch jv.ajtype {
+	case "le":
+		cmp = func(x, y float64) bool {
+			return x <= y
+		}
+	case "ge":
+		cmp = func(x, y float64) bool {
+			return x >= y
+		}
+	case "ne":
+		cmp = func(x, y float64) bool {
+			return x != y
+		}
+	default:
+		return ""
 
-	if len(pk.Value) <= 0 {
+	}
+
+	switch true {
+	case jv.level3.Valid:
+		if cmp(av.Value, jv.level3.Float64) {
+			return "level3"
+		}
+	case jv.level2.Valid:
+		if cmp(av.Value, jv.level2.Float64) {
+			return "level2"
+		}
+	case jv.level1.Valid:
+		if cmp(av.Value, jv.level1.Float64) {
+			return "level1"
+		}
+
+	}
+	return ""
+
+}
+
+func alarmJudge(pk packetparse.Packet) error {
+	var alarmvalue alarmValue
+	alarmvalue.HostName = pk.HostName
+	alarmvalue.Plugin = pk.Plugin
+	alarmvalue.Time = time.Unix(int64(pk.TimeStamp), 0).Format("2006-01-02 15:04:05")
+	alarmvalue.Message = pk.Message
+
+	fmt.Println(judgemap)
+	leng := len(pk.Value)
+	if leng <= 0 {
 		return fmt.Errorf("value error: %v", pk.Value)
 	}
 
-	if len(pk.Value) == 1 {
+	if leng == 1 {
+		alarmvalue.Value = pk.Value[0]
+		alarmvalue.Level = doJudge(alarmvalue)
+		if alarmvalue.Level == "" {
+			return nil
+		}
 
-	} else {
+		return alarmInsert(alarmvalue)
+
+	}
+
+	if leng > 1 {
 
 		if pk.VlTags == "" {
-			return fmt.Errorf("value gt 0 but vltags is '' ")
+			return fmt.Errorf("VlTags error: value gt 0 but vltags is '' ")
 		}
 
 		sl := strings.Split(pk.VlTags, "|")
 
-		if len(sl) != len(pk.Value) {
-			return fmt.Errorf("value  and  vltags is not equals ")
+		if len(sl) < len(pk.Value) {
+			return fmt.Errorf("VlTags error:  vltags is not enough ")
 		}
 
 		for idx, value := range pk.Value {
 
-			tags["type"] = pk.Type + "_" + sl[idx]
+			alarmvalue.Value = value
+			alarmvalue.Instance = pk.Instance + "_" + sl[idx]
 
-			if err != nil {
-
-				return err
+			alarmvalue.Level = doJudge(alarmvalue)
+			if alarmvalue.Level == "" {
+				continue
 			}
 
+			if err := alarmInsert(alarmvalue); err != nil {
+				return err
+			}
 		}
 
 	}
+
+	return nil
 
 }

@@ -1,5 +1,9 @@
 package main
 
+import (
+	"fmt"
+)
+
 func checkErr(err error) {
 	if err != nil {
 		panic(err)
@@ -8,6 +12,6 @@ func checkErr(err error) {
 
 func main() {
 
-	ss()
+	fmt.Println(judgemap)
 
 }

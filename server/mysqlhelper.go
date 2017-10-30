@@ -9,7 +9,7 @@ import (
 //('10.1.1.107',3306,'monitor','monitor','monitor')
 var mysql *sql.DB
 
-func judgemapStore() judgeMap {
+func judgemapGet() judgeMap {
 	judgemap := make(judgeMap)
 	rows, err := mysql.Query("SELECT * FROM AlarmJudge")
 	checkErr(err)
@@ -43,8 +43,28 @@ func judgemapStore() judgeMap {
 	return judgemap
 }
 
+// 仅仅为了美观 sql 放这里
+func alarmInsert(av alarmValue) error {
+
+	_, err := mysql.Exec(
+		"INSERT userinfo SET hostname=?,alarmname=?,alarmele=?,value=?,message=?,time=?,level=?",
+		av.HostName,
+		av.Plugin,
+		av.Instance,
+		av.Value,
+		av.Message,
+		av.Time,
+		av.Level)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 /*
-	stmt, err := mysql.Prepare("INSERT userinfo SET username=?,departname=?,created=?")
+	stmt, err := mysql.Prepare("INSERT AlarmQueue SET username=?,departname=?,created=?")
 	checkErr(err)
 
 	res, err := stmt.Exec("astaxie", "研发部门", "2012-12-09")

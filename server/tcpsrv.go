@@ -33,12 +33,21 @@ func handleFunc(conn *net.TCPConn) {
 		}
 		Logger.Info.Println("Receive from client:", conn.RemoteAddr())
 		pk, err := packetparse.Parse(buf[0:n])
+
 		if err != nil {
 			Logger.Error.Println("packetparse.Parse error:", err.Error())
 			continue
 		}
+
 		go func(p packetparse.Packet) {
 			err := writeToInfluxdb(p)
+			if err != nil {
+				Logger.Error.Println("writeToInfluxdb error:", err.Error())
+			}
+		}(pk)
+
+		go func(p packetparse.Packet) {
+			err := alarmJudge(p)
 			if err != nil {
 				Logger.Error.Println("writeToInfluxdb error:", err.Error())
 			}
