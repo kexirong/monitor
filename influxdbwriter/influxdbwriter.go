@@ -31,10 +31,11 @@ type  Packet struct {
 func WriteToInfluxdb(pk packetparse.Packet) error {
 	// Make client
 	clt, err := client.NewHTTPClient(client.HTTPConfig{Addr: host})
+
 	if err != nil {
 		panic(err.Error())
 	}
-
+	defer clt.Close()
 	// Create a new point batch
 	bp, _ := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  DB,
@@ -75,7 +76,7 @@ func WriteToInfluxdb(pk packetparse.Packet) error {
 
 		for idx, value := range pk.Value {
 			fields["value"] = value
-			tags["type"] = pk.Type + "_" + sl[idx]
+			tags["type"] = pk.Type + "." + sl[idx]
 
 			pt, err := client.NewPoint(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp), 0))
 

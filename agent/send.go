@@ -47,7 +47,13 @@ func cHandleFunc(conn *tcpConn, queue *queue.BytesQueue) {
 		if err := send(conn.conn, vl); err != nil {
 			Logger.Error.Printf("server:%s,error:%s", conn.addr, err.Error())
 			conn.Close()
+			continue
 		}
+		if _, err := read(conn.conn); err != nil {
+			Logger.Error.Printf("server:%s,error:%s", conn.addr, err.Error())
+			conn.Close()
+		}
+
 	}
 
 }

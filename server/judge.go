@@ -32,13 +32,15 @@ type judge struct {
 
 var judgemap judgeMap
 
-func doJudge(av alarmValue) string {
+func doJudge(av alarmValue, jkey string) string {
+
 	iv, ok := judgemap[av.Plugin]
 	var cmp func(x, y float64) bool
 	if !ok {
 		return ""
 	}
-	jv, ok := iv[av.Instance]
+
+	jv, ok := iv[jkey]
 	if !ok {
 		return ""
 	}
@@ -81,12 +83,12 @@ func doJudge(av alarmValue) string {
 
 func alarmJudge(pk packetparse.Packet) error {
 	var alarmvalue alarmValue
+	var jkey string
 	alarmvalue.HostName = pk.HostName
 	alarmvalue.Plugin = pk.Plugin
 	alarmvalue.Time = time.Unix(int64(pk.TimeStamp), 0).Format("2006-01-02 15:04:05")
 	alarmvalue.Message = pk.Message
 
-	fmt.Println(judgemap)
 	leng := len(pk.Value)
 	if leng <= 0 {
 		return fmt.Errorf("value error: %v", pk.Value)
@@ -94,7 +96,9 @@ func alarmJudge(pk packetparse.Packet) error {
 
 	if leng == 1 {
 		alarmvalue.Value = pk.Value[0]
-		alarmvalue.Level = doJudge(alarmvalue)
+		alarmvalue.Instance = pk.Instance
+		jkey = pk.Instance + pk.Type
+		alarmvalue.Level = doJudge(alarmvalue, jkey)
 		if alarmvalue.Level == "" {
 			return nil
 		}
@@ -118,9 +122,9 @@ func alarmJudge(pk packetparse.Packet) error {
 		for idx, value := range pk.Value {
 
 			alarmvalue.Value = value
-			alarmvalue.Instance = pk.Instance + "_" + sl[idx]
-
-			alarmvalue.Level = doJudge(alarmvalue)
+			alarmvalue.Instance = pk.Instance + "." + sl[idx]
+			jkey = sl[idx] + pk.Type
+			alarmvalue.Level = doJudge(alarmvalue, jkey)
 			if alarmvalue.Level == "" {
 				continue
 			}

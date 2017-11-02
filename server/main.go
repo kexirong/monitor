@@ -13,5 +13,6 @@ func checkErr(err error) {
 func main() {
 
 	fmt.Println(judgemap)
+	startTCPsrv()
 
 }

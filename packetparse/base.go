@@ -22,7 +22,7 @@ type Packet struct {
 	Type      string    `json:"type"`      //percent(百分比),counter(正数速率,主要是趋势),gauge(原值),derive(速率)
 	Value     []float64 `json:"value"`
 	VlTags    string    `json:"vltags"` // "idle:user:system"
-	Message   string    ` json:"message"`
+	Message   string    `json:"message"`
 }
 
 var packMap = map[string]uint16{

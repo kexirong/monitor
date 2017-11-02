@@ -1,0 +1,9 @@
+{
+
+    "mysql":"monitor:monitor@tcp(10.1.1.107:3306)/monitor?charset=utf8",
+    "dbinflux" : "monitor",
+	"userinflux" : "monitor",
+	"passwdinflux" : "monitor",
+	"hostinflux" :"http://10.1.1.201:8086"
+
+}

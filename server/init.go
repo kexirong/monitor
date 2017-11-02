@@ -22,4 +22,11 @@ func init() {
 
 	//judge init 需要在 mysql init 后面
 	judgemap = judgemapGet()
+
+	//influxdb
+
+	dbinflux = "monitor"
+	userinflux = "monitor"
+	passwdinflux = "monitor"
+	hostinflux = "http://10.1.1.201:8086"
 }

@@ -9,11 +9,11 @@ import (
 	"github.com/kexirong/monitor/packetparse"
 )
 
-const (
-	dbinflux = "monitor"
-	username = "monitor"
-	password = "monitor"
-	host     = "http://10.1.1.201:8086"
+var (
+	dbinflux     = "monitor"
+	userinflux   = "monitor"
+	passwdinflux = "monitor"
+	hostinflux   = "http://10.1.1.201:8086"
 )
 
 /*
@@ -31,7 +31,11 @@ type  Packet struct {
 func writeToInfluxdb(pk packetparse.Packet) error {
 
 	// Make client
-	clt, err := client.NewHTTPClient(client.HTTPConfig{Addr: host})
+	clt, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr:     hostinflux,
+		Username: userinflux,
+		Password: passwdinflux,
+	})
 	if err != nil {
 		panic(err.Error())
 	}
@@ -80,7 +84,7 @@ func writeToInfluxdb(pk packetparse.Packet) error {
 
 		for idx, value := range pk.Value {
 			fields["value"] = value
-			tags["instance"] = pk.Instance + "_" + sl[idx]
+			tags["instance"] = pk.Instance + "." + sl[idx]
 
 			pt, err := client.NewPoint(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp), 0))
 
@@ -94,8 +98,12 @@ func writeToInfluxdb(pk packetparse.Packet) error {
 		}
 
 	}
-	fmt.Println("writing...", bp)
 
-	return clt.Write(bp)
+	fmt.Println("writing...", bp)
+	fmt.Println(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp), 0))
+
+	err = clt.Write(bp)
+	clt.Close()
+	return err
 
 }

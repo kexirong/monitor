@@ -6,6 +6,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+// 为了美观 sql 放这里
+
 //('10.1.1.107',3306,'monitor','monitor','monitor')
 var mysql *sql.DB
 
@@ -43,11 +45,10 @@ func judgemapGet() judgeMap {
 	return judgemap
 }
 
-// 仅仅为了美观 sql 放这里
 func alarmInsert(av alarmValue) error {
 
 	_, err := mysql.Exec(
-		"INSERT userinfo SET hostname=?,alarmname=?,alarmele=?,value=?,message=?,time=?,level=?",
+		"INSERT AlarmQueue SET hostname=?,alarmname=?,alarmele=?,value=?,message=?,time=?,level=?",
 		av.HostName,
 		av.Plugin,
 		av.Instance,
