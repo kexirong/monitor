@@ -84,7 +84,11 @@ func writeToInfluxdb(pk packetparse.Packet) error {
 
 		for idx, value := range pk.Value {
 			fields["value"] = value
-			tags["instance"] = pk.Instance + "." + sl[idx]
+			if pk.Instance != "" {
+				tags["instance"] = pk.Instance + "." + sl[idx]
+			} else {
+				tags["instance"] = sl[idx]
+			}
 
 			pt, err := client.NewPoint(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp), 0))
 

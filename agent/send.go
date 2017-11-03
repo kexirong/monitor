@@ -2,11 +2,10 @@ package main
 
 import (
 	"net"
+	"time"
 
 	"github.com/kexirong/monitor/queue"
 )
-
-var SERVERS = []string{"127.0.0.1:5000"}
 
 func sendStart(servers []string, queue *queue.BytesQueue) {
 
@@ -32,14 +31,17 @@ func newTCPConn(addr *net.TCPAddr) *tcpConn {
 	}
 }
 
-func cHandleFunc(conn *tcpConn, queue *queue.BytesQueue) {
+func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 	for {
 		if conn.IsClose() {
 			conn.Conn()
+			time.Sleep(100 * time.Millisecond)
+			continue
 		}
-		vl, err := queue.GetWait()
 
-		if err != nil {
+		vl, err := que.GetWait()
+
+		if err == queue.ErrTimeout {
 			Logger.Warning.Println(err.Error())
 
 			continue

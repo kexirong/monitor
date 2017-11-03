@@ -1,11 +1,15 @@
 package queue
 
 import (
-	"fmt"
+	"errors"
 	"runtime"
 	"sync/atomic"
 	"time"
 )
+
+var ErrEmpty = errors.New("queue is empty")
+var ErrFull = errors.New("queue is full")
+var ErrTimeout = errors.New("queue op. timeout")
 
 type data struct {
 	//isFull bool
@@ -65,7 +69,7 @@ func (bq *BytesQueue) Put(bs []byte) (bool, error) {
 	putPtr = atomic.LoadUint32(&bq.putPtr)
 
 	if bq.Len() >= bq.ptrStd {
-		return false, nil
+		return false, ErrFull
 	}
 
 	if !atomic.CompareAndSwapUint32(&bq.putPtr, putPtr, putPtr+1) {
@@ -100,7 +104,7 @@ func (bq *BytesQueue) Get() ([]byte, bool, error) {
 	getPtr = atomic.LoadUint32(&bq.getPtr)
 
 	if bq.Len() < 1 {
-		return nil, false, nil
+		return nil, false, ErrEmpty
 	}
 
 	if !atomic.CompareAndSwapUint32(&bq.getPtr, getPtr, getPtr+1) {
@@ -128,7 +132,7 @@ func (bq *BytesQueue) Get() ([]byte, bool, error) {
 
 // PutWait 阻塞型put,ms 最大等待豪秒数,默认 1000
 func (bq *BytesQueue) PutWait(bs []byte, ms ...time.Duration) error {
-	var ok bool
+
 	var start, end time.Time
 
 	start = time.Now()
@@ -138,13 +142,16 @@ func (bq *BytesQueue) PutWait(bs []byte, ms ...time.Duration) error {
 	}
 
 	for {
-		ok, _ = bq.Put(bs)
+		ok, err := bq.Put(bs)
 		if ok {
 			return nil
 		}
+		if ErrFull == err {
+			time.Sleep(50 * time.Millisecond)
+		}
 
 		if time.Now().After(end) {
-			return fmt.Errorf("put time out,end:%v,start:%v", end, start)
+			return ErrTimeout
 		}
 
 	}
@@ -153,8 +160,7 @@ func (bq *BytesQueue) PutWait(bs []byte, ms ...time.Duration) error {
 
 // GetWait 阻塞型get, ms为 等待毫秒 默认1000
 func (bq *BytesQueue) GetWait(ms ...time.Duration) ([]byte, error) {
-	var ok bool
-	var value []byte
+
 	var start, end time.Time
 
 	start = time.Now()
@@ -164,13 +170,17 @@ func (bq *BytesQueue) GetWait(ms ...time.Duration) ([]byte, error) {
 	}
 
 	for {
-		value, ok, _ = bq.Get()
+		value, ok, err := bq.Get()
 		if ok {
 			return value, nil
 		}
 
+		if ErrEmpty == err {
+			time.Sleep(50 * time.Millisecond)
+		}
+
 		if time.Now().After(end) {
-			return nil, fmt.Errorf("get time out,end:%v,start:%v", end, start)
+			return nil, ErrTimeout
 		}
 
 	}

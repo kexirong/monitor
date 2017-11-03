@@ -2,6 +2,7 @@ package packetparse
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -111,11 +112,20 @@ func bufwrite(buf io.Writer, data interface{}) error {
 
 }
 
-func Package(packet Packet) ([]byte, error) {
+func Package(pk Packet) ([]byte, error) {
+
+	if len(pk.Value) < 1 && pk.Message == "" {
+		return nil, errors.New(" Message is ''  but also  value.len lt 1   ")
+	}
+
+	if (len(pk.Value) > 1 || pk.Instance == "") && pk.VlTags == "" {
+		return nil, errors.New(" VlTags is ''  but value.len ne 1 or instance is also '' ")
+	}
+
 	var err error
 	buf := new(bytes.Buffer)
 
-	value := reflect.ValueOf(packet)
+	value := reflect.ValueOf(pk)
 	num := value.NumField()
 
 	/*if value.Field(num-1) == "" {
@@ -131,8 +141,8 @@ func Package(packet Packet) ([]byte, error) {
 
 		case "", float64(0), nil:
 
-			if !(uint16(i) == packMap["vltags"] || uint16(i) == packMap["message"]) {
-				return nil, fmt.Errorf("Field: %d (%d) is empty", i, packMap["message"])
+			if !(uint16(i) == packMap["vltags"] || uint16(i) == packMap["message"] || uint16(i) == packMap["instance"]) {
+				return nil, fmt.Errorf("Field: %d (%s) is empty", i, parseMap[uint16(i)])
 			}
 
 		default:
@@ -185,6 +195,7 @@ func Parse(b []byte) (Packet, error) {
 		kind := typesMap[field]
 
 		switch kind {
+
 		case "string":
 			str = string(buf)
 
@@ -200,6 +211,7 @@ func Parse(b []byte) (Packet, error) {
 
 		default:
 			return packet, fmt.Errorf("packet parse type error : n=%d, t=%d", n, t)
+
 		}
 
 		switch field {

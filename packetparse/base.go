@@ -36,7 +36,7 @@ var packMap = map[string]uint16{
 	"message":   0x0007,
 }
 
-var typesMap map[string]string //[name]tyoe
+var typesMap map[string]string //[name]type
 var parseMap map[uint16]string //[id]name
 
 func init() {

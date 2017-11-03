@@ -7,18 +7,20 @@ import select
 import sys
 import socket
 import json
+import logging
 
 VAL_QUEUE=Queue.Queue()
 PATH= "./pysched/pythscript"
 
-
+logging.basicConfig(level=logging.DEBUG,  
+                    filename=r'SchecdOut.log',  
+                    filemode='w+',  
+                    format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')  
 
 
 PLUGINMAP={}
 
-F=open (r'SchecdOut.log','w')
 
-print >>F ,PATH
 
 class Plugin(object):
     __slots__ = {"name",'step','instan'}
@@ -49,17 +51,15 @@ def instance_add(plugin):
  
 def plugin_run(instan):
     try:
-        value=getattr(instan.instan,"getvalue")()
-        VAL_QUEUE.put(value)
-        print >>F, value
-    except AttributeError,e:
-
-
-
-        print >>F, dir(instan)
+        values=getattr(instan.instan,"getvalue")()
+        for i in values:
+            VAL_QUEUE.put(i)
+        
+    except AttributeError:
+        logging.error(dir(instan))
         
     except Exception,e:
-        print >>F, instan.name,e
+         logging.error("%s:%s",instan.name,e)
        
  
  
@@ -80,10 +80,10 @@ class Cron(object):
             
             for i in PLUGINMAP: # key is int type,so...
                 timewant=int(time.time())-self.timerec[i]
-                print >>F, "############:",i,timewant
+    
                 
                 if timewant < i:
-                    print >> F ,"sleep..."
+                    logging.info("sleep...waiting")
                     time.sleep(i-timewant)
                     
                 self.timerec[i]=int(time.time())
@@ -117,17 +117,17 @@ class  AFUNIX_TCP(object):
                 try:
                     self.sock.connect(path)
                 except socket.error:
+                    logging.error("coonect server failed")
                     self.__init__()
                     continue
                 break
             else:
-                print >> F,"waiting server..."
+                logging.warning("waiting server...")
                 time.sleep(5)
 
     def send(self,msg):
-
-        self.sock.send(msg)
-        self.sock.send("\n")
+        self.sock.send(msg+"\n")
+        
          
     def recv(self):
         return self.sock.recv(1024)
@@ -148,24 +148,31 @@ class  AFUNIX_TCP(object):
 
                 if not events :
                     break
-
-                print >>F,"events:",events
-
+                logging.debug("select.EPOLL events: %s",events)
                 for fileno, event in events:
                     if event&select.EPOLLIN:
                         rec=self.recv()
-                        do(parse(rec))
+                        logging.debug("select.EPOLLIN is turue %s",rec)
+                        if len(rec) != 0:
+                            do(parse(rec))
+
                         
-                    elif event&select.EPOLLOUT:
+                    if event&select.EPOLLOUT:
                         
                         while not VAL_QUEUE.empty():
                             msg=VAL_QUEUE.get()
                             self.send(msg)
+                            
+                            logging.info("----sendmsg---:%s" %msg)
+                            continue
+                        time.sleep(0.5)
+                         
 
-                if event==select.EPOLLHUP :
-                    self.epoll.unregister(fileno)
-                    self.close()
-                    break
+                    if event&select.EPOLLHUP :
+                        logging.warning("select.EPOLL:EPOLLHUP")
+                        self.epoll.unregister(fileno)
+                        self.close()
+                        break
                         
                 
        
@@ -191,7 +198,7 @@ def parse(recv):
     try:
         cmd=json.loads(recv)
     except ValueError:
-        print >>F,recv
+        logging.error(recv)
         cmd=None
     return cmd
     
@@ -200,10 +207,10 @@ def loadplugin(name):
         plugin=Plugin()
         
         plugin.instan=__import__(name)
-        plugin.name=plugin.instan.name
-        plugin.step=plugin.instan.step
+        plugin.name=plugin.instan.NAME
+        plugin.step=plugin.instan.STEP
     except Exception,e:
-        print >>F,e
+        logging.error(e) 
         plugin=None
         
     return plugin
@@ -212,7 +219,7 @@ def loadplugin(name):
 def mian():
     sys.path.append(PATH) 
     dirlist=os.listdir(PATH)
-    print >>F,"cur....dir",sys.path,dirlist
+    logging.info("curdir:%s",dirlist)
     for i in dirlist:
         if not i.endswith(".py"):
             continue
@@ -220,15 +227,16 @@ def mian():
         if plugin:
             instance_add(plugin)
    
-    print >>F, 'start AFUNIX_TCP client '
+    logging.info( 'start AFUNIX_TCP client ')
     t=threading.Thread(target=AFUNIX_TCP().transfer) 
     t.setDaemon(1)
     t.start()
-    print >>F ,'run cron... '
+    logging.info('run cron... ')
     
     Cron().cron()
     
         
 
 if __name__ == '__main__':
+
     mian()

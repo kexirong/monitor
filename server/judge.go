@@ -122,7 +122,12 @@ func alarmJudge(pk packetparse.Packet) error {
 		for idx, value := range pk.Value {
 
 			alarmvalue.Value = value
-			alarmvalue.Instance = pk.Instance + "." + sl[idx]
+			if pk.Instance != "" {
+				alarmvalue.Instance = pk.Instance + "." + sl[idx]
+			} else {
+				alarmvalue.Instance = sl[idx]
+			}
+			//alarmvalue.Instance = pk.Instance + "." + sl[idx]
 			jkey = sl[idx] + pk.Type
 			alarmvalue.Level = doJudge(alarmvalue, jkey)
 			if alarmvalue.Level == "" {

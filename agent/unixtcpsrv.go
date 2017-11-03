@@ -3,6 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 	"net"
 	"os"
 
@@ -53,44 +56,56 @@ func pkg(queue *queue.BytesQueue, data []byte) error {
 	if err != nil {
 		return err
 	}
+	if len(pk.Value) < 1 && pk.Message == "" {
+		return errors.New(" Message is ''  but also  value.len lt 1   ")
+	}
+
+	if (len(pk.Value) > 1 || pk.Instance == "") && pk.VlTags == "" {
+		return errors.New(" VlTags is ''  but value.len ne 1 or instance is also '' ")
+	}
 
 	bdata, err := packetparse.Package(pk)
 
 	if err != nil {
 		return err
 	}
-	if err := queue.PutWait(bdata); err != nil {
-
-	}
-	return nil
+	return queue.PutWait(bdata)
 
 }
 
 func handleFunc(conn *net.UnixConn, queue *queue.BytesQueue) {
 	defer conn.Close()
-	var buf = make([]byte, 1)
+	var buf = make([]byte, 1452)
 	data := new(bytes.Buffer)
-	var cnt = 0
+
 	for {
-		_, _, err := conn.ReadFromUnix(buf)
+		n, _, err := conn.ReadFromUnix(buf)
 		if err != nil {
 			return
 		}
 
-		if buf[0] != '\n' {
-			data.Write(buf)
-			cnt++
-		} else {
-			tmp := data.Bytes()
-			go func(data []byte) {
-				err := pkg(queue, data)
-				if err != nil {
-					Logger.Error.Printf("pkg the data: %s , error:%s", data, err.Error())
-				}
-			}(tmp)
-			data.Truncate(0)
-			cnt = 0
+		if n == 0 {
+			fmt.Println("nnnnnnnnnnnnnnnnnnnnnn=================================0000000000000000000000000")
 		}
+		data.Write(buf[0:n])
+		tmp, err := data.ReadBytes('\n')
+		if err == io.EOF {
+			continue
+		}
+		if len(tmp) == 0 {
+			Logger.Error.Printf("tmp is nil")
+			continue
+		}
+		go func(bs []byte) {
+			err := pkg(queue, bs)
+			if err != nil {
+				Logger.Error.Printf("pkg the data: %s , error:%s", bs, err.Error())
+			}
+		}(tmp[0 : len(tmp)-1])
+
+		data.Reset()
+		continue
 
 	}
+
 }

@@ -1,4 +1,6 @@
-name="kk"
-step=5
+
+NAME = "kk"
+
+STEP = 50
 def getvalue():
-    return 'kk1'
+    return ['kk1',]
