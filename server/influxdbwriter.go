@@ -49,17 +49,19 @@ func writeToInfluxdb(pk packetparse.Packet) error {
 	// Create a point and add to batch
 	tags := map[string]string{
 		"hostname": pk.HostName,
-		"instance": pk.Instance,
 		"type":     pk.Type,
 	}
 
+	if pk.Instance != "" {
+		tags["instance"] = pk.Instance
+	}
 	fields := make(map[string]interface{})
 
 	if len(pk.Value) <= 0 {
 		return fmt.Errorf("value error: %v", pk.Value)
 	}
 
-	if len(pk.Value) == 1 {
+	/*if len(pk.Value) == 1 {
 
 		fields["value"] = pk.Value[0]
 
@@ -70,36 +72,31 @@ func writeToInfluxdb(pk packetparse.Packet) error {
 		}
 		bp.AddPoint(pt)
 
-	} else {
+	} else {  */
 
-		if pk.VlTags == "" {
-			return fmt.Errorf("value gt 0 but vltags is '' ")
+	if pk.VlTags == "" {
+		return fmt.Errorf("value gt 0 but vltags is '' ")
+	}
+
+	sl := strings.Split(pk.VlTags, "|")
+
+	if len(sl) < len(pk.Value) {
+		return fmt.Errorf("value  and  vltags is not equals ")
+	}
+
+	for idx, value := range pk.Value {
+		fields["value"] = value
+
+		tags["metric"] = sl[idx]
+
+		pt, err := client.NewPoint(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp), 0))
+
+		if err != nil {
+
+			return err
 		}
 
-		sl := strings.Split(pk.VlTags, "|")
-
-		if len(sl) != len(pk.Value) {
-			return fmt.Errorf("value  and  vltags is not equals ")
-		}
-
-		for idx, value := range pk.Value {
-			fields["value"] = value
-			if pk.Instance != "" {
-				tags["instance"] = pk.Instance + "." + sl[idx]
-			} else {
-				tags["instance"] = sl[idx]
-			}
-
-			pt, err := client.NewPoint(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp), 0))
-
-			if err != nil {
-
-				return err
-			}
-
-			bp.AddPoint(pt)
-
-		}
+		bp.AddPoint(pt)
 
 	}
 

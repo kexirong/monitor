@@ -13,7 +13,7 @@ var mysql *sql.DB
 
 func judgemapGet() judgeMap {
 	judgemap := make(judgeMap)
-	rows, err := mysql.Query("SELECT * FROM AlarmJudge")
+	rows, err := mysql.Query("SELECT * FROM alarm_judge")
 	checkErr(err)
 	for rows.Next() {
 		var plugin string
@@ -48,7 +48,7 @@ func judgemapGet() judgeMap {
 func alarmInsert(av alarmValue) error {
 
 	_, err := mysql.Exec(
-		"INSERT AlarmQueue SET hostname=?,alarmname=?,alarmele=?,value=?,message=?,time=?,level=?",
+		"INSERT alarm_queue SET hostname=?,alarmname=?,alarmele=?,value=?,message=?,time=?,level=?",
 		av.HostName,
 		av.Plugin,
 		av.Instance,
@@ -68,7 +68,7 @@ func alarmInsert(av alarmValue) error {
 	stmt, err := mysql.Prepare("INSERT AlarmQueue SET username=?,departname=?,created=?")
 	checkErr(err)
 
-	res, err := stmt.Exec("astaxie", "研发部门", "2012-12-09")
+	res, err := stmt.Exec("astaxie", "部门", "2012-12-09")
 	checkErr(err)
 
 	id, err := res.LastInsertId()

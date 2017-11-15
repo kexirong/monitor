@@ -10,7 +10,7 @@ import json
 import logging
 
 VAL_QUEUE=Queue.Queue()
-PATH= "./pysched/pythscript"
+PATH= "./pythscript"
 
 logging.basicConfig(level=logging.DEBUG,  
                     filename=r'SchecdOut.log',  
@@ -47,13 +47,25 @@ def instance_add(plugin):
     else:
         PLUGINMAP[plugin.step]=[plugin]
     return True
-        
+
+
+def instance_del(plugin):
+    
+    if PLUGINMAP.get(plugin.step):
+        PLUGINMAP[plugin.step].append(plugin)
+    else:
+        PLUGINMAP[plugin.step]=[plugin]
+    return True
+
  
 def plugin_run(instan):
     try:
         values=getattr(instan.instan,"getvalue")()
         for i in values:
-            VAL_QUEUE.put(i)
+            if i['hostname'].startswith("localhost"):
+                logging.error("hostname not allow localhost:%s",i)
+                return
+            VAL_QUEUE.put(json.dumps(i))
         
     except AttributeError:
         logging.error(dir(instan))
@@ -72,7 +84,7 @@ class Cron(object):
         return cls._instance  
         
     def __init__(self):
-        self.timerec={k:0 for k in PLUGINMAP}
+        self.timerec={k:int(time.time()) for k in PLUGINMAP}
     
     def cron(self):
         while True:
@@ -83,8 +95,9 @@ class Cron(object):
     
                 
                 if timewant < i:
-                    logging.info("sleep...waiting")
-                    time.sleep(i-timewant)
+                    time.sleep(0.1)
+                    continue
+
                     
                 self.timerec[i]=int(time.time())
                 for j in PLUGINMAP[i]:
@@ -106,8 +119,8 @@ class Cron(object):
             
 class  AFUNIX_TCP(object):
     def __init__(self):
-        self.sock=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        self.sock=socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
+        #self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.sock.setblocking(0)
         self.epoll=select.epoll()
     
@@ -126,7 +139,8 @@ class  AFUNIX_TCP(object):
                 time.sleep(5)
 
     def send(self,msg):
-        self.sock.send(msg+"\n")
+        n = self.sock.send(msg+"\n")
+        return n
         
          
     def recv(self):
@@ -161,10 +175,10 @@ class  AFUNIX_TCP(object):
                         
                         while not VAL_QUEUE.empty():
                             msg=VAL_QUEUE.get()
-                            self.send(msg)
-                            
-                            logging.info("----sendmsg---:%s" %msg)
-                            continue
+                            n=self.send(msg)
+                            logging.info("----sendmsg---:%s,%s" %(msg,n))
+
+                        #   continue
                         time.sleep(0.5)
                          
 

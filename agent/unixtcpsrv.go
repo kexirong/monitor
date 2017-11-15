@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"os"
@@ -32,9 +31,9 @@ func UnixTCPsrv(queue *queue.BytesQueue) {
 			os.Exit(1)
 		}
 	}
-	unixAddr, err := net.ResolveUnixAddr("unix", PATH)
+	unixAddr, err := net.ResolveUnixAddr("unixpacket", PATH)
 	checkErr(err)
-	listen, err := net.ListenUnix("unix", unixAddr)
+	listen, err := net.ListenUnix("unixpacket", unixAddr)
 	checkErr(err)
 
 	for {
@@ -81,13 +80,17 @@ func handleFunc(conn *net.UnixConn, queue *queue.BytesQueue) {
 	for {
 		n, _, err := conn.ReadFromUnix(buf)
 		if err != nil {
+			Logger.Warning.Println("errerrerrerrerrerrerrerrerrerrerrerr")
 			return
 		}
 
 		if n == 0 {
-			fmt.Println("nnnnnnnnnnnnnnnnnnnnnn=================================0000000000000000000000000")
+			Logger.Warning.Println("nnnnnnnnnnnnnnnnnnnnnn=================================0000000000000000000000000")
 		}
+
+		Logger.Info.Println("rec's buf :", string(buf[0:n]))
 		data.Write(buf[0:n])
+
 		tmp, err := data.ReadBytes('\n')
 		if err == io.EOF {
 			continue
@@ -96,6 +99,9 @@ func handleFunc(conn *net.UnixConn, queue *queue.BytesQueue) {
 			Logger.Error.Printf("tmp is nil")
 			continue
 		}
+
+		Logger.Info.Println(string(tmp))
+
 		go func(bs []byte) {
 			err := pkg(queue, bs)
 			if err != nil {

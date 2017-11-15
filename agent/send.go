@@ -42,19 +42,22 @@ func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 		vl, err := que.GetWait()
 
 		if err == queue.ErrTimeout {
-			Logger.Warning.Println(err.Error())
-
+			//Logger.Warning.Println(err.Error())
+			time.Sleep(time.Microsecond * 10)
 			continue
 		}
 		if err := send(conn.conn, vl); err != nil {
-			Logger.Error.Printf("server:%s,error:%s", conn.addr, err.Error())
+			err1 := que.PutWait(vl)
+			Logger.Error.Printf("server:%s,error:%s:%s", conn.addr, err.Error(), err1.Error())
 			conn.Close()
 			continue
 		}
-		if _, err := read(conn.conn); err != nil {
+		var tmp []byte
+		if tmp, err = read(conn.conn); err != nil {
 			Logger.Error.Printf("server:%s,error:%s", conn.addr, err.Error())
 			conn.Close()
 		}
+		Logger.Info.Printf("rec form: %s, msg: %s", conn.addr, tmp)
 
 	}
 
