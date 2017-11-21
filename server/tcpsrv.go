@@ -3,7 +3,7 @@ package main
 import (
 	"net"
 
-	"github.com/kexirong/monitor/packetparse"
+	"github.com/kexirong/monitor/common/packetparse"
 )
 
 func startTCPsrv() {

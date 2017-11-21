@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kexirong/monitor/queue"
+	"github.com/kexirong/monitor/common/queue"
 )
 
 func main() {

@@ -57,11 +57,9 @@ func alarmInsert(av alarmValue) error {
 		av.Time,
 		av.Level)
 
-	if err != nil {
-		return err
-	}
+	
+	return err
 
-	return nil
 }
 
 /*

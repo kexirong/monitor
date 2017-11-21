@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/influxdata/influxdb/client/v2"
-	"github.com/kexirong/monitor/packetparse"
+	"github.com/kexirong/monitor/common/packetparse"
 )
 
 var (

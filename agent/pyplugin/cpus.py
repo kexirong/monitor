@@ -18,7 +18,7 @@ def getvalue():
         import psutil
     except ImportError:
         return ["import psutil Error"]
-    
+
     cpu_value = psutil.cpu_times_percent(percpu=True)
     #cpu_value = psutil.cpu_times_percent()
     value0 = [cpu_value[0].user, cpu_value[0].nice, cpu_value[0].system, cpu_value[0].idle,]
@@ -49,6 +49,5 @@ def getvalue():
 
 
 if __name__ == "__main__":
-    for i in range(100):
+    for i in range(10000):
         print(i, ":", getvalue())
-        time.sleep(1)

@@ -4,7 +4,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/kexirong/monitor/queue"
+	"github.com/kexirong/monitor/common/queue"
 )
 
 func sendStart(servers []string, queue *queue.BytesQueue) {

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kexirong/monitor/packetparse"
+	"github.com/kexirong/monitor/common/packetparse"
 )
 
 /*

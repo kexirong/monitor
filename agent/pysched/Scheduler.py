@@ -10,7 +10,7 @@ import json
 import logging
 
 VAL_QUEUE=Queue.Queue()
-PATH= "./pythscript"
+PATH= "./pyplugin"
 
 logging.basicConfig(level=logging.DEBUG,  
                     filename=r'SchecdOut.log',  
@@ -124,7 +124,7 @@ class  AFUNIX_TCP(object):
         self.sock.setblocking(0)
         self.epoll=select.epoll()
     
-    def conn(self,path='pysched/agent.sock'):
+    def conn(self,path='agent.sock'):
         while True:
             if os.path.exists(path):
                 try:

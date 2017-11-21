@@ -8,13 +8,13 @@ import (
 	"net"
 	"os"
 
-	"github.com/kexirong/monitor/packetparse"
-	"github.com/kexirong/monitor/queue"
+	"github.com/kexirong/monitor/common/packetparse"
+	"github.com/kexirong/monitor/common/queue"
 )
 
 const (
 	//PATH sock 文件
-	PATH = "./pysched/agent.sock"
+	PATH = "agent.sock"
 )
 
 func isExist(path string) bool {
