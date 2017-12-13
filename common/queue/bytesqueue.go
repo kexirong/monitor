@@ -132,57 +132,55 @@ func (bq *BytesQueue) Get() ([]byte, bool, error) {
 
 // PutWait 阻塞型put,ms 最大等待豪秒数,默认 1000
 func (bq *BytesQueue) PutWait(bs []byte, ms ...time.Duration) error {
-
-	var start, end time.Time
-
-	start = time.Now()
-	end = start.Add(time.Millisecond * 1000)
+	var timeout <-chan time.Time
+	var msto time.Duration
 	if len(ms) > 0 {
-		end = end.Add(time.Millisecond * ms[0])
+		msto = time.Millisecond * ms[0]
+	} else {
+		msto = time.Millisecond * 1000
 	}
-
+	timeout = time.After(msto)
+	wait := time.Tick(100 * time.Millisecond)
 	for {
-		ok, err := bq.Put(bs)
-		if ok {
-			return nil
-		}
-		if ErrFull == err {
-			time.Sleep(50 * time.Millisecond)
-		}
+		select {
 
-		if time.Now().After(end) {
+		case <-timeout:
 			return ErrTimeout
+		default:
+			if ok, err := bq.Put(bs); ok {
+				return nil
+			} else if err == ErrFull {
+				<-wait
+			}
 		}
-
 	}
-
 }
 
 // GetWait 阻塞型get, ms为 等待毫秒 默认1000
 func (bq *BytesQueue) GetWait(ms ...time.Duration) ([]byte, error) {
+	var timeout <-chan time.Time
+	var msto time.Duration
 
-	var start, end time.Time
-
-	start = time.Now()
-	end = start.Add(time.Millisecond * 1000)
 	if len(ms) > 0 {
-		end = start.Add(time.Millisecond * ms[0])
+		msto = time.Millisecond * ms[0]
+	} else {
+		msto = time.Millisecond * 1000
 	}
+	timeout = time.After(msto)
+	wait := time.Tick(100 * time.Millisecond)
 
 	for {
-		value, ok, err := bq.Get()
-		if ok {
-			return value, nil
-		}
-
-		if ErrEmpty == err {
-			time.Sleep(50 * time.Millisecond)
-		}
-
-		if time.Now().After(end) {
+		select {
+		case <-timeout:
 			return nil, ErrTimeout
-		}
 
+		default:
+			if value, ok, err := bq.Get(); ok {
+				return value, nil
+			} else if err == ErrEmpty {
+				<-wait
+			}
+		}
 	}
 
 }

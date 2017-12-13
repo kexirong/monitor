@@ -43,15 +43,15 @@ func Test_QueueWaitGetAndPut(t *testing.T) {
 	num := runtime.NumCPU()
 
 	runtime.GOMAXPROCS(num)
-	num = 1
+	num = 4
 
 	cnt := make([]map[string]int, 4)
 	var waitGroup = new(sync.WaitGroup)
 	var total int
 	var perr, gerr uint32
 
-	total = 10000
-	bq := NewBtsQueue(2048)
+	total = 100000
+	bq := NewBtsQueue(100000)
 	start := time.Now()
 
 	for i := 0; i < num; i++ {
