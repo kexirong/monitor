@@ -5,7 +5,22 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/kexirong/monitor/common/packetparse"
 )
+
+//Goplugin interface
+type Goplugin interface {
+	Gather() ([]packetparse.Packet, error)
+	Config(key string, value string) bool
+}
+
+func register(name string, plugin Goplugin) error {
+	gopluginMap[name] = plugin
+	return nil
+}
+
+var gopluginMap = map[string]Goplugin{}
 
 type commonStruct struct {
 	vltags   string

@@ -49,7 +49,7 @@ func (c *CPU) Gather() ([]packetparse.Packet, error) {
 			return nil, err
 		}
 		subret.Value = perc
-		subret.Instance = k[3:]
+		subret.Instance = k
 		ret = append(ret, subret)
 	}
 	c.preValue = timescpu
@@ -81,10 +81,34 @@ func (c *CPU) collect() (procValue, error) {
 	return parseLineCPU(lines)
 }
 
-//Init must use  befor of GetTarget method
-func (c *CPU) Init(VlTags string) error {
+//Config conf method
+func (c *CPU) Config(key string, value string) bool {
+	var cvalue []string
+	switch key {
+	case "vltags":
+		tc := strings.Split(value, "|")
+		for _, v := range tc {
+			_, ok := c.valueMap[v]
+			if ok {
+				cvalue = append(cvalue, v)
+			}
+		}
+		if len(cvalue) < 1 {
+			return false
+		}
+		c.valueC = cvalue
+		c.vltags = strings.Join(c.valueC, "|")
+		return true
+
+	default:
+		return false
+	}
+
+}
+
+func (c *CPU) init() error {
 	var err error
-	var tc []string
+
 	c.valueMap = map[string]int{
 		"user":       0,
 		"nice":       1,
@@ -97,17 +121,9 @@ func (c *CPU) Init(VlTags string) error {
 		"guest":      8,
 		"guest_nice": 9,
 	}
-	tc = strings.Split(VlTags, "|")
-	for _, v := range tc {
-		_, ok := c.valueMap[v]
-		if ok {
-			c.valueC = append(c.valueC, v)
-		}
+	if !c.Config("vltags", "user|nice|system|idle") {
+		return errors.New("CPU plugin： init error")
 	}
-	if len(c.valueC) < 1 {
-		return errors.New("cpu plugin init error: VlTags none hit")
-	}
-	c.vltags = strings.Join(c.valueC, "|")
 	c.preValue, err = c.collect()
 	return err
 }
@@ -133,4 +149,12 @@ func parseLineCPU(lines []string) (procValue, error) {
 
 	}
 	return ret, nil
+}
+
+func init() {
+	cpu := new(CPU)
+	if err := cpu.init(); err == nil {
+		register("cpu", cpu)
+	}
+
 }
