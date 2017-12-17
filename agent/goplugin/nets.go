@@ -2,6 +2,7 @@ package goplugin
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -14,11 +15,9 @@ var (
 	netStatFile = "/proc/net/dev"
 )
 
-//timesCPU ”/proc/stat“ times unitis are 10ms，so that‘s it
-
 //NET exproted method has Init GetTarget
 type NET struct {
-	commonStruct
+	plugin
 }
 
 //Gather scheduler use
@@ -28,7 +27,7 @@ func (n *NET) Gather() ([]packetparse.Packet, error) {
 	var subret = packetparse.Packet{
 		Plugin:    "net",
 		HostName:  hostname,
-		TimeStamp: float64(time.Now().Unix()),
+		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
 		Type:      "derive",
 		VlTags:    n.vltags,
 	}
@@ -38,7 +37,7 @@ func (n *NET) Gather() ([]packetparse.Packet, error) {
 	}
 
 	for k, v := range valuenet {
-		d, err := fsliced(n.preValue[k], v)
+		d, err := fsliced(n.lastValue[k], v)
 		if err != nil {
 			return nil, err
 		}
@@ -50,35 +49,12 @@ func (n *NET) Gather() ([]packetparse.Packet, error) {
 		subret.Instance = k
 		ret = append(ret, subret)
 	}
+	n.lastValue = valuenet
 	return ret, nil
 }
 
-func (n *NET) getValueC(value []float64) ([]float64, error) {
-	var ret []float64
-	for _, v := range n.valueC {
-		r := value[n.valueMap[v]]
-		if r < 0 {
-			return nil, errors.New("cpu plugin calculate error:  precent lt 0 ")
-		}
-		ret = append(ret, r)
-
-	}
-	return ret, nil
-
-}
-
-func (n *NET) collect() (procValue, error) {
-	lines, err := readFileToStrings(netStatFile, 2, -1)
-	if err != nil {
-		return nil, err
-	}
-	return parseLineNET(lines)
-}
-
-//Init must use  befor of GetTarget method
-func (n *NET) Init(VlTags string) error {
+func (n *NET) init() error {
 	var err error
-	var tc []string
 	n.valueMap = map[string]int{
 		"rx_bytes":      0,
 		"rx_packets":    1,
@@ -97,28 +73,43 @@ func (n *NET) Init(VlTags string) error {
 		"tx_carrier":    14,
 		"tx_compressed": 15,
 	}
-	tc = strings.Split(VlTags, "|")
-	for _, v := range tc {
-		_, ok := n.valueMap[v]
-		if ok {
-			n.valueC = append(n.valueC, v)
-		}
+	if !n.Config("vltags", "rx_bytes|tx_bytes") {
+		return errors.New("NET plugin： init set vltags error")
 	}
-	if len(n.valueC) < 1 {
-		return errors.New("net plugin init error: VlTags none hit")
+	if !n.Config("step", 1) {
+		return errors.New("NET plugin： init set step error")
 	}
-	n.vltags = strings.Join(n.valueC, "|")
-	n.preValue, err = n.collect()
+
+	n.lastValue, err = n.collect()
 	return err
 }
 
-func parseLineNET(lines []string) (procValue, error) {
+func (n *NET) getValueC(value []float64) ([]float64, error) {
+	var ret []float64
+	for _, v := range n.valueC {
+		r := value[n.valueMap[v]]
+		if r < 0 {
+			return nil, fmt.Errorf("net plugin calculate error: %s  value lt 0 ", v)
+		}
+		ret = append(ret, r)
+	}
+	return ret, nil
+}
+
+func (n *NET) collect() (procvalue, error) {
+	lines, err := readFileToStrings(netStatFile, 2, -1)
+	if err != nil {
+		return nil, err
+	}
+	return parseLineNET(lines)
+}
+
+func parseLineNET(lines []string) (procvalue, error) {
 	var vl = make([]float64, 0, 16)
-	var ret = make(procValue)
+	var ret = make(procvalue)
 	for _, line := range lines {
 		sline := strings.Fields(line)
 		if !strings.HasSuffix(sline[0], ":") {
-
 			return nil, errors.New("net plugin error: parse /proc/net/dev error")
 		}
 		for _, v := range sline[1:] {
@@ -127,12 +118,20 @@ func parseLineNET(lines []string) (procValue, error) {
 				return nil, errors.New("net plugin error: parse /proc/net/dev strconv.ParseInt error")
 			}
 			vl = append(vl, n)
-			//fmt.Println("vl is cap：", cap(vl))
 		}
 		key := sline[0][:len(sline[0])-1]
 		ret[key] = vl
 		vl = make([]float64, 0, 10)
-
 	}
 	return ret, nil
+}
+
+func init() {
+	nets := new(NET)
+	if err := nets.init(); err == nil {
+		register("nets", nets)
+	} else {
+		fmt.Println(err)
+	}
+
 }

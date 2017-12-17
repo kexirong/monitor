@@ -2,6 +2,7 @@ package goplugin
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"runtime"
 	"strconv"
@@ -12,15 +13,14 @@ import (
 )
 
 var (
+	// ”/proc/stat“ times unitis are 10ms，so that‘s it
 	cpuStatFile = "/proc/stat"
 	cpuNum      = runtime.NumCPU()
 )
 
-//timesCPU ”/proc/stat“ times unitis are 10ms，so that‘s it
-
 //CPU exproted method has Init GetTarget
 type CPU struct {
-	commonStruct
+	plugin
 }
 
 //Gather scheduler use
@@ -30,7 +30,7 @@ func (c *CPU) Gather() ([]packetparse.Packet, error) {
 	var subret = packetparse.Packet{
 		Plugin:    "cpu",
 		HostName:  hostname,
-		TimeStamp: float64(time.Now().Unix()),
+		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
 		Type:      "percent",
 		VlTags:    c.vltags,
 	}
@@ -38,9 +38,8 @@ func (c *CPU) Gather() ([]packetparse.Packet, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	for k, v := range timescpu {
-		d, err := fsliced(c.preValue[k], v)
+		d, err := fsliced(c.lastValue[k], v)
 		if err != nil {
 			return nil, err
 		}
@@ -52,63 +51,12 @@ func (c *CPU) Gather() ([]packetparse.Packet, error) {
 		subret.Instance = k
 		ret = append(ret, subret)
 	}
-	c.preValue = timescpu
+	c.lastValue = timescpu
 	return ret, nil
-}
-
-func (c *CPU) timesPercent(times []float64) ([]float64, error) {
-	var timestot float64
-	var ret []float64
-
-	for _, v := range times {
-		timestot += v
-	}
-	for _, v := range c.valueC {
-		r := times[c.valueMap[v]] / timestot * 100
-		if r < 0 {
-			return nil, errors.New("cpu plugin calculate error:  precent lt 0 ")
-		}
-		ret = append(ret, r)
-	}
-	return ret, nil
-}
-
-func (c *CPU) collect() (procValue, error) {
-	lines, err := readFileToStrings(cpuStatFile, 0, cpuNum+1) // 读取cpu跟各个核心的状态行 故cpuNum+1
-	if err != nil {
-		return nil, err
-	}
-	return parseLineCPU(lines)
-}
-
-//Config conf method
-func (c *CPU) Config(key string, value string) bool {
-	var cvalue []string
-	switch key {
-	case "vltags":
-		tc := strings.Split(value, "|")
-		for _, v := range tc {
-			_, ok := c.valueMap[v]
-			if ok {
-				cvalue = append(cvalue, v)
-			}
-		}
-		if len(cvalue) < 1 {
-			return false
-		}
-		c.valueC = cvalue
-		c.vltags = strings.Join(c.valueC, "|")
-		return true
-
-	default:
-		return false
-	}
-
 }
 
 func (c *CPU) init() error {
 	var err error
-
 	c.valueMap = map[string]int{
 		"user":       0,
 		"nice":       1,
@@ -121,16 +69,46 @@ func (c *CPU) init() error {
 		"guest":      8,
 		"guest_nice": 9,
 	}
-	if !c.Config("vltags", "user|nice|system|idle") {
-		return errors.New("CPU plugin： init error")
+	if !c.Config("step", 1) {
+		return errors.New("CPU plugin： init set step error")
 	}
-	c.preValue, err = c.collect()
+
+	if !c.Config("vltags", "user|nice|system|idle") {
+		return errors.New("CPU plugin： init set vltags error")
+	}
+
+	c.lastValue, err = c.collect()
 	return err
 }
 
-func parseLineCPU(lines []string) (procValue, error) {
+func (c *CPU) collect() (procvalue, error) {
+	lines, err := readFileToStrings(cpuStatFile, 0, cpuNum+1) // 读取cpu跟各个核心的状态行 故cpuNum+1
+	if err != nil {
+		return nil, err
+	}
+	return parseLineCPU(lines)
+}
+
+func (c *CPU) timesPercent(times []float64) ([]float64, error) {
+	var timestot float64
+	var ret []float64
+
+	for _, v := range times {
+		timestot += v
+	}
+	for _, v := range c.valueC {
+		r := times[c.valueMap[v]] / timestot * 100
+		if r < 0 {
+			return nil, fmt.Errorf("cpu plugin calculate error:  %s precent lt 0", v)
+		}
+		ret = append(ret, r)
+	}
+	return ret, nil
+}
+
+func parseLineCPU(lines []string) (procvalue, error) {
 	var vl = make([]float64, 0, 10)
-	var ret = make(procValue)
+	var ret = make(procvalue)
 	for _, line := range lines {
 		if !strings.HasPrefix(line, "cpu") {
 			return nil, errors.New("cpu plugin error: parse /proc/stat error")
@@ -142,11 +120,9 @@ func parseLineCPU(lines []string) (procValue, error) {
 				return nil, errors.New("cpu plugin error: parse /proc/stat strconv.ParseInt error")
 			}
 			vl = append(vl, n)
-			//fmt.Println("vl is cap：", cap(vl))
 		}
 		ret[sline[0]] = vl
 		vl = make([]float64, 0, 10)
-
 	}
 	return ret, nil
 }
@@ -155,6 +131,8 @@ func init() {
 	cpu := new(CPU)
 	if err := cpu.init(); err == nil {
 		register("cpu", cpu)
+	} else {
+		fmt.Println(err)
 	}
 
 }

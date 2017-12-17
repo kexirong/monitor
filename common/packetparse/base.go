@@ -2,6 +2,7 @@ package packetparse
 
 import (
 	"reflect"
+	"time"
 )
 
 /*
@@ -13,10 +14,10 @@ import (
    | ************  |
    +---------------+
 */
-
+//Packet
 type Packet struct {
 	HostName  string    `json:"hostname"`  //ops201
-	TimeStamp float64   `json:"timestamp"` //23123131.123131
+	TimeStamp float64   `json:"timestamp"` //the number of seconds elapsed since January 1, 1970 UTC
 	Plugin    string    `json:"plugin"`    // cpu
 	Instance  string    `json:"instance"`  // 0,1,2,3 (eth0,eth1)(sda,sdb)
 	Type      string    `json:"type"`      //percent(百分比),counter(正数速率,主要是趋势),gauge(原值),derive(速率)
@@ -54,4 +55,13 @@ func init() {
 	for k := 0; k < t.NumField(); k++ {
 		typesMap[t.Field(k).Tag.Get("json")] = v.Field(k).Kind().String()
 	}
+}
+
+//Nsecond2Unix is  NanoSecond To UnixTimetamp
+func Nsecond2Unix(ns int64) float64 {
+	if ns < int64(time.Second) {
+		return 1
+	}
+	deno := float64(time.Second)
+	return float64(ns) / deno
 }
