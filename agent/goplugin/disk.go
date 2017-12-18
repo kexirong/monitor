@@ -5,16 +5,18 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/kexirong/monitor/common/packetparse"
 )
 
 var (
-	// ”/proc/stat“ times unitis are 10ms，so that‘s it
 	diskmtabFlie = "/proc/mounts"
 	diskfsFile   = "/proc/filesystems"
 )
+
+//硬盘容量值使用了float64保存，单位字节。目前硬盘远小于1000TB，理论上不会有精度问题
 
 //DISK exproted method has Init GetTarget
 type DISK struct {
@@ -30,33 +32,67 @@ func (d *DISK) Gather() ([]packetparse.Packet, error) {
 		Plugin:    "disk",
 		HostName:  hostname,
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
-		Type:      "percent",
+		Type:      "gauge",
 		VlTags:    d.vltags,
+	}
+	diskinfo, err := d.collect()
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range diskinfo {
+		value := make([]float64, 0)
+		for _, c := range d.valueC {
+			value = append(value, v[d.valueMap[c]])
+		}
+		if err != nil {
+			return nil, err
+		}
+		subret.Value = value
+		subret.Instance = k
+		ret = append(ret, subret)
 	}
 
 	return ret, nil
+
 }
 
 func (d *DISK) init() error {
 	var err error
-	mtp, err := getmtpmap()
+	d.devmtp, err = getmtpmap()
 	if err != nil {
 		return err
 	}
-	d.devmtp = mtp
-	d.valueMap = map[string]int{}
-	for k, v := range mtp {
-		d.valueMap[k] = 0
-		d.valueC = append(d.valueC, v)
+	d.valueMap = map[string]int{
+		"all":   0,
+		"used":  1,
+		"avail": 2,
 	}
-	d.vltags = strings.Join(d.valueC, "|")
+	if !d.Config("vltags", "all|used|avail") {
+		return errors.New("DISK plugin error： init set vltags error")
+	}
 	if !d.Config("step", 60) {
-		return errors.New("DISK plugin： init set step error")
+		return errors.New("DISK plugin error: init set step error")
 	}
 	return nil
 }
 
 func (d *DISK) collect() (procvalue, error) {
+	var ret = procvalue{}
+	var value []float64
+	fs := syscall.Statfs_t{}
+	for k, v := range d.devmtp {
+		value = make([]float64, 3)
+		err := syscall.Statfs(v, &fs)
+		if err != nil {
+			return nil, err
+		}
+		value[0] = float64(fs.Blocks * uint64(fs.Bsize))
+		value[1] = float64((fs.Blocks - fs.Bfree) * uint64(fs.Bsize))
+		value[2] = float64(fs.Bavail * uint64(fs.Bsize))
+		ret[k] = value
+	}
+	return ret, nil
 
 }
 

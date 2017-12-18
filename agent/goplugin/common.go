@@ -2,7 +2,9 @@ package goplugin
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -66,8 +68,8 @@ func (p *plugin) Config(key string, value interface{}) bool {
 		p.vltags = strings.Join(p.valueC, "|")
 		return true
 	case "step":
-		if v, ok := value.(int64); ok && v > 0 {
-			p.step = v * int64(time.Second)
+		if v, ok := value.(int); ok && v > 0 {
+			p.step = int64(v) * int64(time.Second)
 			return true
 		}
 		return false
@@ -115,3 +117,20 @@ func readFileToStrings(filepath string, offset uint, n int) ([]string, error) {
 	}
 	return ret, nil
 }
+
+func readSingleLine(filepath string) (string, error) {
+	lines, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return "", err
+	}
+	n := bytes.IndexByte(lines, '\n')
+	if n > 0 {
+		return string(lines[:n]), nil
+	}
+	if n < 0 && len(lines) > 0 {
+		return string(lines), nil
+	}
+	return "", fmt.Errorf("readSingleLine error: %s may is none", filepath)
+}
+
+//
