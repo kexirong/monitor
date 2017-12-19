@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
-	"sync"
 
 	"github.com/kexirong/monitor/common/queue"
 )
@@ -23,11 +22,7 @@ func main() {
 
 	servers := strings.Split(*addr, ",")
 	btq := queue.NewBtsQueue(4096)
-
-	var waitGroup = new(sync.WaitGroup)
 	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	waitGroup.Add(1)
 
 	go UnixTCPsrv(btq)
 	go sendStart(servers, btq)
@@ -45,9 +40,8 @@ func main() {
 			Logger.Error.Println(err.Error(), cmd.Args)
 		}
 	}()
-
-	waitGroup.Wait()
-
+	go gopluginScheduler2(btq)
+	select {}
 }
 
 func getCurrentPath() string {

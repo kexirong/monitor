@@ -25,7 +25,7 @@ func (m *MEM) Gather() ([]packetparse.Packet, error) {
 	var hostname, _ = os.Hostname()
 	var ret []packetparse.Packet
 	var subret = packetparse.Packet{
-		Plugin:    "net",
+		Plugin:    "memory",
 		HostName:  hostname,
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
 		Type:      "derive",
@@ -55,7 +55,7 @@ func (m *MEM) init() error {
 	if !m.Config("vltags", "MemTotal|MemFree|SwapTotal|SwapFree") {
 		return errors.New("MEM plugin： init set vltags error")
 	}
-	if !m.Config("step", 1) {
+	if !m.Config("step", 10) {
 		return errors.New("MEM plugin： init set step error")
 	}
 

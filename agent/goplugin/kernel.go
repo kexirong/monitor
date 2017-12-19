@@ -25,10 +25,10 @@ func (k *KERNEL) Gather() ([]packetparse.Packet, error) {
 	var hostname, _ = os.Hostname()
 	var ret []packetparse.Packet
 	var subret = packetparse.Packet{
-		Plugin:    "net",
+		Plugin:    "kernel",
 		HostName:  hostname,
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
-		Type:      "derive",
+		Type:      "gauge",
 		VlTags:    k.vltags,
 	}
 	valueker, err := k.collect()

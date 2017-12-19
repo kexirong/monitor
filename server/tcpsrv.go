@@ -10,7 +10,7 @@ func startTCPsrv() {
 	service := ":5000"
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", service)
 	checkErr(err)
-	listen, err := net.ListenTCP("tcp", tcpAddr)
+	listen, err := net.ListenTCP("tcp4", tcpAddr)
 	checkErr(err)
 	// conn_chan := make(chan net.Conn)
 

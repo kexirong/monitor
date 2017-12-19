@@ -25,11 +25,18 @@ type  Packet struct {
     Type      string        `json:"type"`
     Value     []float64     `json:"value"`
     VlTags    string        `json:"vltags"`
-    Message   string       ` json:"message"`
+    Message   string       	`json:"message"`
 }*/
 
-func writeToInfluxdb(pk packetparse.Packet) error {
+func timestamp2Time(ts float64) time.Time {
+	if ts < 0 {
+		return time.Now().Round(time.Millisecond)
+	}
+	deno := float64(time.Second)
+	return time.Unix(0, int64(ts*deno)).Round(time.Millisecond)
+}
 
+func writeToInfluxdb(pk packetparse.Packet) error {
 	// Make client
 	clt, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     hostinflux,
@@ -39,39 +46,31 @@ func writeToInfluxdb(pk packetparse.Packet) error {
 	if err != nil {
 		panic(err.Error())
 	}
-
 	// Create a new point batch
 	bp, _ := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  dbinflux,
 		Precision: "s",
 	})
-
 	// Create a point and add to batch
 	tags := map[string]string{
 		"hostname": pk.HostName,
 		"type":     pk.Type,
 	}
-
 	if pk.Instance != "" {
 		tags["instance"] = pk.Instance
 	}
 	fields := make(map[string]interface{})
-
 	if len(pk.Value) <= 0 {
 		return fmt.Errorf("value error: %v", pk.Value)
 	}
 
 	/*if len(pk.Value) == 1 {
-
 		fields["value"] = pk.Value[0]
-
 		pt, err := client.NewPoint(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp), 0))
-
 		if err != nil {
 			return err
 		}
 		bp.AddPoint(pt)
-
 	} else {  */
 
 	if pk.VlTags == "" {
@@ -85,23 +84,17 @@ func writeToInfluxdb(pk packetparse.Packet) error {
 	}
 
 	for idx, value := range pk.Value {
-		fields["value"] = value
-
-		tags["metric"] = sl[idx]
-
-		pt, err := client.NewPoint(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp), 0))
-
-		if err != nil {
-
-			return err
-		}
-
-		bp.AddPoint(pt)
-
+		fields[sl[idx]] = value
+		//	tags["metric"] = sl[idx]
 	}
+	pt, err := client.NewPoint(pk.Plugin, tags, fields, timestamp2Time(pk.TimeStamp))
+	if err != nil {
+		return err
+	}
+	bp.AddPoint(pt)
 
 	fmt.Println("writing...", bp)
-	fmt.Println(pk.Plugin, tags, fields, time.Unix(int64(pk.TimeStamp), 0))
+	fmt.Println(pk.Plugin, tags, fields, timestamp2Time(pk.TimeStamp))
 
 	err = clt.Write(bp)
 	clt.Close()

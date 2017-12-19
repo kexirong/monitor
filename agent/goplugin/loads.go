@@ -25,7 +25,7 @@ func (l *LOADAVG) Gather() ([]packetparse.Packet, error) {
 	var hostname, _ = os.Hostname()
 	var ret []packetparse.Packet
 	var subret = packetparse.Packet{
-		Plugin:    "net",
+		Plugin:    "loadavg",
 		HostName:  hostname,
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
 		Type:      "gauge",

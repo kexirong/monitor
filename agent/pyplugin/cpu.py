@@ -26,7 +26,7 @@ def getvalue():
     ret = {
         "hostname":hostname,
         "timestamp":time.time(),
-        "plugin":"cpu",
+        "plugin":"cpuss",
         "instance":"",
         "type":"percent",
         "value":value,

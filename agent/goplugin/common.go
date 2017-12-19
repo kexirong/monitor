@@ -19,20 +19,20 @@ type Goplugin interface {
 	GetStep() int64
 }
 
-//GopluginMap .
-var GopluginMap = map[string]struct {
+//Goplugintype .
+type Goplugintype struct {
 	NextTime int64
 	Instance Goplugin
-}{}
+}
+
+// GopluginMap .
+var GopluginMap = map[string]*Goplugintype{}
 
 func register(name string, plugin Goplugin) error {
 	if _, ok := GopluginMap[name]; ok {
 		return fmt.Errorf("plugin regist error: %s is exist", name)
 	}
-	GopluginMap[name] = struct {
-		NextTime int64
-		Instance Goplugin
-	}{
+	GopluginMap[name] = &Goplugintype{
 		NextTime: time.Now().UnixNano() + plugin.GetStep(),
 		Instance: plugin,
 	}
