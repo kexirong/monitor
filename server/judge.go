@@ -18,7 +18,7 @@ type  Packet struct {
     Type      string        `json:"type"`
     Value     []float64     `json:"value"`
     VlTags    string        `json:"vltags"`
-    Message   string       ` json:"message"`
+    Message   string        `json:"message"`
 }*/
 
 type judgeMap map[string]map[string]judge //key1 is plugin, key2 is instance
@@ -81,7 +81,7 @@ func doJudge(av alarmValue, jkey string) string {
 
 }
 
-func alarmJudge(pk packetparse.Packet) error {
+func alarmJudge(pk packetparse.TargetPacket) error {
 	var alarmvalue alarmValue
 	var jkey string
 	alarmvalue.HostName = pk.HostName

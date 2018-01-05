@@ -14,7 +14,7 @@ import (
 
 //Goplugin interface
 type Goplugin interface {
-	Gather() ([]packetparse.Packet, error)
+	Gather() ([]packetparse.TargetPacket, error)
 	Config(key string, value interface{}) bool
 	GetStep() int64
 }

@@ -50,7 +50,7 @@ func UnixTCPsrv(queue *queue.BytesQueue) {
 
 func pkg(queue *queue.BytesQueue, data []byte) error {
 
-	var pk packetparse.Packet
+	var pk packetparse.TargetPacket
 	err := json.Unmarshal(data, &pk)
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func pkg(queue *queue.BytesQueue, data []byte) error {
 		return errors.New(" VlTags is ''  but value.len ne 1 or instance is also '' ")
 	}
 
-	bdata, err := packetparse.Package(pk)
+	bdata, err := packetparse.TargetPackage(pk)
 
 	if err != nil {
 		return err
@@ -80,12 +80,12 @@ func handleFunc(conn *net.UnixConn, queue *queue.BytesQueue) {
 	for {
 		n, _, err := conn.ReadFromUnix(buf)
 		if err != nil {
-			Logger.Warning.Println("errerrerrerrerrerrerrerrerrerrerrerr")
+			Logger.Warning.Println("err ")
 			return
 		}
 
 		if n == 0 {
-			Logger.Warning.Println("nnnnnnnnnnnnnnnnnnnnnn=================================0000000000000000000000000")
+			Logger.Warning.Println("nnn ")
 		}
 
 		Logger.Info.Println("rec's buf :", string(buf[0:n]))

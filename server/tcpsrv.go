@@ -35,21 +35,21 @@ func handleFunc(conn *net.TCPConn) {
 			return
 		}
 		Logger.Info.Println("Receive from client:", conn.RemoteAddr())
-		pk, err := packetparse.Parse(buf[0:n])
+		pk, err := packetparse.TargetParse(buf[0:n])
 
 		if err != nil {
 			Logger.Error.Println("packetparse.Parse error:", err.Error())
 			return
 		}
 
-		go func(p packetparse.Packet) {
+		go func(p packetparse.TargetPacket) {
 			err := writeToInfluxdb(p)
 			if err != nil {
 				Logger.Error.Println("writeToInfluxdb error:", err.Error())
 			}
 		}(pk)
 
-		go func(p packetparse.Packet) {
+		go func(p packetparse.TargetPacket) {
 			err := alarmJudge(p)
 			if err != nil {
 				Logger.Error.Println("writeToAlarmQueue error:", err.Error())

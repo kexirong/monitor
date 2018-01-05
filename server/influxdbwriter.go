@@ -36,7 +36,7 @@ func timestamp2Time(ts float64) time.Time {
 	return time.Unix(0, int64(ts*deno)).Round(time.Millisecond)
 }
 
-func writeToInfluxdb(pk packetparse.Packet) error {
+func writeToInfluxdb(pk packetparse.TargetPacket) error {
 	// Make client
 	clt, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     hostinflux,

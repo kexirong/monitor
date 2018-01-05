@@ -21,10 +21,10 @@ type LOADAVG struct {
 }
 
 //Gather scheduler use
-func (l *LOADAVG) Gather() ([]packetparse.Packet, error) {
+func (l *LOADAVG) Gather() ([]packetparse.TargetPacket, error) {
 	var hostname, _ = os.Hostname()
-	var ret []packetparse.Packet
-	var subret = packetparse.Packet{
+	var ret []packetparse.TargetPacket
+	var subret = packetparse.TargetPacket{
 		Plugin:    "loadavg",
 		HostName:  hostname,
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),

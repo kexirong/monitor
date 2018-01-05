@@ -21,10 +21,10 @@ type NET struct {
 }
 
 //Gather scheduler use
-func (n *NET) Gather() ([]packetparse.Packet, error) {
+func (n *NET) Gather() ([]packetparse.TargetPacket, error) {
 	var hostname, _ = os.Hostname()
-	var ret []packetparse.Packet
-	var subret = packetparse.Packet{
+	var ret []packetparse.TargetPacket
+	var subret = packetparse.TargetPacket{
 		Plugin:    "net",
 		HostName:  hostname,
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),

@@ -39,7 +39,7 @@ func gopluginScheduler(qe *queue.BytesQueue) {
 						return
 					}
 					for _, pk := range gather {
-						gatherbs, err := packetparse.Package(pk)
+						gatherbs, err := packetparse.TargetPackage(pk)
 						if err == nil {
 							if err := qe.PutWait(gatherbs); err != nil {
 								fmt.Println("gopluginScheduler errror: " + err.Error())
@@ -73,7 +73,7 @@ func gopluginScheduler2(qe *queue.BytesQueue) {
 					return
 				}
 				for _, pk := range gather {
-					gatherbs, err := packetparse.Package(pk)
+					gatherbs, err := packetparse.TargetPackage(pk)
 					if err == nil {
 						if err := qe.PutWait(gatherbs); err != nil {
 							fmt.Println("gopluginScheduler errror: " + err.Error())

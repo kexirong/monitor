@@ -21,10 +21,10 @@ type KERNEL struct {
 }
 
 //Gather scheduler use
-func (k *KERNEL) Gather() ([]packetparse.Packet, error) {
+func (k *KERNEL) Gather() ([]packetparse.TargetPacket, error) {
 	var hostname, _ = os.Hostname()
-	var ret []packetparse.Packet
-	var subret = packetparse.Packet{
+	var ret []packetparse.TargetPacket
+	var subret = packetparse.TargetPacket{
 		Plugin:    "kernel",
 		HostName:  hostname,
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),

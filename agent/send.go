@@ -34,8 +34,9 @@ func newTCPConn(addr *net.TCPAddr) *tcpConn {
 func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 	for {
 		if conn.IsClose() {
-			conn.Conn()
+			Logger.Error.Println("server is not connected , try after of 100ms")
 			time.Sleep(100 * time.Millisecond)
+			conn.Conn()
 			continue
 		}
 
@@ -82,11 +83,9 @@ func (t *tcpConn) Close() {
 	}
 	t.conn.Close()
 	t.isClose = true
-
 }
 
 func send(conn net.Conn, data []byte) error {
-
 	_, err := conn.Write(data)
 	return err
 

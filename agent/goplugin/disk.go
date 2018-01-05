@@ -25,10 +25,10 @@ type DISK struct {
 }
 
 //Gather scheduler use
-func (d *DISK) Gather() ([]packetparse.Packet, error) {
+func (d *DISK) Gather() ([]packetparse.TargetPacket, error) {
 	var hostname, _ = os.Hostname()
-	var ret []packetparse.Packet
-	var subret = packetparse.Packet{
+	var ret []packetparse.TargetPacket
+	var subret = packetparse.TargetPacket{
 		Plugin:    "disk",
 		HostName:  hostname,
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
@@ -81,7 +81,7 @@ func (d *DISK) collect() (procvalue, error) {
 	var ret = procvalue{}
 	var value []float64
 	fs := syscall.Statfs_t{}
-	for k, v := range d.devmtp {
+	for _, v := range d.devmtp {
 		value = make([]float64, 3)
 		err := syscall.Statfs(v, &fs)
 		if err != nil {
@@ -90,7 +90,7 @@ func (d *DISK) collect() (procvalue, error) {
 		value[0] = float64(fs.Blocks * uint64(fs.Bsize))
 		value[1] = float64((fs.Blocks - fs.Bfree) * uint64(fs.Bsize))
 		value[2] = float64(fs.Bavail * uint64(fs.Bsize))
-		ret[k] = value
+		ret[v] = value
 	}
 	return ret, nil
 
@@ -130,7 +130,7 @@ func getmtpmap() (map[string]string, error) {
 		if len(sline) < 4 {
 			continue
 		}
-		if _, ok := fs[sline[2]]; ok {
+		if _, ok := fs[sline[2]]; ok && strings.HasPrefix(sline[3], "rw") {
 			mtp[sline[0]] = sline[1]
 		}
 	}
