@@ -1,6 +1,9 @@
 package packetparse
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"reflect"
 )
 
@@ -28,11 +31,37 @@ type PDU struct {
 	Check   uint32
 }
 
-func Encode(pdu PDU) ([]byte, error) {
-	return nil, nil
+var PDUTypeMap = map[uint8]string{
+	0x01: "normal",
+	0x02: "json",
+	0x03: "heartbeat",
+	0x04: "reply",
 }
 
-func Decode(bits []byte) (PDU, error) {
+func PdUEncode(pdu PDU) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	if pdu.Type == 0 {
+		return nil, fmt.Errorf("PDU.Type is 0")
+	}
+
+	err := buf.WriteByte(byte(pdu.Type))
+	if err != nil {
+		return nil, err
+	}
+	pdu.Length = uint64(len(pdu.Payload))
+	if pdu.Length == 0 {
+		return nil, fmt.Errorf("PDU.Length is 0")
+	}
+
+	_, err = buf.Write(Network.Uint64ToBytes(pdu.Length))
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func PDUDecode(rd io.Reader) (PDU, error) {
 
 	return PDU{}, nil
 }

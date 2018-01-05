@@ -17,7 +17,7 @@ var (
 )
 
 /*
-type  Packet struct {
+type  TargetPacket struct {
     HostName  string        `json:"hostname"`
     TimeStamp float64       `json:"timestamp"`
     Plugin    string        `json:"plugin"`
@@ -26,7 +26,8 @@ type  Packet struct {
     Value     []float64     `json:"value"`
     VlTags    string        `json:"vltags"`
     Message   string       	`json:"message"`
-}*/
+}
+*/
 
 func timestamp2Time(ts float64) time.Time {
 	if ts < 0 {
