@@ -28,7 +28,7 @@ type  TargetPacket struct {
     Message   string       	`json:"message"`
 }
 */
-
+//由于float64的精度问题所以保留到毫秒，舍弃纳秒部分
 func timestamp2Time(ts float64) time.Time {
 	if ts < 0 {
 		return time.Now().Round(time.Millisecond)
