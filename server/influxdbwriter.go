@@ -37,9 +37,11 @@ func timestamp2Time(ts float64) time.Time {
 	return time.Unix(0, int64(ts*deno)).Round(time.Millisecond)
 }
 
-func writeToInfluxdb(pk packetparse.TargetPacket) error {
-	// Make client
-	clt, err := client.NewHTTPClient(client.HTTPConfig{
+var clt client.Client
+
+func init() {
+	var err error
+	clt, err = client.NewHTTPClient(client.HTTPConfig{
 		Addr:     hostinflux,
 		Username: userinflux,
 		Password: passwdinflux,
@@ -47,6 +49,11 @@ func writeToInfluxdb(pk packetparse.TargetPacket) error {
 	if err != nil {
 		panic(err.Error())
 	}
+}
+
+func writeToInfluxdb(pk packetparse.TargetPacket) error {
+	// Make client
+
 	// Create a new point batch
 	bp, _ := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  dbinflux,
@@ -95,10 +102,9 @@ func writeToInfluxdb(pk packetparse.TargetPacket) error {
 	bp.AddPoint(pt)
 
 	fmt.Println("writing...", bp)
-	fmt.Println(pk.Plugin, tags, fields, timestamp2Time(pk.TimeStamp))
-
+	//fmt.Println(pk.Plugin, tags, fields, timestamp2Time(pk.TimeStamp))
 	err = clt.Write(bp)
-	clt.Close()
+	//	clt.Close()
 	return err
 
 }

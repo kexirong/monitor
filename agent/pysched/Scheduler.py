@@ -170,7 +170,6 @@ class  AFUNIX_TCP(object):
                         if len(rec) != 0:
                             do(parse(rec))
 
-                        
                     if event&select.EPOLLOUT:
                         
                         while not VAL_QUEUE.empty():

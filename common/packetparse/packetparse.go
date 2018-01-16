@@ -60,14 +60,13 @@ func TargetPackage(pk TargetPacket) ([]byte, error) {
 func TargetParse(b []byte) (TargetPacket, error) {
 	var err error
 	var packet TargetPacket
-	var t uint16
-	var l uint32
+	var t, l uint16
 	var str string
 	var f float64
 	var sf []float64
 	n := 0
 
-	head := make([]byte, 6)
+	head := make([]byte, 4)
 
 	bufs := bytes.NewReader(b)
 	for ; ; n++ {
@@ -77,7 +76,7 @@ func TargetParse(b []byte) (TargetPacket, error) {
 			break
 		}
 		t = Network.BytesToUint16(head[0:2])
-		l = Network.BytesToUint32(head[2:6])
+		l = Network.BytesToUint16(head[2:4])
 
 		buf := make([]byte, l)
 
@@ -143,7 +142,7 @@ func TargetParse(b []byte) (TargetPacket, error) {
 
 func targetWriteBuf(buf io.Writer, seq uint16, data interface{}) error {
 	var err error
-	var leng uint32
+	var leng uint16
 	_, err = buf.Write(Network.Uint16ToBytes(seq))
 	if err != nil {
 		return err
@@ -151,8 +150,8 @@ func targetWriteBuf(buf io.Writer, seq uint16, data interface{}) error {
 	switch data.(type) {
 
 	case string:
-		leng = uint32(len(data.(string)))
-		_, err = buf.Write(Network.Uint32ToBytes(leng))
+		leng = uint16(len(data.(string)))
+		_, err = buf.Write(Network.Uint16ToBytes(leng))
 
 		if err != nil {
 			return err
@@ -166,7 +165,7 @@ func targetWriteBuf(buf io.Writer, seq uint16, data interface{}) error {
 
 	case float64:
 		leng = 8
-		_, err = buf.Write(Network.Uint32ToBytes(leng))
+		_, err = buf.Write(Network.Uint16ToBytes(leng))
 
 		if err != nil {
 			return err
@@ -179,8 +178,8 @@ func targetWriteBuf(buf io.Writer, seq uint16, data interface{}) error {
 		}
 
 	case []float64:
-		leng = uint32(8 * len(data.([]float64)))
-		_, err = buf.Write(Network.Uint32ToBytes(leng))
+		leng = uint16(8 * len(data.([]float64)))
+		_, err = buf.Write(Network.Uint16ToBytes(leng))
 
 		if err != nil {
 			return err

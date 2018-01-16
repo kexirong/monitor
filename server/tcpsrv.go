@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
+	"io"
 	"net"
 
 	"github.com/kexirong/monitor/common/packetparse"
@@ -19,8 +22,56 @@ func startTCPsrv() {
 		if err != nil {
 			continue
 		}
-		go handleFunc(conn)
+		go readHandke(conn)
 	}
+}
+
+func readHandke(conn *net.TCPConn) {
+	defer conn.Close()
+	reader := bufio.NewReader(conn)
+	for {
+		bits, err := packetparse.ReadPDU(reader)
+		fmt.Println("reading .....")
+		if err != nil {
+			if err == io.EOF {
+				Logger.Warning.Printf("client %s is close!\n", conn.RemoteAddr().String())
+			}
+			Logger.Error.Printf("parse data error: %s , client  is %s \n", err.Error(), conn.RemoteAddr().String())
+			return
+		}
+		pdu, err := packetparse.PDUDecode(bits)
+		if err != nil {
+			Logger.Error.Printf("Decode data error: %s , client  is %s \n", err.Error(), conn.RemoteAddr().String())
+			return
+		}
+		switch packetparse.PDUTypeMap[pdu.Type] {
+		case "targetpackage":
+			tp, err := packetparse.TargetParse(pdu.Payload)
+			if err != nil {
+				Logger.Error.Println("packetparse.Parse error:", err.Error())
+				return
+			}
+			//	reply, _ := packetparse.PDUEncodeReply(pdu.Check, []byte("ok"))
+			//	conn.Write(reply)
+
+			go func(p packetparse.TargetPacket) {
+				err := writeToInfluxdb(p)
+				if err != nil {
+					Logger.Error.Println("writeToInfluxdb error:", err.Error())
+				}
+			}(tp)
+
+			go func(p packetparse.TargetPacket) {
+				err := alarmJudge(p)
+				if err != nil {
+					Logger.Error.Println("writeToAlarmQueue error:", err.Error())
+				}
+			}(tp)
+
+		}
+
+	}
+
 }
 
 func handleFunc(conn *net.TCPConn) {

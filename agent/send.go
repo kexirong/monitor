@@ -4,6 +4,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/kexirong/monitor/common/packetparse"
 	"github.com/kexirong/monitor/common/queue"
 )
 
@@ -34,8 +35,8 @@ func newTCPConn(addr *net.TCPAddr) *tcpConn {
 func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 	for {
 		if conn.IsClose() {
-			Logger.Error.Println("server is not connected , try after of 100ms")
-			time.Sleep(100 * time.Millisecond)
+			Logger.Error.Println("server is not connected , try after of 1000ms")
+			time.Sleep(1000 * time.Millisecond)
 			conn.Conn()
 			continue
 		}
@@ -47,18 +48,28 @@ func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 			time.Sleep(time.Microsecond * 10)
 			continue
 		}
-		if err := send(conn.conn, vl); err != nil {
+		pdu, err := packetparse.GenPduWithPayload(0x05, vl)
+		if err != nil {
+			Logger.Error.Println(err)
+			continue
+		}
+		bits, err := packetparse.PDUEncode(pdu)
+		if err != nil {
+			Logger.Error.Println(err)
+			continue
+		}
+		if err := send(conn.conn, bits); err != nil {
 			err1 := que.PutWait(vl)
-			Logger.Error.Printf("server:%s,error:%s:%s", conn.addr, err.Error(), err1.Error())
+			Logger.Error.Printf("server:%s,error:%s:%s", conn.addr.String(), err.Error(), err1.Error())
 			conn.Close()
 			continue
 		}
 		var tmp []byte
 		if tmp, err = read(conn.conn); err != nil {
-			Logger.Error.Printf("server:%s,error:%s", conn.addr, err.Error())
+			Logger.Error.Printf("server:%s,error:%s", conn.addr.String(), err.Error())
 			conn.Close()
 		}
-		Logger.Info.Printf("rec form: %s, msg: %s", conn.addr, tmp)
+		Logger.Info.Printf("rec form: %s, msg: %s", conn.addr.String(), tmp)
 
 	}
 

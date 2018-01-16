@@ -5,6 +5,6 @@ import (
 )
 
 func Test_httpandhttps(t *testing.T) {
-	err := get("http://www.werq.com/")
+	err := get("https://www.baidu.com/")
 	t.Log(err)
 }

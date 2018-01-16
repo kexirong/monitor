@@ -34,10 +34,8 @@ func (network) Uint32ToBytes(ui32 uint32) []byte {
 
 func (network) Uint16ToBytes(u uint16) []byte {
 	b := make([]byte, 2)
-
 	b[0] = byte(u >> 8)
 	b[1] = byte(u)
-
 	return b
 
 }
