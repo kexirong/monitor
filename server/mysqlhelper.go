@@ -11,6 +11,21 @@ import (
 //('10.1.1.107',3306,'monitor','monitor','monitor')
 var mysql *sql.DB
 
+func Scanalarmdb() []alarmValue {
+	var av alarmValue
+	var avs []alarmValue
+	rows, err := mysql.Query("SELECT HostName,Time,alarmname,alarmele,Stat,Value Level,Message FROM alarm_queue where stat = 0")
+	checkErr(err)
+	for rows.Next() {
+		err = rows.Scan(&av.HostName, &av.Time, &av.Plugin, &av.Instance, &av.Value, &av.Level, &av.Message)
+		checkErr(err)
+		avs = append(avs, av)
+	}
+
+	//rows.Close()
+	return avs
+}
+
 func judgemapGet() judgeMap {
 	judgemap := make(judgeMap)
 	rows, err := mysql.Query("SELECT * FROM alarm_judge")
@@ -57,7 +72,6 @@ func alarmInsert(av alarmValue) error {
 		av.Time,
 		av.Level)
 
-	
 	return err
 
 }

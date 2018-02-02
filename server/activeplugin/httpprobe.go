@@ -12,10 +12,8 @@ import (
 var TLSClient *http.Client
 
 func init() {
-
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
-
 			InsecureSkipVerify: true,
 		},
 		DisableCompression: true,
@@ -31,7 +29,6 @@ func init() {
 
 }*/
 func get(url string) error {
-
 	rsp, err := TLSClient.Get(url)
 	if err != nil {
 		return err

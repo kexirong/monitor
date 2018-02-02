@@ -152,11 +152,11 @@ class  AFUNIX_TCP(object):
 
    
     def transfer(self):
-        
+
         while True:
             self.conn()
             self.epoll.register(self.sock.fileno(),select.EPOLLIN|select.EPOLLOUT)
-  
+
             while True:
                 events = self.epoll.poll(15)
 
@@ -171,7 +171,7 @@ class  AFUNIX_TCP(object):
                             do(parse(rec))
 
                     if event&select.EPOLLOUT:
-                        
+
                         while not VAL_QUEUE.empty():
                             msg=VAL_QUEUE.get()
                             n=self.send(msg)
@@ -179,7 +179,7 @@ class  AFUNIX_TCP(object):
 
                         #   continue
                         time.sleep(0.5)
-                         
+
 
                     if event&select.EPOLLHUP :
                         logging.warning("select.EPOLL:EPOLLHUP")

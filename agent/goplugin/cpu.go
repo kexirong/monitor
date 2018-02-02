@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	// ”/proc/stat“ times unitis are 10ms，so that‘s it
+	//”/proc/stat“ times unitis are 10ms，so that‘s it
 	cpuStatFile = "/proc/stat"
 	cpuNum      = runtime.NumCPU()
 )

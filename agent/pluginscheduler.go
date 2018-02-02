@@ -24,12 +24,12 @@ func unixTimeComepare(t1, t2 int64) int64 {
 //gopluginScheduler
 func gopluginScheduler(qe *queue.BytesQueue) {
 	var timeNow, nextTime, tickTime int64
-	fmt.Println(goplugin.GopluginMap)
+	//fmt.Println(goplugin.GopluginMap)
 	for {
 		nextTime = 0
 		for name, plugin := range goplugin.GopluginMap {
 			timeNow = time.Now().UnixNano()
-			fmt.Println("name:", name, plugin.Instance.GetStep()/(1000*1000*1000), "timenow: ", timeNow/(1000*1000*1000), "pluginnextTime: ", plugin.NextTime/(1000*1000*1000))
+			fmt.Println("name: ", name, plugin.Instance.GetStep()/(1000*1000*1000), "timenow: ", timeNow/(1000*1000*1000), "pluginnextTime: ", plugin.NextTime/(1000*1000*1000))
 			if timeNow >= plugin.NextTime {
 				plugin.NextTime += plugin.Instance.GetStep()
 				go func() {
@@ -52,7 +52,7 @@ func gopluginScheduler(qe *queue.BytesQueue) {
 		}
 		tickTime = nextTime - time.Now().UnixNano()
 		if tickTime > 0 {
-			fmt.Println("sleeping....", tickTime/(1000*1000*1000))
+
 			<-time.After(time.Duration(tickTime))
 		}
 	}

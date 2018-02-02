@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"fmt"
 	"hash/crc32"
 	"io"
 	"reflect"
@@ -39,13 +38,15 @@ type PDU struct {
 }
 
 //pduVersion 必须3个字节长度
-var pduVersion = []byte("0.1")
+var (
+	pduVersion = []byte("0.1")
 
-//PDUhead 供校验头部信息使用
-var PDUhead = append([]byte{07, 02}, pduVersion...)
+	//PDUhead 供校验头部信息使用
+	PDUhead = append([]byte{07, 02}, pduVersion...)
 
-//PDUeof 供校验尾部信息使用
-var PDUeof = []byte{'\r', '\n'}
+	//PDUeof 供校验尾部信息使用
+	PDUeof = []byte{'\r', '\n'}
+)
 
 //PDUTypeMap 供调用者封包解包使用
 var PDUTypeMap = map[uint8]string{
@@ -142,7 +143,7 @@ func ReadPDU(conn io.Reader) ([]byte, error) {
 	}
 
 	if count != 5 {
-		fmt.Println("break and return")
+		//	fmt.Println("break and return")
 		return nil, errors.New("ReadPDU error: read head failed")
 	}
 
@@ -253,7 +254,6 @@ var targetTypesMap = make(map[string]string) //[name]type
 var targetParseMap = make(map[uint16]string) //[seq]name
 //利用init函数使用反射初始化targetTypesMap和targetParseMap
 func init() {
-
 	for key, vl := range targetPacketMap {
 		targetParseMap[vl] = key
 	}

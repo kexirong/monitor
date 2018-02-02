@@ -40,15 +40,15 @@ func combinedOutputTimeout(c *exec.Cmd, timeout time.Duration) ([]byte, error) {
 	return b.Bytes(), err
 }
 
-func hostPinger(timeout float64, url string) (string, error) {
+func HostPinger(timeout int, url string) (string, error) {
 	var args []string
-	args = append(args, "-i 0.2  -c 4", url)
+	args = append(args, "-i 0.2", "-c 4", url)
 	bin, err := exec.LookPath("ping")
 	if err != nil {
 		return "", err
 	}
 	c := exec.Command(bin, args...)
 	out, err := combinedOutputTimeout(c,
-		time.Second*time.Duration(timeout+5))
+		time.Millisecond*time.Duration(timeout+1000))
 	return string(out), err
 }

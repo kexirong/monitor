@@ -47,6 +47,8 @@ type plugin struct {
 	lastValue procvalue
 }
 
+type procvalue map[string][]float64
+
 func (p *plugin) Config(key string, value interface{}) bool {
 	var cvalue []string
 	switch key {
@@ -81,8 +83,6 @@ func (p *plugin) Config(key string, value interface{}) bool {
 func (p *plugin) GetStep() int64 {
 	return p.step
 }
-
-type procvalue map[string][]float64
 
 func fsliced(fs1 []float64, fs2 []float64) ([]float64, error) {
 	var leng int
