@@ -40,37 +40,41 @@ func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 			conn.Conn()
 			continue
 		}
+		select {
+		case <-time.Tick(time.Second * 30):
+			send(conn.conn, packetparse.Heartbeat())
+		default:
+			vl, err := que.GetWait()
 
-		vl, err := que.GetWait()
+			if err == queue.ErrTimeout {
+				//Logger.Warning.Println(err.Error())
+				time.Sleep(time.Microsecond * 10)
+				continue
+			}
+			pdu, err := packetparse.GenPduWithPayload(0x05, vl)
+			if err != nil {
+				Logger.Error.Println(err)
+				continue
+			}
+			bits, err := packetparse.PDUEncode(pdu)
+			if err != nil {
+				Logger.Error.Println(err)
+				continue
+			}
+			if err := send(conn.conn, bits); err != nil {
+				err1 := que.PutWait(vl)
+				Logger.Error.Printf("server:%s,error:%s:%s", conn.addr.String(), err.Error(), err1.Error())
+				conn.Close()
+				continue
+			}
+			var tmp []byte
+			if tmp, err = read(conn.conn); err != nil {
+				Logger.Error.Printf("server:%s,error:%s", conn.addr.String(), err.Error())
+				conn.Close()
+			}
+			Logger.Info.Printf("rec form: %s, msg: %s", conn.addr.String(), tmp)
 
-		if err == queue.ErrTimeout {
-			//Logger.Warning.Println(err.Error())
-			time.Sleep(time.Microsecond * 10)
-			continue
 		}
-		pdu, err := packetparse.GenPduWithPayload(0x05, vl)
-		if err != nil {
-			Logger.Error.Println(err)
-			continue
-		}
-		bits, err := packetparse.PDUEncode(pdu)
-		if err != nil {
-			Logger.Error.Println(err)
-			continue
-		}
-		if err := send(conn.conn, bits); err != nil {
-			err1 := que.PutWait(vl)
-			Logger.Error.Printf("server:%s,error:%s:%s", conn.addr.String(), err.Error(), err1.Error())
-			conn.Close()
-			continue
-		}
-		var tmp []byte
-		if tmp, err = read(conn.conn); err != nil {
-			Logger.Error.Printf("server:%s,error:%s", conn.addr.String(), err.Error())
-			conn.Close()
-		}
-		Logger.Info.Printf("rec form: %s, msg: %s", conn.addr.String(), tmp)
-
 	}
 
 }
@@ -97,6 +101,9 @@ func (t *tcpConn) Close() {
 }
 
 func send(conn net.Conn, data []byte) error {
+	if len(data) < 1 {
+		return nil
+	}
 	_, err := conn.Write(data)
 	return err
 

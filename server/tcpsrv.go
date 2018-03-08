@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"net"
 
@@ -22,16 +21,16 @@ func startTCPsrv() {
 		if err != nil {
 			continue
 		}
-		go readHandke(conn)
+		go readHandle(conn)
 	}
 }
 
-func readHandke(conn *net.TCPConn) {
+func readHandle(conn *net.TCPConn) {
 	defer conn.Close()
 	reader := bufio.NewReader(conn)
 	for {
 		bits, err := packetparse.ReadPDU(reader)
-		fmt.Println("reading .....")
+		//	fmt.Println("reading .....")
 		if err != nil {
 			if err == io.EOF {
 				Logger.Warning.Printf("client %s is close!\n", conn.RemoteAddr().String())
@@ -67,6 +66,7 @@ func readHandke(conn *net.TCPConn) {
 					Logger.Error.Println("writeToAlarmQueue error:", err.Error())
 				}
 			}(tp)
+		case "heartbeat":
 
 		}
 
