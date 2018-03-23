@@ -15,7 +15,7 @@ func init() {
 
 	//mysql init
 	var err error
-	mysql, err = sql.Open("mysql", "monitor:monitor@tcp(10.1.1.107:3306)/monitor?charset=utf8")
+	mysql, err = sql.Open("mysql", "monitor:monitor@tcp(10.1.1.222:3306)/monitor?charset=utf8")
 	checkErr(err)
 	mysql.SetMaxOpenConns(100)
 	mysql.SetMaxIdleConns(20)

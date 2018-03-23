@@ -3,9 +3,9 @@ package activeplugin
 import (
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -25,19 +25,33 @@ func init() {
 
 }
 
-/*func checkErr(err error){
-
-}*/
-func get(url string) error {
+//Get ..
+func Get(url string) (string, error) {
 	rsp, err := TLSClient.Get(url)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if 200 != rsp.StatusCode {
-		return errors.New(rsp.Status)
+		return "", errors.New(rsp.Status)
 	}
 	byteData, err := ioutil.ReadAll(rsp.Body)
-	fmt.Println(string(byteData))
-	return err
+
+	return string(byteData), err
+
+}
+
+//Post ..
+func Post(url string, contentType string, data string) (string, error) {
+	body := strings.NewReader(data)
+	rsp, err := TLSClient.Post(url, contentType, body)
+	if err != nil {
+		return "", err
+	}
+	if 200 != rsp.StatusCode {
+		return "", errors.New(rsp.Status)
+	}
+	byteData, err := ioutil.ReadAll(rsp.Body)
+
+	return string(byteData), err
 
 }
