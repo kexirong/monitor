@@ -53,6 +53,7 @@ func (n *NET) Gather() ([]packetparse.TargetPacket, error) {
 	return ret, nil
 }
 
+// func NewNets()(Goplugin,error) 有时间再改
 func (n *NET) init() error {
 	var err error
 	n.valueMap = map[string]int{

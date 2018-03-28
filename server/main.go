@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 func checkErr(err error) {
 	if err != nil {
 		panic(err)
@@ -12,7 +8,8 @@ func checkErr(err error) {
 
 func main() {
 
-	fmt.Println(judgemap)
+	go heartdeamo()
+	go httpprobesched()
+	go alarmdo()
 	startTCPsrv()
-
 }

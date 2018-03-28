@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -11,13 +12,13 @@ import (
 //('10.1.1.107',3306,'monitor','monitor','monitor')
 var mysql *sql.DB
 
-func Scanalarmdb() []alarmValue {
+func scanalarmdb() []alarmValue {
 	var av alarmValue
 	var avs []alarmValue
-	rows, err := mysql.Query("SELECT HostName,Time,alarmname,alarmele,Stat,Value Level,Message FROM alarm_queue where stat = 0")
+	rows, err := mysql.Query("SELECT id, hostname,time,alarmname,alarmele,Value, Level,Message FROM alarm_queue where stat = 0")
 	checkErr(err)
 	for rows.Next() {
-		err = rows.Scan(&av.HostName, &av.Time, &av.Plugin, &av.Instance, &av.Value, &av.Level, &av.Message)
+		err = rows.Scan(&av.ID, &av.HostName, &av.Time, &av.Plugin, &av.Instance, &av.Value, &av.Level, &av.Message)
 		checkErr(err)
 		avs = append(avs, av)
 	}
@@ -60,10 +61,24 @@ func judgemapGet() judgeMap {
 	return judgemap
 }
 
+func alarmUpdate(av alarmValue) error {
+
+	ret, err := mysql.Exec(
+		"update alarm_queue SET stat=1 WHERE stat=0 and id=?",
+		av.ID)
+	if err != nil {
+		return err
+	}
+	if n, _ := ret.RowsAffected(); n != 1 {
+		return fmt.Errorf("alarmUpdate: RowsAffected %d,%s", n, av.String())
+	}
+	return nil
+}
+
 func alarmInsert(av alarmValue) error {
 
 	_, err := mysql.Exec(
-		"INSERT alarm_queue SET hostname=?,alarmname=?,alarmele=?,value=?,message=?,time=?,level=?",
+		"INSERT INTO alarm_queue SET hostname=?,alarmname=?,alarmele=?,value=?,message=?,time=?,level=?",
 		av.HostName,
 		av.Plugin,
 		av.Instance,

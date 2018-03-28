@@ -39,24 +39,12 @@ func timestamp2Time(ts float64) time.Time {
 
 var clt client.Client
 
-func init() {
-	var err error
-	clt, err = client.NewHTTPClient(client.HTTPConfig{
-		Addr:     hostinflux,
-		Username: userinflux,
-		Password: passwdinflux,
-	})
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
 func writeToInfluxdb(pk packetparse.TargetPacket) error {
-	// Make client
+	// Make client+
 
 	// Create a new point batch
 	bp, _ := client.NewBatchPoints(client.BatchPointsConfig{
-		Database:  dbinflux,
+		Database:  conf.InfluxDB,
 		Precision: "s",
 	})
 	// Create a point and add to batch

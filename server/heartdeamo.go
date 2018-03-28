@@ -17,11 +17,15 @@ func scanAssetdb() int {
 	}
 	rows, err := mysql.Query("SELECT HostName,ip FROM opsmgt.cmdb_asset where is_active =1")
 	checkErr(err)
+	cur := time.Now().Unix()
 	for rows.Next() {
-		err = rows.Scan(&host.name, &host.ip)
-		checkErr(err)
+		if err := rows.Scan(&host.name, &host.ip); err != nil {
+			Logger.Error.Println(err)
+			continue
+		}
+
 		hostIPMap[host.name] = host.ip
-		hostHeartRecorde[host.name] = 0
+		hostHeartRecorde[host.name] = cur
 	}
 
 	return len(hostIPMap)
@@ -34,10 +38,11 @@ func hostIPMapAdd(host, ip string) bool {
 		}
 	}
 	hostIPMap[host] = ip
-	hostHeartRecorde[host] = 0
+	hostHeartRecorde[host] = time.Now().Unix()
 	return true
 }
-func deamo() {
+func heartdeamo() {
+	scanAssetdb()
 	var av alarmValue
 	for range time.Tick(time.Second * 10) {
 		now := time.Now().Unix()
@@ -52,13 +57,14 @@ func deamo() {
 				go func(ip string, av alarmValue) {
 					out, err := activeplugin.HostPinger(4000, ip)
 					if err == nil {
-						av.Message = fmt.Sprintf("heartbeat lost %0f；ping ok", av.Value)
+						av.Message = fmt.Sprintf("heartbeat lost %g；ping ok", av.Value)
 					} else {
-						av.Message = fmt.Sprintf("heartbeat lost %0f；ping %s", av.Value, out)
+						av.Message = fmt.Sprintf("heartbeat lost %g；ping %s", av.Value, out)
 					}
 					alarmInsert(av)
 				}(hostIPMap[k], av)
 			}
+
 		}
 
 	}

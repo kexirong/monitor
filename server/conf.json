@@ -1,9 +1,12 @@
 {
 
-    "mysql":"monitor:monitor@tcp(10.1.1.107:3306)/monitor?charset=utf8",
-    "dbinflux" : "monitor",
-	"userinflux" : "monitor",
-	"passwdinflux" : "monitor",
-	"hostinflux" :"http://10.1.1.201:8086"
+    "mysqlconnetstring":"monitor:monitor@tcp(10.1.1.222:3306)/monitor?charset=utf8",
+    "influxdb" : "monitor",
+	"influxuser" : "monitor",
+	"influxpasswd" : "monitor",
+	"influxhost" :"http://10.1.1.201:8086",
+	"WchatURL" :"http://10.8.12.152:4000/sender/wechat",
+	"EmailURL" : "http://10.8.12.152:4000/sender/mail"
+
 
 }

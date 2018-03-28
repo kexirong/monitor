@@ -11,5 +11,6 @@ func Test_scanAssetdb(t *testing.T) {
 	for host, ip := range hostIPMap {
 		fmt.Println(host, ip, hostHeartRecorde[host])
 	}
+	heartdeamo()
 	//t.Log(err)
 }
