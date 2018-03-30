@@ -2,14 +2,17 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"net"
+	"strings"
+	"time"
 
 	"github.com/kexirong/monitor/common/packetparse"
 )
 
 func startTCPsrv() {
-	service := ":5000"
+	service := conf.Service
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", service)
 	checkErr(err)
 	listen, err := net.ListenTCP("tcp4", tcpAddr)
@@ -21,6 +24,7 @@ func startTCPsrv() {
 		if err != nil {
 			continue
 		}
+		Logger.Info.Printf("client %s is connect!\n", conn.RemoteAddr().String())
 		go readHandle(conn)
 	}
 }
@@ -30,7 +34,6 @@ func readHandle(conn *net.TCPConn) {
 	reader := bufio.NewReader(conn)
 	for {
 		bits, err := packetparse.ReadPDU(reader)
-		//	fmt.Println("reading .....")
 		if err != nil {
 			if err == io.EOF {
 				Logger.Warning.Printf("client %s is close!\n", conn.RemoteAddr().String())
@@ -43,6 +46,9 @@ func readHandle(conn *net.TCPConn) {
 			Logger.Error.Printf("Decode data error: %s , client  is %s \n", err.Error(), conn.RemoteAddr().String())
 			return
 		}
+		if _, err := conn.Write([]byte("ok")); err != nil {
+			Logger.Error.Println("readHandle write error:", err.Error())
+		}
 		switch packetparse.PDUTypeMap[pdu.Type] {
 		case "targetpackage":
 			tp, err := packetparse.TargetParse(pdu.Payload)
@@ -50,12 +56,11 @@ func readHandle(conn *net.TCPConn) {
 				Logger.Error.Println("packetparse.Parse error:", err.Error())
 				return
 			}
-			//	reply, _ := packetparse.PDUEncodeReply(pdu.Check, []byte("ok"))
-			//	conn.Write(reply)
 
 			go func(p packetparse.TargetPacket) {
 				err := writeToInfluxdb(p)
 				if err != nil {
+					Logger.Error.Println("writeToInfluxdb error:", p.String())
 					Logger.Error.Println("writeToInfluxdb error:", err.Error())
 				}
 			}(tp)
@@ -67,13 +72,19 @@ func readHandle(conn *net.TCPConn) {
 				}
 			}(tp)
 		case "heartbeat":
+			hostip := strings.Split(conn.RemoteAddr().String(), ":")[0]
+			if _, ok := ipHeartRecorde[hostip]; ok {
+				ipHeartRecorde[hostip] = time.Now().Unix()
+			}
+
+			fmt.Println("heartbeat:", hostip)
 
 		}
-
 	}
 
 }
 
+/*
 func handleFunc(conn *net.TCPConn) {
 	defer conn.Close()
 	var buf [1452]byte
@@ -109,3 +120,4 @@ func handleFunc(conn *net.TCPConn) {
 
 	}
 }
+*/

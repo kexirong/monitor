@@ -3,6 +3,7 @@ package goplugin
 import (
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"runtime"
 	"strconv"
@@ -98,8 +99,8 @@ func (c *CPU) timesPercent(times []float64) ([]float64, error) {
 	}
 	for _, v := range c.valueC {
 		r := times[c.valueMap[v]] / timestot * 100
-		if r < 0 {
-			return nil, fmt.Errorf("cpu plugin calculate error:  %s precent lt 0", v)
+		if r < 0 || math.IsNaN(r) {
+			return nil, fmt.Errorf("cpu plugin calculate error:  %s precent lt 0 ,times:%v", v, times)
 		}
 		ret = append(ret, r)
 	}
@@ -107,9 +108,10 @@ func (c *CPU) timesPercent(times []float64) ([]float64, error) {
 }
 
 func parseLineCPU(lines []string) (procvalue, error) {
-	var vl = make([]float64, 0, 10)
+
 	var ret = make(procvalue)
 	for _, line := range lines {
+		var vl = make([]float64, 0, 10)
 		if !strings.HasPrefix(line, "cpu") {
 			return nil, errors.New("cpu plugin error: parse /proc/stat error")
 		}
@@ -122,7 +124,7 @@ func parseLineCPU(lines []string) (procvalue, error) {
 			vl = append(vl, n)
 		}
 		ret[sline[0]] = vl
-		vl = make([]float64, 0, 10)
+
 	}
 	return ret, nil
 }

@@ -56,7 +56,7 @@ func writeToInfluxdb(pk packetparse.TargetPacket) error {
 		tags["instance"] = pk.Instance
 	}
 	fields := make(map[string]interface{})
-	if len(pk.Value) <= 0 {
+	if len(pk.Value) == 0 {
 		return fmt.Errorf("value error: %v", pk.Value)
 	}
 
@@ -67,11 +67,11 @@ func writeToInfluxdb(pk packetparse.TargetPacket) error {
 			return err
 		}
 		bp.AddPoint(pt)
-	} else {  */
+	} else {
 
 	if pk.VlTags == "" {
 		return fmt.Errorf("value gt 0 but vltags is '' ")
-	}
+	}*/
 
 	sl := strings.Split(pk.VlTags, "|")
 
@@ -89,10 +89,7 @@ func writeToInfluxdb(pk packetparse.TargetPacket) error {
 	}
 	bp.AddPoint(pt)
 
-	fmt.Println("writing...", bp)
 	//fmt.Println(pk.Plugin, tags, fields, timestamp2Time(pk.TimeStamp))
-	err = clt.Write(bp)
-	//	clt.Close()
-	return err
+	return clt.Write(bp)
 
 }

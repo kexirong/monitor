@@ -5,6 +5,6 @@ import (
 )
 
 func Test_httpandhttps(t *testing.T) {
-	str, err := Get("https://www.baidu.com/")
-	t.Log(str, err)
+	str, err := Get("http://10.1.1.201:8086/ping")
+	t.Log(str, "|||", err)
 }

@@ -106,9 +106,10 @@ func (n *NET) collect() (procvalue, error) {
 }
 
 func parseLineNET(lines []string) (procvalue, error) {
-	var vl = make([]float64, 0, 16)
+
 	var ret = make(procvalue)
 	for _, line := range lines {
+		var vl = make([]float64, 0, 16)
 		sline := strings.Fields(line)
 		if !strings.HasSuffix(sline[0], ":") {
 			return nil, errors.New("net plugin error: parse /proc/net/dev error")
@@ -122,7 +123,6 @@ func parseLineNET(lines []string) (procvalue, error) {
 		}
 		key := sline[0][:len(sline[0])-1]
 		ret[key] = vl
-		vl = make([]float64, 0, 10)
 	}
 	return ret, nil
 }

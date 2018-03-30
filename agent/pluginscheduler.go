@@ -35,7 +35,6 @@ func gopluginScheduler(qe *queue.BytesQueue) {
 				go func() {
 					gather, err := plugin.Instance.Gather()
 					if err != nil {
-						fmt.Println(err)
 						return
 					}
 					for _, pk := range gather {
@@ -64,26 +63,26 @@ func gopluginScheduler2(qe *queue.BytesQueue) {
 	fmt.Println(goplugin.GopluginMap)
 
 	for name, plugin := range goplugin.GopluginMap {
-		fmt.Println(name, ":")
-		go func(plugin *goplugin.Goplugintype) {
+		go func(name string, plugin *goplugin.Goplugintype) {
 			for {
+				<-time.After(time.Duration(plugin.Instance.GetStep()))
 				gather, err := plugin.Instance.Gather()
 				if err != nil {
-					fmt.Println(err)
+					Logger.Error.Printf("gopluginScheduler errror:%s, %s ", name, err.Error())
 					return
 				}
 				for _, pk := range gather {
 					gatherbs, err := packetparse.TargetPackage(pk)
 					if err == nil {
 						if err := qe.PutWait(gatherbs); err != nil {
-							fmt.Println("gopluginScheduler errror: " + err.Error())
+							Logger.Error.Println("gopluginScheduler errror: " + err.Error())
 						}
 					}
 				}
-				<-time.After(time.Duration(plugin.Instance.GetStep()))
+
 			}
 
-		}(plugin)
+		}(name, plugin)
 
 	}
 

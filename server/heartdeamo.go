@@ -7,8 +7,8 @@ import (
 	"github.com/kexirong/monitor/server/activeplugin"
 )
 
-var hostHeartRecorde = make(map[string]int64) //time.Now().Unix()
-var hostIPMap = make(map[string]string)
+var ipHeartRecorde = make(map[string]int64) //time.Now().Unix()
+var ipHostnameMap = make(map[string]string)
 
 func scanAssetdb() int {
 	var host struct {
@@ -24,21 +24,21 @@ func scanAssetdb() int {
 			continue
 		}
 
-		hostIPMap[host.name] = host.ip
-		hostHeartRecorde[host.name] = cur
+		ipHostnameMap[host.ip] = host.name
+		ipHeartRecorde[host.ip] = cur
 	}
 
-	return len(hostIPMap)
+	return len(ipHostnameMap)
 }
 
-func hostIPMapAdd(host, ip string) bool {
-	if v, ok := hostIPMap[host]; ok {
-		if v == ip {
+func hostIPMapAdd(hostname, ip string) bool {
+	if v, ok := ipHostnameMap[ip]; ok {
+		if v == hostname {
 			return false
 		}
 	}
-	hostIPMap[host] = ip
-	hostHeartRecorde[host] = time.Now().Unix()
+	ipHostnameMap[ip] = hostname
+	ipHeartRecorde[ip] = time.Now().Unix()
 	return true
 }
 func heartdeamo() {
@@ -46,11 +46,11 @@ func heartdeamo() {
 	var av alarmValue
 	for range time.Tick(time.Second * 10) {
 		now := time.Now().Unix()
-		for k, v := range hostHeartRecorde {
+		for k, v := range ipHeartRecorde {
 			if now-v > 30 {
 				av.Plugin = "heartbeat"
 				av.Instance = "heartbeat.timeout"
-				av.HostName = k
+				av.HostName = ipHostnameMap[k]
 				av.Time = time.Unix(now, 0).Format("2006-01-02 15:04:05")
 				av.Level = "level3"
 				av.Value = float64(now - v)
@@ -62,11 +62,8 @@ func heartdeamo() {
 						av.Message = fmt.Sprintf("heartbeat lost %g；ping %s", av.Value, out)
 					}
 					alarmInsert(av)
-				}(hostIPMap[k], av)
+				}(k, av)
 			}
-
 		}
-
 	}
-
 }

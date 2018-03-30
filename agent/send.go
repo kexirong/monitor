@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"net"
 	"time"
 
@@ -33,15 +34,20 @@ func newTCPConn(addr *net.TCPAddr) *tcpConn {
 }
 
 func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
+	var ticker = time.Tick(time.Second * 30)
+	conn.Conn()
 	for {
 		if conn.IsClose() {
+			conn.Conn()
+
 			Logger.Error.Println("server is not connected , try after of 1000ms")
 			time.Sleep(1000 * time.Millisecond)
-			conn.Conn()
+
 			continue
 		}
 		select {
-		case <-time.Tick(time.Second * 30):
+		case <-ticker:
+			Logger.Info.Println("send heartbeat")
 			send(conn.conn, packetparse.Heartbeat())
 		default:
 			vl, err := que.GetWait()
@@ -67,14 +73,16 @@ func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 				conn.Close()
 				continue
 			}
-			var tmp []byte
-			if tmp, err = read(conn.conn); err != nil {
-				Logger.Error.Printf("server:%s,error:%s", conn.addr.String(), err.Error())
-				conn.Close()
-			}
-			Logger.Info.Printf("rec form: %s, msg: %s", conn.addr.String(), tmp)
 
 		}
+		// 此处逻辑需要修改
+
+		if tmp, err := read(conn.conn); err != nil || !bytes.Equal(tmp, []byte("ok")) {
+			Logger.Error.Printf("server:%s,error:%v", conn.addr.String(), err.Error())
+			conn.Close()
+		}
+		//Logger.Info.Printf("rec from: %s, msg: %s", conn.addr.String(), string(tmp))
+
 	}
 
 }

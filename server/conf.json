@@ -1,12 +1,12 @@
 {
-
+	"service":":5000",
     "mysqlconnetstring":"monitor:monitor@tcp(10.1.1.222:3306)/monitor?charset=utf8",
     "influxdb" : "monitor",
 	"influxuser" : "monitor",
 	"influxpasswd" : "monitor",
 	"influxhost" :"http://10.1.1.201:8086",
-	"WchatURL" :"http://10.8.12.152:4000/sender/wechat",
-	"EmailURL" : "http://10.8.12.152:4000/sender/mail"
+	"wchaturl" :"http://10.8.12.152:4000/sender/wechat",
+	"emailurl" : "http://10.8.12.152:4000/sender/mail"
 
 
 }

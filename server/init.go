@@ -11,6 +11,7 @@ import (
 )
 
 var conf = struct {
+	Service           string
 	MysqlConnetString string
 	InfluxDB          string
 	InfluxUser        string

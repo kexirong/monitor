@@ -2,6 +2,7 @@ package packetparse
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 )
@@ -9,35 +10,41 @@ import (
 func TargetPackage(pk TargetPacket) ([]byte, error) {
 
 	buf := new(bytes.Buffer)
+	if pk.Type == "" {
+		return nil, errors.New("TargetPacket.Type is none")
+	}
+	if err := targetWriteBuf(buf, targetPacketMap["type"], pk.Type); err != nil {
+		return nil, err
+	}
 	if pk.HostName == "" {
-		return nil, fmt.Errorf("TargetPacket.HostName is none")
+		return nil, errors.New("TargetPacket.HostName is none")
 	}
 
 	if err := targetWriteBuf(buf, targetPacketMap["hostname"], pk.HostName); err != nil {
 		return nil, err
 	}
 	if pk.TimeStamp <= 0 {
-		return nil, fmt.Errorf("TargetPacket.TimeStamp le 0")
+		return nil, errors.New("TargetPacket.TimeStamp le 0")
 	}
 	if err := targetWriteBuf(buf, targetPacketMap["timestamp"], pk.TimeStamp); err != nil {
 		return nil, err
 	}
 	if pk.Plugin == "" {
-		return nil, fmt.Errorf("TargetPacket.Plugin is none")
+		return nil, errors.New("TargetPacket.Plugin is none")
 	}
 	if err := targetWriteBuf(buf, targetPacketMap["plugin"], pk.Plugin); err != nil {
 		return nil, err
 	}
 
-	if pk.Value == nil {
-		return nil, fmt.Errorf("TargetPacket.Value is none")
+	if pk.Value == nil || len(pk.Value) == 0 {
+		return nil, errors.New("TargetPacket.Value is none")
 	}
 
 	if err := targetWriteBuf(buf, targetPacketMap["value"], pk.Value); err != nil {
 		return nil, err
 	}
 	if pk.VlTags == "" {
-		return nil, fmt.Errorf("TargetPacket.VlTags is none")
+		return nil, errors.New("TargetPacket.VlTags is none")
 	}
 	if err := targetWriteBuf(buf, targetPacketMap["vltags"], pk.VlTags); err != nil {
 		return nil, err
@@ -131,9 +138,7 @@ func TargetParse(b []byte) (TargetPacket, error) {
 			packet.Message = str
 		default:
 			return packet, fmt.Errorf("packet parse field error : n=%d, t=%d", n, t)
-
 		}
-
 	}
 
 	return packet, nil

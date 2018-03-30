@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"hash/crc32"
 	"io"
 	"reflect"
@@ -236,6 +237,28 @@ type TargetPacket struct {
 	Value     []float64 `json:"value"`
 	VlTags    string    `json:"vltags"`  // "idle|user|system"(rx|tx)(read|write|use|free...)
 	Message   string    `json:"message"` // description ,e.g: the disk is full please clean
+}
+
+func (tp *TargetPacket) String() string {
+	return fmt.Sprintf(`
+		hostname:%s
+		timestamp:%v
+		plugin:%s
+		instance:%s
+		type:%s
+		value:%v
+		vltags:%s
+		message:%s
+		`,
+		tp.HostName,
+		tp.TimeStamp,
+		tp.Plugin,
+		tp.Instance,
+		tp.Type,
+		tp.Value,
+		tp.VlTags,
+		tp.Message,
+	)
 }
 
 //0为初始化值,所以不使用
