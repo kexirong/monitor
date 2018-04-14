@@ -7,9 +7,9 @@ import (
 
 func Test_goplugin(t *testing.T) {
 	time.Sleep(time.Second * 1)
-	for n, i := range GopluginMap {
+	for n, Instance := range GopluginMap {
 		t.Log(n)
-		gather, err := i.Instance.Gather()
+		gather, err := Instance.Gather()
 		if err != nil {
 			t.Log(err)
 			continue

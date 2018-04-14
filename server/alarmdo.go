@@ -45,7 +45,7 @@ func sendAlarm(av alarmValue) {
 	}
 	switch al._type {
 	case "team":
-		teams := strings.Split(al.list, ";")
+		teams := strings.Split(al.list, ",")
 		if len(teams) < 1 {
 			Logger.Error.Printf("sendAlarm: invalid list field in alarm_link table  alarmname=%s", al.alarmname)
 			return
@@ -124,7 +124,7 @@ func sendAlarm(av alarmValue) {
 }
 
 func alarmdo() {
-	for range time.Tick(time.Second * 3) {
+	for range time.Tick(time.Second * 5) {
 		avs := scanalarmdb()
 		if len(avs) < 1 {
 			continue

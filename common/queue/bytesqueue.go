@@ -10,6 +10,7 @@ import (
 var ErrEmpty = errors.New("queue is empty")
 var ErrFull = errors.New("queue is full")
 var ErrTimeout = errors.New("queue op. timeout")
+var ErrLost = errors.New("queue op. get token failed")
 
 type data struct {
 	//isFull bool
@@ -73,7 +74,7 @@ func (bq *BytesQueue) Put(bs []byte) (bool, error) {
 	}
 
 	if !atomic.CompareAndSwapUint32(&bq.putPtr, putPtr, putPtr+1) {
-		return false, nil
+		return false, ErrLost
 	}
 	atomic.AddUint32(&bq.len, 1)
 	dt = &bq.queue[putPtr&bq.ptrStd]
@@ -108,7 +109,7 @@ func (bq *BytesQueue) Get() ([]byte, bool, error) {
 	}
 
 	if !atomic.CompareAndSwapUint32(&bq.getPtr, getPtr, getPtr+1) {
-		return nil, false, nil
+		return nil, false, ErrLost
 	}
 	atomic.AddUint32(&bq.len, 4294967295) //^uint32(-1-1)==uint32(0)-uint32(1)
 	dt = &bq.queue[getPtr&bq.ptrStd]
@@ -140,7 +141,8 @@ func (bq *BytesQueue) PutWait(bs []byte, ms ...time.Duration) error {
 		msto = time.Millisecond * 1000
 	}
 	timeout = time.After(msto)
-	wait := time.Tick(100 * time.Millisecond)
+	//wait := time.NewTicker(100 * time.Millisecond)
+	//defer wait.Stop()
 	for {
 		select {
 
@@ -150,7 +152,8 @@ func (bq *BytesQueue) PutWait(bs []byte, ms ...time.Duration) error {
 			if ok, err := bq.Put(bs); ok {
 				return nil
 			} else if err == ErrFull {
-				<-wait
+				//<-wait.C
+				time.Sleep(100 * time.Millisecond)
 			}
 		}
 	}
@@ -167,7 +170,9 @@ func (bq *BytesQueue) GetWait(ms ...time.Duration) ([]byte, error) {
 		msto = time.Millisecond * 1000
 	}
 	timeout = time.After(msto)
-	wait := time.Tick(100 * time.Millisecond)
+
+	//wait := time.NewTicker(100 * time.Millisecond)
+	//defer wait.Stop()
 
 	for {
 		select {
@@ -178,7 +183,8 @@ func (bq *BytesQueue) GetWait(ms ...time.Duration) ([]byte, error) {
 			if value, ok, err := bq.Get(); ok {
 				return value, nil
 			} else if err == ErrEmpty {
-				<-wait
+				//<-wait.C
+				time.Sleep(100 * time.Millisecond)
 			}
 		}
 	}

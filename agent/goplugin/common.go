@@ -12,30 +12,24 @@ import (
 	"github.com/kexirong/monitor/common/packetparse"
 )
 
-//Goplugin interface
-type Goplugin interface {
+//PLUGIN interface
+type PLUGIN interface {
 	Gather() ([]packetparse.TargetPacket, error)
 	Config(key string, value interface{}) bool
 	GetStep() int64
 }
 
 //Goplugintype .
-type Goplugintype struct {
-	NextTime int64
-	Instance Goplugin
-}
 
 // GopluginMap .
-var GopluginMap = map[string]*Goplugintype{}
+var GopluginMap = make(map[string]PLUGIN)
 
-func register(name string, plugin Goplugin) error {
+func register(name string, plugin PLUGIN) error {
 	if _, ok := GopluginMap[name]; ok {
 		return fmt.Errorf("plugin regist error: %s is exist", name)
 	}
-	GopluginMap[name] = &Goplugintype{
-		NextTime: time.Now().UnixNano() + plugin.GetStep(),
-		Instance: plugin,
-	}
+	GopluginMap[name] = plugin
+
 	return nil
 }
 

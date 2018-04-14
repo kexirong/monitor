@@ -38,6 +38,5 @@ def getvalue():
 
 
 if __name__ == "__main__":
-    for i in range(100):
-        print(i, ":", getvalue())
-        time.sleep(0.3)
+        print( getvalue())
+        

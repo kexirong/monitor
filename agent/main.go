@@ -2,9 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
-	"os/exec"
 	"runtime"
 	"strings"
 
@@ -13,6 +11,26 @@ import (
 
 func main() {
 
+	/*
+		cpuprofile := "./agent.prof"
+		if isExist(cpuprofile) {
+			err := os.Remove(cpuprofile)
+
+			if err != nil {
+				os.Exit(1)
+			}
+		}
+		f, err := os.Create(cpuprofile)
+		if err != nil {
+			fmt.Println(err)
+		}
+		pprof.StartCPUProfile(f)
+		go func() {
+			<-time.After(time.Second * 600)
+			fmt.Println("StopCPUProfile")
+			pprof.StopCPUProfile()
+		}()
+	*/
 	var addr = flag.String("s", "ip:port", "server addrs multi delimit  with ',' ")
 	flag.Parse()
 
@@ -24,37 +42,29 @@ func main() {
 	btq := queue.NewBtsQueue(4096)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	go UnixTCPsrv(btq)
 	go sendStart(servers, btq)
-	go func() {
-		path := getCurrentPath()
-		cmd := exec.Command("/usr/bin/python", fmt.Sprintf("%s/pysched/Scheduler.py", path))
+	/*
+		go UnixTCPsrv(btq)
+		go func() {
+			path := getCurrentPath()
+			cmd := exec.Command("/usr/bin/python", fmt.Sprintf("%s/pysched/Scheduler.py", path))
 
-		if err := cmd.Start(); err != nil {
+			if err := cmd.Start(); err != nil {
+				Logger.Error.Fatalln("run python error:", err.Error())
+			}
 
-			Logger.Error.Fatalln("xxxxxxxxx:", err.Error())
-		}
+			if err := cmd.Wait(); err != nil {
+				Logger.Error.Println(err.Error(), cmd.Args)
+			}
+		}()*/
+	go goPluginScheduler(btq)
 
-		if err := cmd.Wait(); err != nil {
-
-			Logger.Error.Println(err.Error(), cmd.Args)
-		}
-	}()
-	go gopluginScheduler2(btq)
 	select {}
 }
 
 func getCurrentPath() string {
-
 	path, err := os.Getwd()
 	checkErr(err)
-	/*
-		i := strings.LastIndex(path, "/")
-		if i < 0 {
-			Logger.Error.Fatalln("get the path error")
-		}
-		path = string(path[0:i])
-	*/
 	return path
 }
 

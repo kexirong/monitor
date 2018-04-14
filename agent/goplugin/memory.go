@@ -28,7 +28,7 @@ func (m *MEM) Gather() ([]packetparse.TargetPacket, error) {
 		Plugin:    "memory",
 		HostName:  hostname,
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
-		Type:      "derive",
+		Type:      "gauge",
 		VlTags:    m.vltags,
 	}
 	valuemem, err := m.collect()

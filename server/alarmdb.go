@@ -10,10 +10,10 @@ type alarmValue struct {
 	Time     string
 	Plugin   string
 	Instance string
-	//Stat     int64
-	Value   float64
-	Level   string
-	Message string
+	Stat     int64
+	Value    float64
+	Level    string
+	Message  string
 }
 
 func (a *alarmValue) String() string {

@@ -32,18 +32,10 @@ type judge struct {
 
 var judgemap judgeMap
 
-func doJudge(av alarmValue, jkey string) string {
+func doJudge(av alarmValue, jv judge) string {
 
-	iv, ok := judgemap[av.Plugin]
 	var cmp func(x, y float64) bool
-	if !ok {
-		return ""
-	}
 
-	jv, ok := iv[jkey]
-	if !ok {
-		return ""
-	}
 	switch jv.ajtype {
 	case "le":
 		cmp = func(x, y float64) bool {
@@ -84,6 +76,12 @@ func doJudge(av alarmValue, jkey string) string {
 func alarmJudge(pk packetparse.TargetPacket) error {
 	var alarmvalue alarmValue
 	var jkey string
+	iv, ok := judgemap[pk.Plugin]
+
+	if !ok {
+		return nil
+	}
+
 	alarmvalue.HostName = pk.HostName
 	alarmvalue.Plugin = pk.Plugin
 	alarmvalue.Time = time.Unix(int64(pk.TimeStamp), 0).Format("2006-01-02 15:04:05")
@@ -96,9 +94,17 @@ func alarmJudge(pk packetparse.TargetPacket) error {
 
 	if leng == 1 {
 		alarmvalue.Value = pk.Value[0]
-		alarmvalue.Instance = pk.Instance
-		jkey = pk.Instance + pk.Type
-		alarmvalue.Level = doJudge(alarmvalue, jkey)
+		alarmvalue.Instance = pk.Instance + "." + pk.VlTags
+
+		if pk.Instance == "" {
+			alarmvalue.Instance = pk.VlTags
+		}
+		jkey = fmt.Sprintf("%s.%s", alarmvalue.Instance, pk.Type)
+		jv, ok := iv[jkey]
+		if !ok {
+			return nil
+		}
+		alarmvalue.Level = doJudge(alarmvalue, jv)
 		if alarmvalue.Level == "" {
 			return nil
 		}
@@ -128,8 +134,12 @@ func alarmJudge(pk packetparse.TargetPacket) error {
 				alarmvalue.Instance = sl[idx]
 			}
 			//alarmvalue.Instance = pk.Instance + "." + sl[idx]
-			jkey = sl[idx] + pk.Type
-			alarmvalue.Level = doJudge(alarmvalue, jkey)
+			jkey = fmt.Sprintf("%s.%s", alarmvalue.Instance, pk.Type)
+			jv, ok := iv[jkey]
+			if !ok {
+				continue
+			}
+			alarmvalue.Level = doJudge(alarmvalue, jv)
 			if alarmvalue.Level == "" {
 				continue
 			}

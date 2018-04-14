@@ -184,7 +184,7 @@ class  AFUNIX_TCP(object):
                     if event&select.EPOLLHUP :
                         logging.warning("select.EPOLL:EPOLLHUP")
                         self.epoll.unregister(fileno)
-                        self.close()
+                        self.sock.close()
                         break
                         
                 

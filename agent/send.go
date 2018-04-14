@@ -39,10 +39,8 @@ func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 	for {
 		if conn.IsClose() {
 			conn.Conn()
-
 			Logger.Error.Println("server is not connected , try after of 1000ms")
-			time.Sleep(1000 * time.Millisecond)
-
+			time.Sleep(time.Second)
 			continue
 		}
 		select {
@@ -51,10 +49,8 @@ func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 			send(conn.conn, packetparse.Heartbeat())
 		default:
 			vl, err := que.GetWait()
-
 			if err == queue.ErrTimeout {
 				//Logger.Warning.Println(err.Error())
-				time.Sleep(time.Microsecond * 10)
 				continue
 			}
 			pdu, err := packetparse.GenPduWithPayload(0x05, vl)
@@ -78,7 +74,7 @@ func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 		// 此处逻辑需要修改
 
 		if tmp, err := read(conn.conn); err != nil || !bytes.Equal(tmp, []byte("ok")) {
-			Logger.Error.Printf("server:%s,error:%v", conn.addr.String(), err.Error())
+			Logger.Error.Printf("server:%s,error:%s", conn.addr.String(), err.Error())
 			conn.Close()
 		}
 		//Logger.Info.Printf("rec from: %s, msg: %s", conn.addr.String(), string(tmp))

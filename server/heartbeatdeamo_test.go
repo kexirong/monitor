@@ -8,8 +8,8 @@ import (
 func Test_scanAssetdb(t *testing.T) {
 	n := scanAssetdb()
 	fmt.Println(n)
-	for host, ip := range hostIPMap {
-		fmt.Println(host, ip, hostHeartRecorde[host])
+	for ip, host := range ipHostnameMap {
+		fmt.Println(host, ip, ipHeartRecorde[ip])
 	}
 	heartdeamo()
 	//t.Log(err)
