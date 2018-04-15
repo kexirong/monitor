@@ -77,8 +77,8 @@ func (n *NET) init() error {
 	if !n.Config("vltags", "rx_bytes|tx_bytes") {
 		return errors.New("NET plugin： init set vltags error")
 	}
-	if !n.Config("step", 1) {
-		return errors.New("NET plugin： init set step error")
+	if !n.Config("interval", 1) {
+		return errors.New("NET plugin： init set interval error")
 	}
 
 	n.lastValue, err = n.collect()

@@ -2,12 +2,13 @@
 
 import  time
 import  platform
+import json
 
 
 
 NAME = "cpu"
 
-STEP = 5
+interval = 5
 
 def getvalue():
     '''
@@ -26,15 +27,15 @@ def getvalue():
     ret = {
         "hostname":hostname,
         "timestamp":time.time(),
-        "plugin":"cpuss",
+        "plugin":"cpu",
         "instance":"",
         "type":"percent",
         "value":value,
         "vltags":"user|nice|system|idle",
         #  "Message":"",
         }
-
-    return [ret,]
+    return json.dumps([ret,])
+  
 
 
 if __name__ == "__main__":

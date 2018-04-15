@@ -71,8 +71,8 @@ func (d *DISK) init() error {
 	if !d.Config("vltags", "all|used|avail") {
 		return errors.New("DISK plugin error： init set vltags error")
 	}
-	if !d.Config("step", 60) {
-		return errors.New("DISK plugin error: init set step error")
+	if !d.Config("interval", 60) {
+		return errors.New("DISK plugin error: init set interval error")
 	}
 	return nil
 }

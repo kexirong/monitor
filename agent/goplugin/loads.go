@@ -50,8 +50,8 @@ func (l *LOADAVG) init() error {
 	if !l.Config("vltags", "1min|5min|15min") {
 		return errors.New("NET plugin： init set vltags error")
 	}
-	if !l.Config("step", 60) {
-		return errors.New("NET plugin： init set step error")
+	if !l.Config("interval", 60) {
+		return errors.New("NET plugin： init set interval error")
 	}
 
 	return err

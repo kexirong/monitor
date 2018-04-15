@@ -55,8 +55,8 @@ func (m *MEM) init() error {
 	if !m.Config("vltags", "MemTotal|MemFree|SwapTotal|SwapFree") {
 		return errors.New("MEM plugin： init set vltags error")
 	}
-	if !m.Config("step", 10) {
-		return errors.New("MEM plugin： init set step error")
+	if !m.Config("interval", 10) {
+		return errors.New("MEM plugin： init set interval error")
 	}
 
 	return err

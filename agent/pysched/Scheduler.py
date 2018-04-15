@@ -23,10 +23,10 @@ PLUGINMAP={}
 
 
 class Plugin(object):
-    __slots__ = {"name",'step','instan'}
+    __slots__ = {"name",'interval','instan'}
     def __init__(self):
         self.name = None
-        self.step = None
+        self.interval = None
         self.instan = None
        
 
@@ -36,25 +36,25 @@ class Plugin(object):
 def instance_add(plugin):
     if not isinstance(plugin,Plugin):
         return False
-    if not isinstance(plugin.step,int) and plugin.step <= 0 :
+    if not isinstance(plugin.interval,int) and plugin.interval <= 0 :
         return  False
     if not isinstance(plugin.name,str) and plugin.name  in  [None,'']:
         return  False
     if not hasattr(plugin.instan,"getvalue"):
         return  False
-    if PLUGINMAP.get(plugin.step):
-        PLUGINMAP[plugin.step].append(plugin)
+    if PLUGINMAP.get(plugin.interval):
+        PLUGINMAP[plugin.interval].append(plugin)
     else:
-        PLUGINMAP[plugin.step]=[plugin]
+        PLUGINMAP[plugin.interval]=[plugin]
     return True
 
 
 def instance_del(plugin):
     
-    if PLUGINMAP.get(plugin.step):
-        PLUGINMAP[plugin.step].append(plugin)
+    if PLUGINMAP.get(plugin.interval):
+        PLUGINMAP[plugin.interval].append(plugin)
     else:
-        PLUGINMAP[plugin.step]=[plugin]
+        PLUGINMAP[plugin.interval]=[plugin]
     return True
 
  
@@ -221,7 +221,7 @@ def loadplugin(name):
         
         plugin.instan=__import__(name)
         plugin.name=plugin.instan.NAME
-        plugin.step=plugin.instan.STEP
+        plugin.interval=plugin.instan.interval
     except Exception,e:
         logging.error(e) 
         plugin=None

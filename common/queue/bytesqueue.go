@@ -62,7 +62,7 @@ func (bq *BytesQueue) Empty() bool {
 	return true
 }
 
-//Put method
+//Put return value
 func (bq *BytesQueue) Put(bs []byte) (bool, error) {
 	var putPtr, stat uint32
 	var dt *data

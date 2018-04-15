@@ -50,8 +50,8 @@ func (k *KERNEL) init() error {
 	if !k.Config("vltags", "fdused|fdunused|fdmax") {
 		return errors.New("KERNEL plugin： init set vltags error")
 	}
-	if !k.Config("step", 30) {
-		return errors.New("KERNEL plugin： init set step error")
+	if !k.Config("interval", 30) {
+		return errors.New("KERNEL plugin： init set interval error")
 	}
 
 	return err

@@ -16,7 +16,7 @@ import (
 type PLUGIN interface {
 	Gather() ([]packetparse.TargetPacket, error)
 	Config(key string, value interface{}) bool
-	GetStep() int64
+	GetInterval() int64
 }
 
 //Goplugintype .
@@ -37,7 +37,7 @@ type plugin struct {
 	vltags    string
 	valueMap  map[string]int
 	valueC    []string
-	step      int64
+	interval  int64
 	lastValue procvalue
 }
 
@@ -63,9 +63,9 @@ func (p *plugin) Config(key string, value interface{}) bool {
 		p.valueC = cvalue
 		p.vltags = strings.Join(p.valueC, "|")
 		return true
-	case "step":
+	case "interval":
 		if v, ok := value.(int); ok && v > 0 {
-			p.step = int64(v) * int64(time.Second)
+			p.interval = int64(v) * int64(time.Second)
 			return true
 		}
 		return false
@@ -74,8 +74,8 @@ func (p *plugin) Config(key string, value interface{}) bool {
 	}
 }
 
-func (p *plugin) GetStep() int64 {
-	return p.step
+func (p *plugin) GetInterval() int64 {
+	return p.interval
 }
 
 func fsliced(fs1 []float64, fs2 []float64) ([]float64, error) {

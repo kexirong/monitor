@@ -16,7 +16,7 @@ func pyPluginScheduler(qe *queue.BytesQueue) {
 func goPluginScheduler(qe *queue.BytesQueue) {
 	for name, plugin := range goplugin.GopluginMap {
 		go func(name string, plugin goplugin.PLUGIN) {
-			for range time.Tick(time.Duration(plugin.GetStep())) {
+			for range time.Tick(time.Duration(plugin.GetInterval())) {
 				gather, err := plugin.Gather()
 				if err != nil {
 					Logger.Error.Printf("gopluginScheduler errror:%s, %s ", name, err.Error())

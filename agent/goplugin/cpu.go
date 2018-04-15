@@ -70,8 +70,8 @@ func (c *CPU) init() error {
 		"guest":      8,
 		"guest_nice": 9,
 	}
-	if !c.Config("step", 1) {
-		return errors.New("CPU plugin： init set step error")
+	if !c.Config("interval", 1) {
+		return errors.New("CPU plugin： init set interval error")
 	}
 
 	if !c.Config("vltags", "user|nice|system|idle") {

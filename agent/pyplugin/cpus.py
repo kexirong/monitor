@@ -2,11 +2,11 @@
 
 import time
 import platform
-
+import json
 
 NAME = "cpus"
 
-STEP = 30
+interval = 30
 
 def getvalue():
     '''
@@ -27,7 +27,7 @@ def getvalue():
     ret0 = {
         "hostname":hostname,
         "timestamp":time.time(),
-        "plugin":"cpusss",
+        "plugin":"cpu",
         "instance":"0",
         "type":"percent",
         "value":value0,
@@ -45,9 +45,9 @@ def getvalue():
         #  "Message":"",
         }
 
-    return [ret0, ret1]
+    return json.dumps([ret0, ret1])
 
 
 if __name__ == "__main__":
-    for i in range(10000):
-        print(i, ":", getvalue())
+
+        print( getvalue())
