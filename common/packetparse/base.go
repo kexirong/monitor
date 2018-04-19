@@ -40,7 +40,7 @@ type PDU struct {
 
 //pduVersion 必须3个字节长度
 var (
-	pduVersion = []byte("0.1")
+	pduVersion = "0.1"
 
 	//PDUhead 供校验头部信息使用
 	PDUhead = append([]byte{07, 02}, pduVersion...)
@@ -234,9 +234,9 @@ type TargetPacket struct {
 	Plugin    string    `json:"plugin"`    // cpu
 	Instance  string    `json:"instance"`  // 0,1,2,3 (eth0,eth1)(sda,sdb)
 	Type      string    `json:"type"`      //percent(百分比),counter(正数速率,主要是趋势),gauge(原值),derive(速率)
-	Value     []float64 `json:"value"`
-	VlTags    string    `json:"vltags"`  // "idle|user|system"(rx|tx)(read|write|use|free...)
-	Message   string    `json:"message"` // description ,e.g: the disk is full please clean
+	Value     []float64 `json:"value"`     //float 对整数兼容，故采用float64而不是interface{}
+	VlTags    string    `json:"vltags"`    // "idle|user|system"(rx|tx)(read|write|use|free...)
+	Message   string    `json:"message"`   // description ,e.g: the disk is full please clean
 }
 
 func (tp *TargetPacket) String() string {

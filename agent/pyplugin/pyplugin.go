@@ -2,17 +2,18 @@ package pyplugin
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
+	"github.com/kexirong/monitor/common"
 	python "github.com/sbinet/go-python"
 )
 
 type pluginEntry struct {
 	runing   bool
-	nextTime int64
-	interval int64
+	nextTime time.Time
+	interval time.Duration
 	name     string
 	plugin   *python.PyObject
 	pNext    *pluginEntry
@@ -24,10 +25,11 @@ func (p *pluginEntry) done() {
 }
 func (p *pluginEntry) run() (string, error) {
 	if p.runing {
-		return "", errors.New("is runing, may interval Too brief")
+		return "", errors.New(p.name + "is runing, may interval Too brief")
 	}
 	p.runing = true
 	defer p.done()
+
 	ret := p.plugin.CallFunction()
 	if ret == nil {
 		_, value, _ := python.PyErr_Fetch()
@@ -45,9 +47,9 @@ func (p *pluginEntry) run() (string, error) {
 type PythonPlugin struct {
 	initialize bool
 	timer      int64
-	plug       chan struct{}
+	result     chan common.Event
 	len        int
-	event      chan string //"method:pluginnam[|interval]"
+	event      chan common.Event //"method:pluginnam[|interval]"
 	curEntry   *pluginEntry
 }
 
@@ -68,81 +70,88 @@ func Initialize(pluginPath string) (*PythonPlugin, error) {
 	}
 
 	ring := new(PythonPlugin)
-	ring.plug = make(chan struct{}, 1)
-	ring.event = make(chan string, 1)
-	ring.ready()
+	ring.result = make(chan common.Event, 1)
+	ring.event = make(chan common.Event, 1)
 	ring.initialize = true
+
 	return ring, nil
 }
 
-func (r *PythonPlugin) eventDeal(event string) error {
-	ev := strings.SplitN(event, ":", 2)
-	if len(ev) != 2 {
-		return errors.New(event + "the arg format false")
+//AddEventAndWaitResult add a event and wait eventDeal return result
+func (r *PythonPlugin) AddEventAndWaitResult(event common.Event) common.Event {
+	r.event <- event
+	return <-r.result
+
+}
+
+func (r *PythonPlugin) eventDeal(event common.Event) {
+
+	select {
+	case <-r.result:
+	default:
 	}
-	switch ev[0] {
+	event.Result = "ok"
+	switch event.Method {
 	case "delete":
-		if err := r.DeleteEntry(ev[1]); err != nil {
-			return errors.New(event + err.Error())
+		if err := r.DeleteEntry(event.Target); err != nil {
+			event.Result = err.Error()
 		}
 
 	case "add":
-		evs := strings.Split(ev[1], "|")
-		if len(evs) != 2 {
-			return errors.New(event + "the arg format false")
-		}
-		invl, err := strconv.Atoi(evs[1])
-		if err != nil {
-			return err
-		}
-		return r.InsertEntry(ev[1], invl)
-	default:
-		return errors.New(event + "unknown operation type")
-	}
 
-	return nil
-}
-func (r *PythonPlugin) ready() {
-	r.plug <- struct{}{}
+		invl, err := strconv.Atoi(event.Arg)
+		if err != nil {
+			event.Result = "Arg:" + err.Error()
+		} else if err := r.InsertEntry(event.Target, invl); err != nil {
+			event.Result = err.Error()
+		}
+
+	default:
+		event.Result = "unknown operation type"
+	}
+	r.result <- event
+	return
 
 }
 
 //WaitAndEventDeal 等待阻塞结束和时间
-func (r *PythonPlugin) WaitAndEventDeal() []error {
-	var err []error
-	<-r.plug
-	r.timer = time.Now().Unix()
-	n := r.curEntry.nextTime - r.timer
+func (r *PythonPlugin) WaitAndEventDeal() {
 
-	if n <= 0 {
-		return nil
+	wait := time.After(3 * time.Second)
+	if r.len != 0 {
+		now := time.Now()
+
+		if r.curEntry.nextTime.Before(now) {
+			return
+		}
+		wait = time.After(r.curEntry.nextTime.Sub(now))
 	}
-	wait := time.After(time.Duration(n) * time.Second)
 	for {
 		select {
 		case <-wait:
-			return err
+			return
 		case e := <-r.event:
-			err1 := r.eventDeal(e)
-			if err1 != nil {
-				err = append(err, err1)
-			}
+			r.eventDeal(e)
+
 		}
 	}
 }
 
 //Scheduler must be  after  initialize true
 func (r *PythonPlugin) Scheduler() (string, error) {
+	//defer r.ready()
+	if r.len == 0 {
+		return "", nil
+	}
 	pn := r.curEntry
-	pn.nextTime += pn.interval
+	pn.nextTime = pn.nextTime.Add(pn.interval)
 	r.fixOrder()
-	r.ready()
+
 	return pn.run()
 }
 
 //DeleteEntry arg PythonModuleName ,as stop the module
 func (r *PythonPlugin) DeleteEntry(name string) error {
-
 	cur := r.curEntry
 	for i := 0; i < r.len; i++ {
 		if name == r.curEntry.name {
@@ -154,6 +163,7 @@ func (r *PythonPlugin) DeleteEntry(name string) error {
 		}
 		r.next()
 	}
+	r.curEntry = cur
 	return errors.New("not exist")
 }
 
@@ -173,16 +183,19 @@ func (r *PythonPlugin) Len() int {
 	return r.len
 }
 
-//InsertEntry  m
+//InsertEntry  为了不重复，插入前都尝试一次删除 ,interval单位s
 func (r *PythonPlugin) InsertEntry(name string, interval int) error {
+	r.DeleteEntry(name)
 	node, err := r.genEntry(name, interval)
 	if err != nil {
 		return err
 	}
+
 	if r.len > 1 {
 		r.prev()
 	}
 	r.insert(node)
+	r.next()
 	r.fixOrder()
 	return nil
 }
@@ -205,27 +218,29 @@ func (r *PythonPlugin) insert(e *pluginEntry) {
 }
 
 //调度后进行位置修正
-func (r *PythonPlugin) fixOrder() {
+func (r *PythonPlugin) fixOrder() bool {
 	cur := r.curEntry
 	next := cur.pNext
 
-	if cur.nextTime < next.nextTime {
-		return
+	if cur.nextTime.Before(next.nextTime) {
+		return false
 	}
 	if r.len < 3 {
 		r.next()
-		return
+		return true
 	}
 	cur = r.pop()
 	for i := 0; i < r.len-1; i++ {
-		if cur.nextTime >= r.curEntry.nextTime {
+		r.next()
+		if cur.nextTime.Before(r.curEntry.nextTime) {
+			r.prev()
 			break
 		}
-		r.next()
+
 	}
 	r.insert(cur)
 	r.curEntry = next
-	return
+	return true
 }
 
 func (r *PythonPlugin) next() {
@@ -243,9 +258,9 @@ func (PythonPlugin) genEntry(name string, interval int) (*pluginEntry, error) {
 		return nil, errors.New("the interval le 0")
 	}
 	pe.name = name
-	pe.interval = int64(interval)
-	pe.nextTime = time.Now().Unix() + pe.interval
+	pe.interval = time.Second * time.Duration(interval)
 
+	pe.nextTime = time.Now().Add(pe.interval)
 	module := python.PyImport_ImportModule(pe.name)
 	if module == nil {
 		_, value, _ := python.PyErr_Fetch()
@@ -275,4 +290,15 @@ func (PythonPlugin) genEntry(name string, interval int) (*pluginEntry, error) {
 	pe.plugin = getvalue
 
 	return &pe, nil
+}
+func (r *PythonPlugin) foreche() string {
+	cur := r.curEntry
+	var ret = "["
+	var plugins = `{"name":"%s","interval":%v,"nextime":"%s"}`
+	for i := 0; i < r.len; i++ {
+		ret += fmt.Sprintf(plugins, cur.name, cur.interval, cur.nextTime.Format("2006-01-02 15:04:05.000000"))
+		cur = cur.pNext
+	}
+	ret += "]"
+	return ret
 }

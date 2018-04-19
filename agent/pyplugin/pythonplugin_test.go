@@ -1,55 +1,59 @@
 package pyplugin
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
-	"time"
+
+	"github.com/kexirong/monitor/common"
 )
 
 func Test_pyplugin(t *testing.T) {
 	pp, err := Initialize("")
+
 	if err != nil {
 
 		panic(err)
 	}
-	err = pp.InsertEntry("cpu", 1)
+	err = pp.InsertEntry("cpu", 5)
 	if err != nil {
 		fmt.Println(err)
 	}
-
 	err = pp.InsertEntry("cpus", 2)
 	if err != nil {
 		fmt.Println(err)
 	}
-	err = pp.InsertEntry("cpus1", 5)
-	if err != nil {
-		fmt.Println(err)
-	}
-	err = pp.InsertEntry("cpus2", 3)
-	if err != nil {
-		fmt.Println(err)
-	}
-	err = pp.InsertEntry("cpus3", 1)
-	if err != nil {
-		fmt.Println(err)
-	}
 
-	for i := 0; i < 5; i++ {
-		err := pp.WaitAndEventDeal()
-		fmt.Println("########################################################################")
-		for i := 0; i < pp.len; i++ {
-			cur := pp.curEntry
-			fmt.Printf("nextTime:%v, cur.name:%s, cur.interval:%v \n", cur.nextTime, cur.name, cur.interval)
-			cur = cur.pNext
-		}
-		fmt.Println("########################################################################")
-		if len(err) > 0 {
+	go func() {
+		es := `[{"method":"add", "target":"cpus1","arg":"1"},{"method":"add", "target":"cpus2","arg":"3"},{"method":"add", "target":"cpus3","arg":"2"},{"method":"delete", "target":"cpus1"}]`
+		var events []common.Event
+		err := json.Unmarshal([]byte(es), &events)
+		if err != nil {
 			fmt.Println(err)
+			return
+		}
+		for i := 0; i < len(events); i++ {
+			nv := pp.AddEventAndWaitResult(events[i])
+			events[i].Result = nv.Result
+			if events[i].Target != nv.Target || events[i].Method != nv.Method || events[i].Arg != nv.Arg {
+				events[i].Result = "server internal error"
+			}
+		}
+		b, e := json.MarshalIndent(events, "", "    ")
+		if e == nil {
+			fmt.Println(string(b))
+		} else {
+			fmt.Println(e)
 		}
 
-		go func() {
-			fmt.Println(pp.Scheduler())
-		}()
+	}()
+	for {
+		fmt.Println(pp.foreche())
+
+		pp.WaitAndEventDeal()
+
+		fmt.Println(pp.Scheduler())
+
 	}
-	<-time.After(time.Second * 10)
+
 }
