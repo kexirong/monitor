@@ -39,7 +39,6 @@ func (d *DISK) Gather() ([]packetparse.TargetPacket, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	for k, v := range diskinfo {
 		value := make([]float64, 0)
 		for _, c := range d.valueC {
@@ -52,7 +51,6 @@ func (d *DISK) Gather() ([]packetparse.TargetPacket, error) {
 		subret.Instance = k
 		ret = append(ret, subret)
 	}
-
 	return ret, nil
 
 }
