@@ -90,16 +90,13 @@ func (bq *BytesQueue) Put(bs []byte) (bool, error) {
 			return true, nil
 		}
 		runtime.Gosched()
-
 	}
-
 }
 
 //Get method
 func (bq *BytesQueue) Get() ([]byte, bool, error) {
 	var getPtr, stat uint32
 	var dt *data
-
 	var bs []byte //中间变量，保障数据完整性
 
 	getPtr = atomic.LoadUint32(&bq.getPtr)
@@ -123,12 +120,9 @@ func (bq *BytesQueue) Get() ([]byte, bool, error) {
 			dt.value = nil
 			atomic.StoreUint32(&dt.stat, 0) //重置stat为0
 			return bs, true, nil
-
 		}
 		runtime.Gosched()
-
 	}
-
 }
 
 // PutWait 阻塞型put,ms 最大等待豪秒数,默认 1000
@@ -145,7 +139,6 @@ func (bq *BytesQueue) PutWait(bs []byte, ms ...time.Duration) error {
 	//defer wait.Stop()
 	for {
 		select {
-
 		case <-timeout:
 			return ErrTimeout
 		default:
@@ -173,7 +166,6 @@ func (bq *BytesQueue) GetWait(ms ...time.Duration) ([]byte, error) {
 
 	//wait := time.NewTicker(100 * time.Millisecond)
 	//defer wait.Stop()
-
 	for {
 		select {
 		case <-timeout:
@@ -188,5 +180,4 @@ func (bq *BytesQueue) GetWait(ms ...time.Duration) ([]byte, error) {
 			}
 		}
 	}
-
 }

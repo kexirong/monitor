@@ -19,8 +19,6 @@ type PLUGIN interface {
 	GetInterval() int64
 }
 
-//Goplugintype .
-
 // GopluginMap .
 var GopluginMap = make(map[string]PLUGIN)
 
@@ -29,7 +27,6 @@ func register(name string, plugin PLUGIN) error {
 		return fmt.Errorf("plugin regist error: %s is exist", name)
 	}
 	GopluginMap[name] = plugin
-
 	return nil
 }
 
@@ -126,5 +123,3 @@ func readSingleLine(filepath string) (string, error) {
 	}
 	return "", fmt.Errorf("readSingleLine error: %s may is none", filepath)
 }
-
-//
