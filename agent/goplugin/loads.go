@@ -53,7 +53,6 @@ func (l *LOADAVG) init() error {
 	if !l.Config("interval", 60) {
 		return errors.New("NET plugin： init set interval error")
 	}
-
 	return err
 }
 
@@ -85,5 +84,4 @@ func init() {
 	} else {
 		fmt.Println(err)
 	}
-
 }

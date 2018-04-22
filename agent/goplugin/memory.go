@@ -58,7 +58,6 @@ func (m *MEM) init() error {
 	if !m.Config("interval", 10) {
 		return errors.New("MEM plugin： init set interval error")
 	}
-
 	return err
 }
 
@@ -105,5 +104,4 @@ func init() {
 	} else {
 		fmt.Println(err)
 	}
-
 }

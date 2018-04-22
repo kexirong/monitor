@@ -108,7 +108,6 @@ func (c *CPU) timesPercent(times []float64) ([]float64, error) {
 }
 
 func parseLineCPU(lines []string) (procvalue, error) {
-
 	var ret = make(procvalue)
 	for _, line := range lines {
 		var vl = make([]float64, 0, 10)

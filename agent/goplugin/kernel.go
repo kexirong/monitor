@@ -53,7 +53,6 @@ func (k *KERNEL) init() error {
 	if !k.Config("interval", 30) {
 		return errors.New("KERNEL plugin： init set interval error")
 	}
-
 	return err
 }
 
@@ -85,5 +84,4 @@ func init() {
 	} else {
 		fmt.Println(err)
 	}
-
 }
