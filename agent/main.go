@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"log"
+	"net/http"
 	"os"
 	"runtime"
 	"strings"
@@ -59,7 +61,7 @@ func main() {
 		}()*/
 	go goPluginScheduler(btq)
 
-	select {}
+	log.Fatal(http.ListenAndServe(":5101", nil))
 }
 
 func getCurrentPath() string {

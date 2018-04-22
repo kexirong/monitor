@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kexirong/monitor/common"
@@ -98,14 +99,15 @@ func (r *PythonPlugin) eventDeal(event common.Event) {
 		}
 
 	case "add":
-
 		invl, err := strconv.Atoi(event.Arg)
 		if err != nil {
 			event.Result = "Arg:" + err.Error()
 		} else if err := r.InsertEntry(event.Target, invl); err != nil {
 			event.Result = err.Error()
 		}
-
+	case "getlist":
+		res := r.foreche()
+		event.Result = res
 	default:
 		event.Result = "unknown operation type"
 	}
@@ -294,11 +296,12 @@ func (PythonPlugin) genEntry(name string, interval int) (*pluginEntry, error) {
 func (r *PythonPlugin) foreche() string {
 	cur := r.curEntry
 	var ret = "["
-	var plugins = `{"name":"%s","interval":%v,"nextime":"%s"}`
+	var plugins = `{"name":"%s","interval":%v,"nextime":"%s"},`
 	for i := 0; i < r.len; i++ {
 		ret += fmt.Sprintf(plugins, cur.name, cur.interval, cur.nextTime.Format("2006-01-02 15:04:05.000000"))
 		cur = cur.pNext
 	}
-	ret += "]"
+
+	ret = strings.TrimSuffix(ret, ",") + "]"
 	return ret
 }

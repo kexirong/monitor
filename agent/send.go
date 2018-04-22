@@ -38,9 +38,9 @@ func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 	conn.Conn()
 	for {
 		if conn.IsClose() {
-			conn.Conn()
 			Logger.Error.Println("server is not connected , try after of 1000ms")
 			time.Sleep(time.Second)
+			conn.Conn()
 			continue
 		}
 		select {

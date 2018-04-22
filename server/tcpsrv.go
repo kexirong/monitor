@@ -60,8 +60,7 @@ func readHandle(conn *net.TCPConn) {
 			go func(p packetparse.TargetPacket) {
 				err := writeToInfluxdb(p)
 				if err != nil {
-					Logger.Error.Println("writeToInfluxdb error:", p.String())
-					Logger.Error.Println("writeToInfluxdb error:", err.Error())
+					Logger.Error.Println("writeToInfluxdb error:", err.Error(), "\n", p.String())
 				}
 			}(tp)
 

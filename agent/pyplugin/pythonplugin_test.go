@@ -25,7 +25,7 @@ func Test_pyplugin(t *testing.T) {
 	}
 
 	go func() {
-		es := `[{"method":"add", "target":"cpus1","arg":"1"},{"method":"add", "target":"cpus2","arg":"3"},{"method":"add", "target":"cpus3","arg":"2"},{"method":"delete", "target":"cpus1"}]`
+		es := `[{"method":"add", "target":"cpus1","arg":"1"},{"method":"add", "target":"cpus2","arg":"3"},{"method":"add", "target":"cpus3","arg":"2"},{"method":"delete", "target":"cpus1"},{"method":"getlist" }]`
 		var events []common.Event
 		err := json.Unmarshal([]byte(es), &events)
 		if err != nil {
@@ -48,8 +48,9 @@ func Test_pyplugin(t *testing.T) {
 
 	}()
 	for {
+		fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`")
 		fmt.Println(pp.foreche())
-
+		fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`")
 		pp.WaitAndEventDeal()
 
 		fmt.Println(pp.Scheduler())
