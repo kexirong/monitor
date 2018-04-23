@@ -1,14 +1,67 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/kexirong/monitor/common/queue"
 )
 
-func Test_pyplugin(t *testing.T) {
-	t.Log("")
-	httpInit()
-	log.Fatal(http.ListenAndServe(":5101", nil))
+var testJSON = `{
+    "category": "pyplugin",
+    "events": [
+        {
+            "method": "add",
+            "target": "cpus1",
+            "arg": "1"
+        },
+        {
+            "method": "add",
+            "target": "cpus2",
+            "arg": "3"
+        },
+        {
+            "method": "add",
+            "target": "cpus3",
+            "arg": "2"
+        },
+        {
+            "method": "delete",
+            "target": "cpus1"
+        },
+        {
+            "method": "getlist"
+        }
+    ]
+}`
+
+func Test_pypluginConsole(t *testing.T) {
+	go func() {
+		log.Fatal(http.ListenAndServe(":5101", nil))
+	}()
+
+	go func() {
+		btq := queue.NewBtsQueue(4096)
+
+		pyPluginScheduler(btq)
+	}()
+	time.Sleep(time.Second * 30)
+	client := &http.Client{}
+	j := strings.NewReader(testJSON)
+	req, err := http.NewRequest("POST", "http://127.0.0.1:5101/console", j)
+	if err != nil {
+		t.Error(err)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Error(err)
+	}
+	bt, err := ioutil.ReadAll(resp.Body)
+
+	log.Println(err, string(bt))
 
 }

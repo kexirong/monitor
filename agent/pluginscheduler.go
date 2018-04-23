@@ -4,19 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/kexirong/monitor/agent/goplugin"
-	"github.com/kexirong/monitor/agent/pyplugin"
 	"github.com/kexirong/monitor/common/packetparse"
 	"github.com/kexirong/monitor/common/queue"
 )
 
 func pyPluginScheduler(qe *queue.BytesQueue) {
-	pp, err := pyplugin.Initialize("./pyplugin")
-	if err != nil {
-		panic(err)
-	}
-	err = pp.InsertEntry("cpu", 5)
+	err := pp.InsertEntry("cpu", 5)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -24,7 +18,7 @@ func pyPluginScheduler(qe *queue.BytesQueue) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	var json = jsoniter.ConfigFastest
+
 	for {
 		pp.WaitAndEventDeal()
 		ret, err := pp.Scheduler()
@@ -33,14 +27,13 @@ func pyPluginScheduler(qe *queue.BytesQueue) {
 			continue
 		}
 		go func(ret string) {
-			fmt.Println(ret)
+			//fmt.Println(ret)
 			var tps []packetparse.TargetPacket
 			err = json.Unmarshal([]byte(ret), &tps)
 			if err != nil {
 				Logger.Error.Println(err.Error())
 			}
 			for _, pk := range tps {
-
 				gatherbs, err := packetparse.TargetPackage(pk)
 				if err == nil {
 					if err := qe.PutWait(gatherbs, 1000); err != nil {

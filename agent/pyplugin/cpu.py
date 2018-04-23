@@ -1,14 +1,10 @@
 #*-* coding:utf-8 *-*
-
 import  time
 import  platform
 import json
 
 
-
 NAME = "cpu"
-
-interval = 5
 
 def getvalue():
     '''
@@ -35,8 +31,6 @@ def getvalue():
         #  "Message":"",
         }
     return json.dumps([ret,])
-  
-
 
 if __name__ == "__main__":
         print( getvalue())

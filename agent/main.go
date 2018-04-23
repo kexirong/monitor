@@ -8,8 +8,11 @@ import (
 	"runtime"
 	"strings"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/kexirong/monitor/common/queue"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func main() {
 
@@ -45,21 +48,9 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	go sendStart(servers, btq)
-	/*
-		go UnixTCPsrv(btq)
-		go func() {
-			path := getCurrentPath()
-			cmd := exec.Command("/usr/bin/python", fmt.Sprintf("%s/pysched/Scheduler.py", path))
 
-			if err := cmd.Start(); err != nil {
-				Logger.Error.Fatalln("run python error:", err.Error())
-			}
-
-			if err := cmd.Wait(); err != nil {
-				Logger.Error.Println(err.Error(), cmd.Args)
-			}
-		}()*/
 	go goPluginScheduler(btq)
+	go pyPluginScheduler(btq)
 
 	log.Fatal(http.ListenAndServe(":5101", nil))
 }

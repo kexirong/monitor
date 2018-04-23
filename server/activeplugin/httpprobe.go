@@ -31,6 +31,7 @@ func Get(url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer rsp.Body.Close()
 	if 200 != rsp.StatusCode {
 		return "", errors.New(rsp.Status)
 	}
@@ -47,6 +48,7 @@ func Post(url string, contentType string, data string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer rsp.Body.Close()
 	if 200 != rsp.StatusCode {
 		return "", errors.New(rsp.Status)
 	}
