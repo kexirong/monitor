@@ -108,7 +108,7 @@ func (bq *BytesQueue) Get() ([]byte, bool, error) {
 	if !atomic.CompareAndSwapUint32(&bq.getPtr, getPtr, getPtr+1) {
 		return nil, false, ErrLost
 	}
-	atomic.AddUint32(&bq.len, 4294967295) //^uint32(-1-1)==uint32(0)-uint32(1)
+	atomic.AddUint32(&bq.len, 4294967295) //bq.len - 1
 	dt = &bq.queue[getPtr&bq.ptrStd]
 
 	for {

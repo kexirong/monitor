@@ -26,6 +26,7 @@ func pyPluginScheduler(qe *queue.BytesQueue) {
 			Logger.Error.Println(err)
 			continue
 		}
+		//Logger.Info.Println(ret)
 		go func(ret string) {
 			//fmt.Println(ret)
 			var tps []packetparse.TargetPacket

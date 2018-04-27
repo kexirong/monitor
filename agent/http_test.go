@@ -17,17 +17,17 @@ var testJSON = `{
         {
             "method": "add",
             "target": "cpus1",
-            "arg": "1"
+            "arg": {"interval":"1"}
         },
         {
             "method": "add",
             "target": "cpus2",
-            "arg": "3"
+            "arg": {"interval":"3"}
         },
         {
             "method": "add",
             "target": "cpus3",
-            "arg": "2"
+            "arg": {"interval":"2"}
         },
         {
             "method": "delete",
@@ -49,7 +49,7 @@ func Test_pypluginConsole(t *testing.T) {
 
 		pyPluginScheduler(btq)
 	}()
-	time.Sleep(time.Second * 30)
+	time.Sleep(time.Second * 3)
 	client := &http.Client{}
 	j := strings.NewReader(testJSON)
 	req, err := http.NewRequest("POST", "http://127.0.0.1:5101/console", j)

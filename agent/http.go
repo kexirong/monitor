@@ -31,15 +31,14 @@ func init() {
 			Logger.Error.Println(err)
 			return
 		}
+
 		switch console.Category {
 		case "pyplugin":
 			for i := 0; i < len(console.Events); i++ {
+				console.Events[i].UniqueID = common.NewUniqueID(10)
 				nv := pp.AddEventAndWaitResult(console.Events[i])
 				console.Events[i].Result = nv.Result
-				if console.Events[i].Target != nv.Target ||
-					console.Events[i].Method != nv.Method ||
-					console.Events[i].Arg != nv.Arg {
-
+				if console.Events[i].UniqueID != nv.UniqueID {
 					console.Events[i].Result = "server internal error"
 				}
 			}

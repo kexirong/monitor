@@ -1,4 +1,4 @@
-package pyplugin
+package scriptplugin
 
 import (
 	"encoding/json"
@@ -8,18 +8,18 @@ import (
 	"github.com/kexirong/monitor/common"
 )
 
-func Test_pyplugin(t *testing.T) {
-	pp, err := Initialize("")
+func Test_scriptplugin(t *testing.T) {
+	pp, err := Initialize("../pyplugin")
 
 	if err != nil {
 
 		panic(err)
 	}
-	err = pp.InsertEntry("cpu", 5)
+	err = pp.InsertEntry("cpu.py", 5, 3)
 	if err != nil {
 		fmt.Println(err)
 	}
-	err = pp.InsertEntry("cpus", 2)
+	err = pp.InsertEntry("cpus.py", 2, 3)
 	if err != nil {
 		fmt.Println(err)
 	}

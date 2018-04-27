@@ -11,6 +11,8 @@ import (
 	python "github.com/sbinet/go-python"
 )
 
+// 由于Python 的GLI机制CGO并发调度性能不如线性调度
+// 由于并发问题多，Python脚本不采用这种调用
 type pluginEntry struct {
 	runing   bool
 	nextTime time.Time
@@ -89,8 +91,10 @@ func (r *PythonPlugin) eventDeal(event common.Event) {
 
 	select {
 	case <-r.result:
+		fmt.Println("<-r.result ERROR!!!!")
 	default:
 	}
+
 	event.Result = "ok"
 	switch event.Method {
 	case "delete":
@@ -99,10 +103,13 @@ func (r *PythonPlugin) eventDeal(event common.Event) {
 		}
 
 	case "add":
-		invl, err := strconv.Atoi(event.Arg)
+		arg1 := event.Args["interval"]
+		invl, err := strconv.Atoi(arg1)
 		if err != nil {
 			event.Result = "Arg:" + err.Error()
-		} else if err := r.InsertEntry(event.Target, invl); err != nil {
+			break
+		}
+		if err := r.InsertEntry(event.Target, invl); err != nil {
 			event.Result = err.Error()
 		}
 	case "getlist":

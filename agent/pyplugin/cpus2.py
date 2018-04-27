@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 #*-* coding:utf-8 *-*
 
 import time
@@ -37,7 +39,7 @@ def getvalue():
     ret1 = {
         "hostname":hostname,
         "timestamp":time.time(),
-        "plugin":"cpu2",
+        "plugin":"cpus2",
         "instance":"1",
         "type":"percent",
         "value":value1,
