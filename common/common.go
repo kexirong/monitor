@@ -21,13 +21,22 @@ func NewUniqueID(n int) string {
 		//预防在rand.read 失败函数可用
 		nano := time.Now().UnixNano()
 		for i := 0; i < n; i++ {
-			b[i] = byte(nano >> uint(i&64))
+			b[i] = byte(nano >> uint(i&63))
 		}
 	}
-	return base64.StdEncoding.EncodeToString(b)
+	return base64.StdEncoding.EncodeToString(b)[:n]
 }
 
-func fillByte(bs []byte, i64 int64) {
+type ScriptConf struct {
+	Name     string `json:"name"`
+	FileName string `json:"filename"`
+	HostName string `json:"hostname"`
+	Interval int    `json:"interval"`
+	TimeOut  int    `json:"timeout"`
+}
 
-	//return b
+type HttpResp struct {
+	Code   int         `json:"code"`
+	Msg    string      `json:"msg"`
+	Result interface{} `json:"result,omitempty"`
 }

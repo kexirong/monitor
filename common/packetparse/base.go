@@ -233,7 +233,7 @@ type TargetPacket struct {
 	TimeStamp float64   `json:"timestamp"` //the number of seconds elapsed since January 1, 1970 UTC
 	Plugin    string    `json:"plugin"`    // cpu
 	Instance  string    `json:"instance"`  // 0,1,2,3 (eth0,eth1)(sda,sdb)
-	Type      string    `json:"type"`      //percent(百分比),counter(正数速率,主要是趋势),gauge(原值),derive(速率)
+	Type      string    `json:"type"`      //percent(百分比),bool(0|1),gauge(原值),derive(速率,单位v/s)
 	Value     []float64 `json:"value"`     //float 对整数兼容，故采用float64而不是interface{}
 	VlTags    string    `json:"vltags"`    // "idle|user|system"(rx|tx)(read|write|use|free...)
 	Message   string    `json:"message"`   // description ,e.g: the disk is full please clean

@@ -16,26 +16,6 @@ var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func main() {
 
-	/*
-		cpuprofile := "./agent.prof"
-		if isExist(cpuprofile) {
-			err := os.Remove(cpuprofile)
-
-			if err != nil {
-				os.Exit(1)
-			}
-		}
-		f, err := os.Create(cpuprofile)
-		if err != nil {
-			fmt.Println(err)
-		}
-		pprof.StartCPUProfile(f)
-		go func() {
-			<-time.After(time.Second * 600)
-			fmt.Println("StopCPUProfile")
-			pprof.StopCPUProfile()
-		}()
-	*/
 	var addr = flag.String("s", "ip:port", "server addrs multi delimit  with ',' ")
 	flag.Parse()
 
@@ -50,9 +30,9 @@ func main() {
 	go sendStart(servers, btq)
 
 	go goPluginScheduler(btq)
-	go pyPluginScheduler(btq)
+	go scriptPluginScheduler(btq)
 
-	log.Fatal(http.ListenAndServe(":5101", nil))
+	log.Fatal(http.ListenAndServe(conf.HTTPListen, nil))
 }
 
 func getCurrentPath() string {
@@ -67,3 +47,24 @@ func checkErr(err error) {
 		os.Exit(1)
 	}
 }
+
+/*
+	cpuprofile := "./agent.prof"
+	if isExist(cpuprofile) {
+		err := os.Remove(cpuprofile)
+
+		if err != nil {
+			os.Exit(1)
+		}
+	}
+	f, err := os.Create(cpuprofile)
+	if err != nil {
+		fmt.Println(err)
+	}
+	pprof.StartCPUProfile(f)
+	go func() {
+		<-time.After(time.Second * 600)
+		fmt.Println("StopCPUProfile")
+		pprof.StopCPUProfile()
+	}()
+*/

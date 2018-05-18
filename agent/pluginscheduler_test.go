@@ -6,8 +6,8 @@ import (
 	"github.com/kexirong/monitor/common/queue"
 )
 
-func Test_pypluginscheduler(t *testing.T) {
+func Test_scriptPluginScheduler(t *testing.T) {
 	btq := queue.NewBtsQueue(4096)
 
-	pyPluginScheduler(btq)
+	scriptPluginScheduler(btq)
 }

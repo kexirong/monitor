@@ -2,35 +2,56 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
 	"time"
+
+	"github.com/kexirong/monitor/common"
 
 	"github.com/kexirong/monitor/agent/goplugin"
 	"github.com/kexirong/monitor/common/packetparse"
 	"github.com/kexirong/monitor/common/queue"
 )
 
-func pyPluginScheduler(qe *queue.BytesQueue) {
-	err := pp.InsertEntry("cpu", 5)
+func scriptPluginScheduler(qe *queue.BytesQueue) {
+	res, err := http.Get(fmt.Sprintf("http://%s/config/plugin", conf.ServerHTTP))
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
-	err = pp.InsertEntry("cpus1", 2)
+	body, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
+	}
+
+	var resp common.HttpResp
+	var sconf []common.ScriptConf
+	resp.Result = &conf
+	json.Unmarshal(body, &resp)
+	downloaurl := fmt.Sprintf("http://%s/getscript/", conf.ServerHTTP)
+	for _, ret := range sconf {
+		err := sp.CheckDownloads(downloaurl, ret.FileName, false)
+		if err != nil {
+			Logger.Error.Println(err)
+		}
+		if err := sp.InsertEntry(ret.FileName, ret.Interval, ret.TimeOut); err != nil {
+			Logger.Error.Println(err.Error())
+		}
 	}
 
 	for {
-		pp.WaitAndEventDeal()
-		ret, err := pp.Scheduler()
+		sp.WaitAndEventDeal()
+		ret, err := sp.Scheduler()
 		if err != nil {
 			Logger.Error.Println(err)
 			continue
 		}
 		//Logger.Info.Println(ret)
-		go func(ret string) {
+		go func(ret []byte) {
 			//fmt.Println(ret)
 			var tps []packetparse.TargetPacket
-			err = json.Unmarshal([]byte(ret), &tps)
+			err = json.Unmarshal(ret, &tps)
 			if err != nil {
 				Logger.Error.Println(err.Error())
 			}
@@ -45,7 +66,6 @@ func pyPluginScheduler(qe *queue.BytesQueue) {
 				}
 			}
 		}(ret)
-
 	}
 }
 

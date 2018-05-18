@@ -96,9 +96,5 @@ func (network) BytesToUint32(b []byte) uint32 {
 
 //Nsecond2Unix is  NanoSecond To UnixTimetamp
 func Nsecond2Unix(ns int64) float64 {
-	if ns < int64(time.Second) {
-		return 1
-	}
-	deno := float64(time.Second)
-	return float64(ns) / deno
+	return time.Duration(ns).Seconds()
 }

@@ -9,19 +9,21 @@ import (
 )
 
 func Test_scriptplugin(t *testing.T) {
-	pp, err := Initialize("../pyplugin")
+
+	pp, err := Initialize("./")
 
 	if err != nil {
-
 		panic(err)
 	}
+
 	err = pp.InsertEntry("cpu.py", 5, 3)
 	if err != nil {
-		fmt.Println(err)
+		t.Log(err)
 	}
+
 	err = pp.InsertEntry("cpus.py", 2, 3)
 	if err != nil {
-		fmt.Println(err)
+		t.Log(err)
 	}
 
 	go func() {
@@ -29,13 +31,13 @@ func Test_scriptplugin(t *testing.T) {
 		var events []common.Event
 		err := json.Unmarshal([]byte(es), &events)
 		if err != nil {
-			fmt.Println(err)
+			t.Log(err)
 			return
 		}
 		for i := 0; i < len(events); i++ {
 			nv := pp.AddEventAndWaitResult(events[i])
 			events[i].Result = nv.Result
-			if events[i].Target != nv.Target || events[i].Method != nv.Method || !common.ArgsCompare(events[i].Args, nv.Args) {
+			if events[i].UniqueID != nv.UniqueID {
 				events[i].Result = "server internal error"
 			}
 		}
@@ -43,7 +45,7 @@ func Test_scriptplugin(t *testing.T) {
 		if e == nil {
 			fmt.Println(string(b))
 		} else {
-			fmt.Println(e)
+			t.Log(e)
 		}
 
 	}()

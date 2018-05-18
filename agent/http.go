@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -13,6 +14,7 @@ func init() {
 	})
 
 	http.HandleFunc("/console", func(w http.ResponseWriter, r *http.Request) {
+		var ret common.HttpResp
 		if r.Method != "POST" {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("BadRequest"))
@@ -26,28 +28,74 @@ func init() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		err = json.Unmarshal(req, &console)
-		if err != nil {
-			Logger.Error.Println(err)
-			return
-		}
+		//不需要对Unmarshal 失败的错误信息进行处理
+		json.Unmarshal(req, &console)
 
 		switch console.Category {
-		case "pyplugin":
-			for i := 0; i < len(console.Events); i++ {
-				console.Events[i].UniqueID = common.NewUniqueID(10)
-				nv := pp.AddEventAndWaitResult(console.Events[i])
-				console.Events[i].Result = nv.Result
-				if console.Events[i].UniqueID != nv.UniqueID {
-					console.Events[i].Result = "server internal error"
+		case "scriptplugin":
+			console.Events.UniqueID = common.NewUniqueID(10)
+			if console.Events.Method == "add" {
+				err := sp.CheckDownloads(fmt.Sprintf("http://%s/getscript/", conf.ServerHTTP), console.Events.Target, true)
+				if err != nil {
+					ret.Code = 500
+					ret.Msg = err.Error()
+					break
 				}
 			}
-			b, _ := json.MarshalIndent(console, "", "    ")
-			w.Write(b)
-		default:
-			w.Write([]byte("unkown Category"))
-		}
+			nv := sp.AddEventAndWaitResult(console.Events)
+			//console.Events.Result = nv.Result
+			if console.Events.UniqueID != nv.UniqueID {
+				ret.Code = 500
+				ret.Msg = "please retry"
+			}
+			if nv.Result == "ok" {
+				ret.Code = 200
+				ret.Msg = "ok"
+			}
+			if err := json.Unmarshal([]byte(nv.Result), &ret.Result); err != nil {
+				ret.Code = 400
+				ret.Msg = nv.Result
+				ret.Result = nil
+			} else {
+				ret.Code = 200
+				ret.Msg = "ok"
+			}
 
+		default:
+			ret.Code = 400
+			ret.Msg = "unkown Category"
+		}
+		bt, _ := json.MarshalIndent(ret, "", "   ")
+		w.Write(bt)
 	})
 
+	http.HandleFunc("/process", func(w http.ResponseWriter, r *http.Request) {
+		var ret = common.HttpResp{
+			Code: 200,
+			Msg:  "ok",
+		}
+
+		if r.Method != "GET" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("BadRequest"))
+			return
+		}
+		r.ParseForm()
+		patterns := r.Form["pattern"]
+		var pl common.ProcessList
+		pl.Init()
+		if err := pl.FilterCmdline(patterns); err != nil {
+			ret.Code = 400
+			ret.Msg = err.Error()
+
+		}
+
+		if ret.Code == 200 {
+			pl.LoadsProcessInfo()
+			ret.Result = pl
+		}
+		fmt.Println(len(pl))
+		b, _ := json.Marshal(ret)
+		w.Write(b)
+	})
 }

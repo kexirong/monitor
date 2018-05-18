@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/kexirong/monitor/common"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -16,7 +18,12 @@ func scanalarmdb() []alarmValue {
 	var av alarmValue
 	var avs []alarmValue
 	rows, err := mysql.Query("SELECT id, hostname,time,alarmname,alarmele,Value, Level,Message FROM alarm_queue where stat = 0")
-	checkErr(err)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		panic(err)
+	}
 	for rows.Next() {
 		err = rows.Scan(&av.ID, &av.HostName, &av.Time, &av.Plugin, &av.Instance, &av.Value, &av.Level, &av.Message)
 		checkErr(err)
@@ -27,10 +34,33 @@ func scanalarmdb() []alarmValue {
 	return avs
 }
 
+func pluginconfGet(ip string) []common.ScriptConf {
+	var conf common.ScriptConf
+	var confs []common.ScriptConf
+	rows, err := mysql.Query("SELECT a.pluginname, b.filename,a.hostname,a.interval,a.timeout FROM plugin_config a JOIN plugin b on  a.pluginname=b.pluginname WHERE hostip = ?", ip)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		panic(err)
+	}
+	for rows.Next() {
+		err = rows.Scan(&conf.Name, &conf.FileName, &conf.HostName, &conf.Interval, &conf.TimeOut)
+		checkErr(err)
+		confs = append(confs, conf)
+	}
+	return confs
+}
+
 func judgemapGet() judgeMap {
 	judgemap := make(judgeMap)
 	rows, err := mysql.Query("SELECT * FROM alarm_judge")
-	checkErr(err)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		panic(err)
+	}
 	for rows.Next() {
 		var plugin string
 		var instance string

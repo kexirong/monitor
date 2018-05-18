@@ -1,4 +1,4 @@
-package scriptplugin
+package activeplugin
 
 import (
 	"errors"
@@ -12,69 +12,140 @@ import (
 	"time"
 
 	"github.com/kexirong/monitor/common"
+	"github.com/kexirong/monitor/common/packetparse"
 )
 
+type Plugin interface {
+	Gather() ([]packetparse.TargetPacket, error)
+	AddJob(args ...interface{}) error
+	Name() string
+	DeleteJob(target string) error
+}
+
+//pluginEntry  is  a ring
 type pluginEntry struct {
-	runing   bool
-	nextTime time.Time
-	interval time.Duration
-	timeout  time.Duration
-	name     string
-	pNext    *pluginEntry
-	pPrev    *pluginEntry
+	runing       bool
+	nextTime     time.Time
+	interval     time.Duration
+	pNext, pPrev *pluginEntry
+	plugin       Plugin
 }
 
-func (p *pluginEntry) done() {
-	p.runing = false
+func (p *pluginEntry) insert(e *pluginEntry) {
+	//	n := p.pNext
+	//	p.pNext = e
+	//	e.pNext = n
+	//	e.pPrev = p
+	//	n.pPrev = e
+	e.pNext = p.pNext
+	p.pNext.pPrev = e
+	p.pNext = e
+	e.pPrev = p
 }
 
-func (p *pluginEntry) run() ([]byte, error) {
-	if p.runing {
-		return nil, errors.New(p.name + "is runing, may interval Too brief")
+//pop  while len==0  will return  nil
+func (p *pluginEntry) pop() *pluginEntry {
+	next := p
+	if p.len() > 1 {
+		p.pPrev.pNext = p.pNext
+		p.pNext.pPrev = p.pPrev
+	} else {
+		p = nil
 	}
-	p.runing = true
-	defer p.done()
-	return common.Command(p.name, p.timeout)
-
+	return next
 }
 
-//ScriptPlugin   内嵌环形链表，不支持并发操作环形链表
-type ScriptPlugin struct {
-	len        int
-	result     chan common.Event
+func (p *pluginEntry) shift(n int) {
+	cur := p.pop()
+
+	if cur.nextTime.Before(next.nextTime) {
+		return
+	}
+	if r.len < 3 {
+		r.next()
+		return
+	}
+	cur = r.pop()
+	for i := 0; i < r.len-1; i++ {
+		r.next()
+		if cur.nextTime.Before(r.curEntry.nextTime) {
+			r.prev()
+			break
+		}
+	}
+	r.insert(cur)
+	r.curEntry = next
+	return
+}
+
+func (p *pluginEntry) isRuning() bool {
+	return p.runing
+}
+
+func (p *pluginEntry) Interval() time.Duration {
+	return p.interval
+}
+
+func (p *pluginEntry) next() *pluginEntry {
+	return p.pNext
+}
+
+func (p *pluginEntry) perv() *pluginEntry {
+	return p.pPrev
+}
+
+/*
+func (p *pluginEntry) init() *pluginEntry {
+	p.pNext = p
+	p.pPrev = p
+	return p
+}
+*/
+func (p *pluginEntry) len() int {
+	n := 0
+	if p != nil {
+		n = 1
+		for r := p.pNext; r != p; p = p.pNext {
+			n++
+		}
+	}
+	return n
+}
+
+//ActivePlugin   内嵌环形链表，不支持并发操作环形链表
+type ActivePlugin struct {
 	event      chan common.Event //"method:pluginnam[|interval]"
-	curEntry   *pluginEntry
-	scriptPath string
-	mutex      sync.Mutex
+	result     chan common.Event
+	pluginRing *pluginEntry
+	mutex      *sync.Mutex
 }
 
 //Initialize  初始化, 等同New
-func Initialize(scriptPath string) (*ScriptPlugin, error) {
-
-	ring := new(ScriptPlugin)
+func Initialize() (*ActivePlugin, error) {
+	ring := new(ActivePlugin)
 	ring.result = make(chan common.Event, 1)
 	ring.event = make(chan common.Event, 1)
-	if !common.CheckFileIsExist(scriptPath) {
-		return nil, errors.New("scriptPath not IsExist")
-	}
-	ring.scriptPath = scriptPath
-	if scriptPath[len(scriptPath)-1] != '/' {
-		ring.scriptPath = scriptPath + "/"
-	}
+	ring.mutex = new(sync.Mutex)
 	return ring, nil
 }
 
 //AddEventAndWaitResult add a event and wait eventDeal return result
-func (r *ScriptPlugin) AddEventAndWaitResult(event common.Event) common.Event {
+func (r *ActivePlugin) AddEventAndWaitResult(event common.Event) common.Event {
 	r.event <- event
 	return <-r.result
 }
 
-func (r *ScriptPlugin) eventDeal(event common.Event) {
+func (r *ActivePlugin) eventDeal(event common.Event) {
+	/*
+		select {
+		case <-r.result:
+		default:
+		}
+	*/
 	event.Result = "ok"
 	switch event.Method {
 	case "delete":
-		if err := r.DeleteEntry(event.Target); err != nil {
+		if err := r.DeleteTask(event.Target); err != nil {
 			event.Result = err.Error()
 		}
 
@@ -93,7 +164,7 @@ func (r *ScriptPlugin) eventDeal(event common.Event) {
 			}
 		}
 
-		if err := r.InsertEntry(event.Target, invl, timeout); err != nil {
+		if err := r.AddTask(event.Target, invl, timeout); err != nil {
 			event.Result = err.Error()
 		}
 	case "getlist":
@@ -108,16 +179,16 @@ func (r *ScriptPlugin) eventDeal(event common.Event) {
 }
 
 //WaitAndEventDeal 等待阻塞结束和时间
-func (r *ScriptPlugin) WaitAndEventDeal() {
+func (r *ActivePlugin) WaitAndEventDeal() {
 	for {
 		var wait = time.After(3 * time.Second)
 		len := r.Len()
 		if len != 0 {
 			now := time.Now()
-			if r.curEntry.nextTime.Before(now) {
+			if r.pluginRing.nextTime.Before(now) {
 				return
 			}
-			wait = time.After(r.curEntry.nextTime.Sub(now))
+			wait = time.After(r.pluginRing.nextTime.Sub(now))
 		}
 
 		for {
@@ -135,35 +206,48 @@ func (r *ScriptPlugin) WaitAndEventDeal() {
 }
 
 //Scheduler must be  after  initialize true
-func (r *ScriptPlugin) Scheduler() ([]byte, error) {
+func (r *ActivePlugin) Scheduler() ([]byte, error) {
+	/*
+		if r.len == 0 {
+			return nil, errors.New("pluginEntry is empty")
+		}
+	*/
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	pn := r.curEntry
-	pn.nextTime = pn.nextTime.Add(pn.interval)
+	pe := r.pluginRing
+
+	pe.nextTime = pe.nextTime.Add(pe.interval)
+
+	if pe.runing {
+		return nil, fmt.Errorf("%sis runing, may interval Too brief", pe.plugin.Name())
+	}
+	pe.runing = true
+
 	r.fixOrder()
-	return pn.run()
+
+	return pe.plugin.Gather()
 }
 
-//DeleteEntry arg PythonModuleName ,as stop the module
-func (r *ScriptPlugin) DeleteEntry(name string) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	cur := r.curEntry
-	for i := 0; i < r.len; i++ {
-		if r.scriptPath+name == r.curEntry.name {
+//DeleteTask arg PythonModuleName ,as stop the module
+func (r *ActivePlugin) DeleteTask(name string) error {
+	cur := r.pluginRing
+	len := cur.Len()
+	for i := 0; i < len; i++ {
+		if name == r.pluginRing.plugin.Name() {
 			r.pop()
 			if i != 0 {
-				r.curEntry = cur
+				r.pluginRing = cur
 			}
 			return nil
 		}
 		r.next()
 	}
-	r.curEntry = cur
+	r.pluginRing = cur
 	return errors.New("not exist")
 }
 
-func (r *ScriptPlugin) pop() *pluginEntry {
+/*
+func (r *ActivePlugin) pop() *pluginEntry {
 	cur := r.curEntry
 	r.next()
 	if r.len > 1 {
@@ -173,22 +257,22 @@ func (r *ScriptPlugin) pop() *pluginEntry {
 	r.len--
 	return cur
 }
+*/
 
 //Len return r.len
-func (r *ScriptPlugin) Len() int {
-	return r.len
+func (r *ActivePlugin) Len() int {
+	return r.pluginRing.len()
 }
 
 //InsertEntry  为了不重复，插入前都尝试一次删除 ,interval单位s ,timeout 必须大于0，单位s
-func (r *ScriptPlugin) InsertEntry(name string, interval int, timeout int) error {
-	r.DeleteEntry(name)
+func (r *ActivePlugin) AddTask(name string, interval int, timeout int) error {
+	r.DeleteTask(name)
 	node, err := r.genEntry(name, interval, timeout)
 	if err != nil {
 		return err
 	}
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	if r.len > 1 {
+
+	if r.Len() > 1 {
 		r.prev()
 	}
 	r.insert(node)
@@ -197,7 +281,8 @@ func (r *ScriptPlugin) InsertEntry(name string, interval int, timeout int) error
 	return nil
 }
 
-func (r *ScriptPlugin) insert(e *pluginEntry) {
+/*
+func (r *ActivePlugin) insert(e *pluginEntry) {
 
 	if r.len == 0 {
 		r.curEntry = e
@@ -212,9 +297,16 @@ func (r *ScriptPlugin) insert(e *pluginEntry) {
 	}
 	r.len++
 }
-
+*/
 //调度后进行位置修正
-func (r *ScriptPlugin) fixOrder() {
+func (r *ActivePlugin) fixOrder() {
+	select {
+	case <-r.plug:
+	default:
+	}
+	defer func() {
+		r.plug <- struct{}{}
+	}()
 	cur := r.curEntry
 	next := cur.pNext
 
@@ -238,15 +330,16 @@ func (r *ScriptPlugin) fixOrder() {
 	return
 }
 
-func (r *ScriptPlugin) next() {
+func (r *ActivePlugin) next() {
 	r.curEntry = r.curEntry.pNext
 
 }
-func (r *ScriptPlugin) prev() {
+func (r *ActivePlugin) prev() {
 	r.curEntry = r.curEntry.pPrev
+
 }
 
-func (r *ScriptPlugin) genEntry(name string, interval int, timeout int) (*pluginEntry, error) {
+func (r *ActivePlugin) genEntry(name string, interval int, timeout int) (*pluginEntry, error) {
 	var pe pluginEntry
 	if interval < 1 || timeout < 1 {
 		return nil, errors.New("arg false: interval or timeout le 0")
@@ -261,7 +354,7 @@ func (r *ScriptPlugin) genEntry(name string, interval int, timeout int) (*plugin
 
 	return &pe, nil
 }
-func (r *ScriptPlugin) foreche() string {
+func (r *ActivePlugin) foreche() string {
 	cur := r.curEntry
 	var ret = `{"name":"%s","interval":"%v","nextime":"%s"}`
 	var plugins []string
@@ -275,7 +368,7 @@ func (r *ScriptPlugin) foreche() string {
 	return fmt.Sprintf("[%s]", strings.Join(plugins, ","))
 }
 
-func (r *ScriptPlugin) CheckDownloads(url, filename string, check bool) error {
+func (r *ActivePlugin) CheckDownloads(url, filename string, check bool) error {
 	if check && common.CheckFileIsExist(r.scriptPath+filename) {
 		return nil
 	}

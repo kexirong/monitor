@@ -2,13 +2,15 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
 
 	client "github.com/influxdata/influxdb/client/v2"
+	jsoniter "github.com/json-iterator/go"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 var conf = struct {
 	Service           string
@@ -22,15 +24,6 @@ var conf = struct {
 }{}
 
 func init() {
-	/*
-		conf.MysqlConnetString = "monitor:monitor@tcp(10.1.1.222:3306)/monitor?charset=utf8"
-		conf.InfluxDB = "monitor"
-		conf.InfluxUser = "monitor"
-		conf.InfluxPasswd = "monitor"
-		conf.InfluxHost = "http://10.1.1.201:8086"
-		conf.WchatURL = "http://10.8.12.152:4000/sender/wechat"
-		conf.EmailURL = "http://10.8.12.152:4000/sender/mail"
-	*/
 	dat, err := ioutil.ReadFile("./conf.json")
 	checkErr(err)
 	err = json.Unmarshal(dat, &conf)

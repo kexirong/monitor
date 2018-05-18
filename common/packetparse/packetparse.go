@@ -10,6 +10,7 @@ import (
 func TargetPackage(pk TargetPacket) ([]byte, error) {
 
 	buf := new(bytes.Buffer)
+	buf.Grow(2048)
 	if pk.Type == "" {
 		return nil, errors.New("TargetPacket.Type is none")
 	}
