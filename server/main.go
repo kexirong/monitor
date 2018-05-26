@@ -9,7 +9,7 @@ func checkErr(err error) {
 func main() {
 
 	go heartdeamo()
-	go httpprobesched()
+	//	go httpprobesched()
 	go alarmdo()
 
 	Logger.Info.Println("runing,listen:,", conf.Service)

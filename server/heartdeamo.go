@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kexirong/monitor/server/activeplugin"
+	"github.com/kexirong/monitor/server/models"
 )
 
 var ipHeartRecorde = make(map[string]int64) //time.Now().Unix()
@@ -15,7 +16,7 @@ func scanAssetdb() int {
 		name string
 		ip   string
 	}
-	rows, err := mysql.Query("SELECT HostName,ip FROM opsmgt.cmdb_asset where is_active =1")
+	rows, err := monitorDB.Query("SELECT HostName,ip FROM opsmgt.cmdb_asset where is_active =1")
 	checkErr(err)
 	cur := time.Now().Unix()
 	for rows.Next() {
@@ -41,27 +42,28 @@ func hostIPMapAdd(hostname, ip string) bool {
 	ipHeartRecorde[ip] = time.Now().Unix()
 	return true
 }
+
 func heartdeamo() {
 	scanAssetdb()
-	var av alarmValue
+	var av models.AlarmQueue
 	for range time.Tick(time.Second * 10) {
 		now := time.Now().Unix()
 		for k, v := range ipHeartRecorde {
 			if now-v > 30 {
-				av.Plugin = "heartbeat"
-				av.Instance = "heartbeat.timeout"
+				av.AlarmName = "heartbeat"
+				av.Alarmele = "heartbeat.timeout"
 				av.HostName = ipHostnameMap[k]
-				av.Time = time.Unix(now, 0).Format("2006-01-02 15:04:05")
-				av.Level = "level3"
+				av.CreatedAt = time.Unix(now, 0)
+				av.Level = models.LevelLevel2
 				av.Value = float64(now - v)
-				go func(ip string, av alarmValue) {
+				go func(ip string, av models.AlarmQueue) {
 					out, err := activeplugin.HostPinger(4000, ip)
 					if err == nil {
 						av.Message = fmt.Sprintf("heartbeat lost %g；ping ok", av.Value)
 					} else {
 						av.Message = fmt.Sprintf("heartbeat lost %g；ping %s", av.Value, out)
 					}
-					alarmInsert(av)
+					av.Insert(monitorDB)
 				}(k, av)
 			}
 		}

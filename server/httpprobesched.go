@@ -1,12 +1,5 @@
 package main
 
-import (
-	"fmt"
-	"time"
-
-	"github.com/kexirong/monitor/server/activeplugin"
-)
-
 type httpprobe struct {
 	hostname    string
 	url         string
@@ -19,9 +12,10 @@ type httpprobe struct {
 	counter     int32
 }
 
+/*
 func httpprobesched() {
 	for range time.Tick(time.Second * 10) {
-		rows, err := mysql.Query("SELECT hostname,url,contenttype,method,reqmsg,counter FROM http_probe WHERE  unix_timestamp(now())  > unix_timestamp(time) + cycle ")
+		rows, err := monitorDB.Query("SELECT hostname,url,contenttype,method,reqmsg,counter FROM http_probe WHERE  unix_timestamp(now())  > unix_timestamp(time) + cycle ")
 		checkErr(err)
 		for rows.Next() {
 			var hp httpprobe
@@ -62,7 +56,7 @@ func httpprobesched() {
 			} else {
 				hp.counter = 0
 			}
-			_, err = mysql.Exec(
+			_, err = monitorDB.Exec(
 				"UPDATE http_probe SET respon=?,counter=?,time=? where hostname=? and url=? and method=?",
 				hp.result,
 				hp.counter,
@@ -78,3 +72,4 @@ func httpprobesched() {
 	}
 
 }
+*/

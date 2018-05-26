@@ -5,29 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/kexirong/monitor/common/packetparse"
 )
 
-var TLSClient *http.Client
-
-func init() {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-		DisableCompression: true,
-	}
-	TLSClient = &http.Client{
-		Transport: tr,
-		Timeout:   5 * time.Second,
-	}
-
-}
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 //HTTPProbe built-in *http.Client
 type HTTPProbe struct {
@@ -47,17 +36,9 @@ type target struct {
 //NewHTTPProbe return *HTTPProbe built-in *http.Client
 func NewHTTPProbe(hostname string) *HTTPProbe {
 	return &HTTPProbe{
-		client: &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
-				DisableCompression: true,
-			},
-			Timeout: 5 * time.Second,
-		},
+		client:     NewHTTPClient(),
 		hostName:   hostname,
-		pluginName: "httpProbe",
+		pluginName: "http_probe",
 	}
 }
 
@@ -65,7 +46,7 @@ func (h *HTTPProbe) Name() string {
 	return fmt.Sprintf("[%s]%s", h.pluginName, h.hostName)
 }
 
-func (h *HTTPProbe) Gather() ([]packetparse.TargetPacket, error) {
+func (h *HTTPProbe) Do() ([]byte, error) {
 
 	var tps []packetparse.TargetPacket
 	var tp = packetparse.TargetPacket{
@@ -73,12 +54,12 @@ func (h *HTTPProbe) Gather() ([]packetparse.TargetPacket, error) {
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
 		Plugin:    h.pluginName,
 		Type:      "bool",
-		Value:     []float64{1},
 	}
 
 	for _, t := range h.target {
 		var rsp []byte
 		var err error
+		tp.Value = []float64{0}
 		switch t.Method {
 		case "get":
 			u, _ := url.Parse(t.URL)
@@ -89,7 +70,6 @@ func (h *HTTPProbe) Gather() ([]packetparse.TargetPacket, error) {
 				t.ContentType = "text/xml"
 			}
 			rsp, err = h.Post(t.URL, t.ContentType, t.ReqData)
-
 		}
 		tp.Instance = t.URL
 		if "ok" == string(rsp) {
@@ -100,22 +80,27 @@ func (h *HTTPProbe) Gather() ([]packetparse.TargetPacket, error) {
 		}
 		tps = append(tps, tp)
 	}
-	return tps, nil
+	return json.Marshal(tps)
 }
 
-//AddJob args value must be has (method,url,contentType,reqdata)
-func (h *HTTPProbe) AddJob(args ...interface{}) error {
+var httpprobeRegex = regexp.MustCompile(`\[(\w+)\](https?://\S+)`)
 
-	if len(args) != 4 {
-		return errors.New("invalid args")
+//AddJob args value must be has (target,contentType,reqdata)
+func (h *HTTPProbe) AddJob(param ...interface{}) error {
+	if len(param) != 3 {
+		return errors.New("invalid param")
 	}
+	var t, _ = param[0].(string)
+	starget := httpprobeRegex.FindStringSubmatch(t)
+	if len(starget) != 3 {
+		return errors.New("parse target error")
+	}
+	var method = starget[1]
+	var URL = starget[2]
+	var contentType, _ = param[1].(string)
+	var reqdata, _ = param[2].(string)
 
-	var method, _ = args[0].(string)
-	var URL, _ = args[1].(string)
-	var contentType, _ = args[2].(string)
-	var reqdata, _ = args[3].(string)
-
-	if method != "get" || method != "post" {
+	if method != "get" && method != "post" {
 		return errors.New("invalid Method")
 	}
 	if contentType == "" {
@@ -135,7 +120,13 @@ func (h *HTTPProbe) AddJob(args ...interface{}) error {
 	return nil
 }
 
-func (h *HTTPProbe) DeleteJob(target string) error {
+func (h *HTTPProbe) DeleteJob(param ...interface{}) error {
+	if len(param) != 4 {
+		return errors.New("invalid param")
+	}
+	var method, _ = param[0].(string)
+	var URL, _ = param[1].(string)
+	var target = fmt.Sprintf("[%s]%s", method, URL)
 	for i := range h.target {
 		if target == fmt.Sprintf("[%s]%s", h.target[i].Method, h.target[i].URL) {
 			h.target = append(h.target[:i], h.target[i+1:]...)
@@ -168,71 +159,25 @@ func (h *HTTPProbe) Post(url string, contentType string, data string) ([]byte, e
 		return nil, errors.New(rsp.Status)
 	}
 	return ioutil.ReadAll(rsp.Body)
-
 }
 
-/*
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- */
-
-//Get ..
-func Get(url string) (string, error) {
-	rsp, err := TLSClient.Get(url)
-	if err != nil {
-		return "", err
+func NewHTTPClient() *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+			DisableCompression: true,
+			Dial: func(netw, addr string) (net.Conn, error) {
+				c, err := net.DialTimeout(netw, addr, time.Second*2)
+				if err != nil {
+					fmt.Println("dail timeout", err)
+					return nil, err
+				}
+				return c, nil
+			},
+			MaxIdleConnsPerHost:   10,
+			ResponseHeaderTimeout: time.Second * 2,
+		},
 	}
-	defer rsp.Body.Close()
-	if 200 != rsp.StatusCode {
-		return "", errors.New(rsp.Status)
-	}
-	byteData, err := ioutil.ReadAll(rsp.Body)
-
-	return string(byteData), err
-
-}
-
-//Post ..
-func Post(url string, contentType string, data string) (string, error) {
-	body := strings.NewReader(data)
-	rsp, err := TLSClient.Post(url, contentType, body)
-	if err != nil {
-		return "", err
-	}
-	defer rsp.Body.Close()
-	if 200 != rsp.StatusCode {
-		return "", errors.New(rsp.Status)
-	}
-	byteData, err := ioutil.ReadAll(rsp.Body)
-
-	return string(byteData), err
-
 }

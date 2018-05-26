@@ -119,12 +119,12 @@ func Test_ProcessInfo(t *testing.T) {
 	v := url.Values{}
 	v.Add("pattern", ".*code.*")
 	v.Add("pattern", ".*chrome.*")
-	v.Encode()
+
 	resp, err := http.Get("http://127.0.0.1:5101/process?" + v.Encode())
 	if err != nil {
 		t.Error(err)
 	}
-
+	defer resp.Body.Close()
 	bt, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		t.Error(err)

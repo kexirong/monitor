@@ -3,10 +3,11 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
-	"github.com/kexirong/monitor/server/activeplugin"
+	"github.com/kexirong/monitor/server/models"
 )
 
 type channels struct {
@@ -21,15 +22,15 @@ type alarmLink struct {
 	channels
 }
 
-func sendAlarm(av alarmValue) {
+func sendAlarm(av *models.AlarmQueue) {
 	var al alarmLink
 
 	al.channels = channels{
 		emails: make([]string, 0),
 		wchats: make([]string, 0),
 	}
-	al.alarmname = fmt.Sprintf("%s[%s]", av.Plugin, av.HostName)
-	err := mysql.QueryRow("select type,list,channel from alarm_link where alarmname=?",
+	al.alarmname = fmt.Sprintf("%s[%s]", av.AlarmName, av.HostName)
+	err := monitorDB.QueryRow("select type,list,channel from alarm_link where alarmname=?",
 		al.alarmname).Scan(&al._type, &al.list, &al.channel)
 	if err != nil && err != sql.ErrNoRows {
 		Logger.Error.Println(al.alarmname, err)
@@ -37,7 +38,8 @@ func sendAlarm(av alarmValue) {
 	}
 
 	if al.channel == 0 {
-		err := alarmUpdate(av)
+		av.Stat = 1
+		err := av.Update(monitorDB)
 		if err != nil {
 			Logger.Error.Println(err)
 		}
@@ -52,7 +54,7 @@ func sendAlarm(av alarmValue) {
 		}
 		s := strings.Join(teams, "','")
 		//Logger.Info.Println(s)
-		rows, err := mysql.Query(`SELECT b.email,b.wechat FROM opsmgt.monitor_staff_group a 
+		rows, err := monitorDB.Query(`SELECT b.email,b.wechat FROM opsmgt.monitor_staff_group a 
 			join opsmgt.monitor_staff b on a.staff_id=b.staffid 
 			join opsmgt.monitor_staffgroup c on c.id=a.staffgroup_id 
 			WHERE c.groupname = (?) `, s)
@@ -79,7 +81,7 @@ func sendAlarm(av alarmValue) {
 			return
 		}
 		s := strings.Join(staffs, "','")
-		rows, err := mysql.Query("SELECT b.email,b.wechat FROM  opsmgt.monitor_staff b WHERE b.staffid in (?)", s)
+		rows, err := monitorDB.Query("SELECT b.email,b.wechat FROM  opsmgt.monitor_staff b WHERE b.staffid in (?)", s)
 		if err != nil {
 			Logger.Error.Println(err)
 			return
@@ -101,23 +103,35 @@ func sendAlarm(av alarmValue) {
 	if al.channel&1 == 1 && len(al.emails) > 0 {
 		data := fmt.Sprintf("to=%s&subject=MonitorAlarm&content=%s", strings.Join(al.emails, ","), av.String())
 		Logger.Info.Println(data)
-		ret, err := activeplugin.Post(conf.EmailURL, "application/x-www-form-urlencoded", data)
+		ret, err := http.Post(conf.EmailURL, "application/x-www-form-urlencoded", strings.NewReader(data))
+
 		if err != nil {
 			Logger.Error.Println(err)
 		} else {
+
 			Logger.Info.Println(ret)
-			Logger.Error.Println(alarmUpdate(av))
+			av.Stat = 1
+			err := av.Update(monitorDB)
+			if err != nil {
+				Logger.Error.Println(err)
+			}
+			ret.Body.Close()
 		}
 	}
 	if al.channel&2 == 2 && len(al.wchats) > 0 {
 		data := fmt.Sprintf("to=%s&content=%s", strings.Join(al.wchats, "|"), av.String())
 		Logger.Info.Println(data)
-		ret, err := activeplugin.Post(conf.WchatURL, "application/x-www-form-urlencoded", data)
+		ret, err := http.Post(conf.WchatURL, "application/x-www-form-urlencoded", strings.NewReader(data))
 		if err != nil {
 			Logger.Error.Println(err)
 		} else {
 			Logger.Info.Println(ret)
-			Logger.Error.Println(alarmUpdate(av))
+			av.Stat = 1
+			err := av.Update(monitorDB)
+			if err != nil {
+				Logger.Error.Println(err)
+			}
+			ret.Body.Close()
 		}
 	}
 
@@ -125,7 +139,10 @@ func sendAlarm(av alarmValue) {
 
 func alarmdo() {
 	for range time.Tick(time.Second * 5) {
-		avs := scanalarmdb()
+		avs, err := models.AlarmQueueByStat(monitorDB, 0)
+		if err != nil {
+			Logger.Error.Println(err)
+		}
 		if len(avs) < 1 {
 			continue
 		}

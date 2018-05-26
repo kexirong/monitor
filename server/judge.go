@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kexirong/monitor/common/packetparse"
+	"github.com/kexirong/monitor/server/models"
 )
 
 /*
@@ -32,7 +33,7 @@ type judge struct {
 
 var judgemap judgeMap
 
-func doJudge(av alarmValue, jv judge) string {
+func doJudge(aq models.AlarmQueue, jv judge) string {
 
 	var cmp func(x, y float64) bool
 
@@ -56,15 +57,15 @@ func doJudge(av alarmValue, jv judge) string {
 
 	switch true {
 	case jv.level3.Valid:
-		if cmp(av.Value, jv.level3.Float64) {
+		if cmp(aq.Value, jv.level3.Float64) {
 			return "level3"
 		}
 	case jv.level2.Valid:
-		if cmp(av.Value, jv.level2.Float64) {
+		if cmp(aq.Value, jv.level2.Float64) {
 			return "level2"
 		}
 	case jv.level1.Valid:
-		if cmp(av.Value, jv.level1.Float64) {
+		if cmp(aq.Value, jv.level1.Float64) {
 			return "level1"
 		}
 
@@ -74,7 +75,7 @@ func doJudge(av alarmValue, jv judge) string {
 }
 
 func alarmJudge(pk packetparse.TargetPacket) error {
-	var alarmvalue alarmValue
+	var aq models.AlarmQueue
 	var jkey string
 	iv, ok := judgemap[pk.Plugin]
 
@@ -82,10 +83,10 @@ func alarmJudge(pk packetparse.TargetPacket) error {
 		return nil
 	}
 
-	alarmvalue.HostName = pk.HostName
-	alarmvalue.Plugin = pk.Plugin
-	alarmvalue.Time = time.Unix(int64(pk.TimeStamp), 0).Format("2006-01-02 15:04:05")
-	alarmvalue.Message = pk.Message
+	aq.HostName = pk.HostName
+	aq.AlarmName = pk.Plugin
+	aq.CreatedAt = time.Unix(int64(pk.TimeStamp), 0)
+	aq.Message = pk.Message
 
 	leng := len(pk.Value)
 	if leng <= 0 {
@@ -93,23 +94,23 @@ func alarmJudge(pk packetparse.TargetPacket) error {
 	}
 
 	if leng == 1 {
-		alarmvalue.Value = pk.Value[0]
-		alarmvalue.Instance = pk.Instance + "." + pk.VlTags
+		aq.Value = pk.Value[0]
+		aq.AlarmName = pk.Instance + "." + pk.VlTags
 
 		if pk.Instance == "" {
-			alarmvalue.Instance = pk.VlTags
+			aq.Alarmele = pk.VlTags
 		}
-		jkey = fmt.Sprintf("%s.%s", alarmvalue.Instance, pk.Type)
+		jkey = fmt.Sprintf("%s.%s", aq.Alarmele, pk.Type)
 		jv, ok := iv[jkey]
 		if !ok {
 			return nil
 		}
-		alarmvalue.Level = doJudge(alarmvalue, jv)
-		if alarmvalue.Level == "" {
+		err := aq.Level.UnmarshalText([]byte(doJudge(aq, jv)))
+		if err != nil {
 			return nil
 		}
 
-		return alarmInsert(alarmvalue)
+		return aq.Insert(monitorDB)
 
 	}
 
@@ -127,24 +128,24 @@ func alarmJudge(pk packetparse.TargetPacket) error {
 
 		for idx, value := range pk.Value {
 
-			alarmvalue.Value = value
+			aq.Value = value
 			if pk.Instance != "" {
-				alarmvalue.Instance = pk.Instance + "." + sl[idx]
+				aq.AlarmName = pk.Instance + "." + sl[idx]
 			} else {
-				alarmvalue.Instance = sl[idx]
+				aq.Alarmele = sl[idx]
 			}
 			//alarmvalue.Instance = pk.Instance + "." + sl[idx]
-			jkey = fmt.Sprintf("%s.%s", alarmvalue.Instance, pk.Type)
+			jkey = fmt.Sprintf("%s.%s", aq.Alarmele, pk.Type)
 			jv, ok := iv[jkey]
 			if !ok {
 				continue
 			}
-			alarmvalue.Level = doJudge(alarmvalue, jv)
-			if alarmvalue.Level == "" {
+			err := aq.Level.UnmarshalText([]byte(doJudge(aq, jv)))
+			if err != nil {
 				continue
 			}
 
-			if err := alarmInsert(alarmvalue); err != nil {
+			if err := aq.Insert(monitorDB); err != nil {
 				return err
 			}
 		}

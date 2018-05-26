@@ -1,6 +1,6 @@
 package activeplugin
 
-//ping需要root权限，（或加suid） 所以用exec.Command
+//ping需要root权限（或加suid） 所以用exec.Command
 import (
 	"time"
 

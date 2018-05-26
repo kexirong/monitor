@@ -25,6 +25,7 @@ type Process struct {
 	CPUPercent  float64 `json:"cpupercent"`
 	ThreadCount int     `json:"threads"`
 	Stat        string  `json:"stat"`
+	Matched     string  `json:"matched"`
 	CPUtimes    cpuInfo `json:"-"`
 }
 
@@ -33,18 +34,19 @@ type cpuInfo struct {
 	Jiffies int
 }
 
-var t int
-var trimFunc = func(r rune) bool {
-	if r == '(' {
-		t++
+func trimFunc() func(r rune) bool {
+	var t int
+	return func(r rune) bool {
+		switch {
+		case r == '(':
+			t++
+		case r == ')' && t > 0:
+			t--
+		case r == ' ' && t == 0:
+			return true
+		}
+		return false
 	}
-	if r == ')' && t > 0 {
-		t--
-	}
-	if r == ' ' && t == 0 {
-		return true
-	}
-	return false
 }
 
 func isInt(s string) bool {
@@ -78,12 +80,15 @@ func (pl *ProcessList) Init(pids ...string) {
 func (pl *ProcessList) FilterCmdline(patterns []string) error {
 	for k, pro := range *pl {
 		var i int
-		for _, pattern := range patterns {
+		var pattern string
+		for _, pattern = range patterns {
 			matched, err := regexp.MatchString(pattern, pro.CmdLine)
 			if err != nil {
 				return err
 			}
 			if matched {
+				pro.Matched = pattern
+				(*pl)[k] = pro
 				i++
 			}
 		}
@@ -102,8 +107,8 @@ func (pl *ProcessList) LoadsProcessInfo() {
 			delete(*pl, pid)
 			continue
 		}
-		t = 0
-		lines := strings.FieldsFunc(string(line), trimFunc)
+
+		lines := strings.FieldsFunc(string(line), trimFunc())
 		if len(lines) != 52 {
 			delete(*pl, pid)
 			continue
@@ -132,8 +137,8 @@ func (pl *ProcessList) LoadsProcessInfo() {
 			delete(*pl, k)
 			continue
 		}
-		t = 0
-		lines := strings.FieldsFunc(string(line), trimFunc)
+		//t=0
+		lines := strings.FieldsFunc(string(line), trimFunc())
 		if len(lines) != 52 {
 			delete(*pl, k)
 			continue

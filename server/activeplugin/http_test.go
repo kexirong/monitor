@@ -1,10 +1,13 @@
 package activeplugin
 
 import (
+	"fmt"
+	"net/http"
 	"testing"
 )
 
 func Test_httpandhttps(t *testing.T) {
-	str, err := Get("http://bing.com/search?q=heh")
-	t.Log(str, "|||", err)
+	ret, err := http.Get("http://10.8.12.152:4000/health")
+	fmt.Printf("%q    \n ERR:%s", ret, err)
+
 }

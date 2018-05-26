@@ -87,7 +87,6 @@ func init() {
 		if err := pl.FilterCmdline(patterns); err != nil {
 			ret.Code = 400
 			ret.Msg = err.Error()
-
 		}
 
 		if ret.Code == 200 {

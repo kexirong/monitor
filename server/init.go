@@ -23,6 +23,8 @@ var conf = struct {
 	EmailURL          string
 }{}
 
+var monitorDB *sql.DB
+
 func init() {
 	dat, err := ioutil.ReadFile("./conf.json")
 	checkErr(err)
@@ -34,10 +36,10 @@ func init() {
 	Logger.Error = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 	//mysql init
-	mysql, err = sql.Open("mysql", conf.MysqlConnetString)
+	monitorDB, err = sql.Open("mysql", conf.MysqlConnetString)
 	checkErr(err)
-	mysql.SetMaxOpenConns(100)
-	mysql.SetMaxIdleConns(20)
+	monitorDB.SetMaxOpenConns(100)
+	monitorDB.SetMaxIdleConns(20)
 
 	//judge init 需要在 mysql init 后面
 	judgemap = judgemapGet()
