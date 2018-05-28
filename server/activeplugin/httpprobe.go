@@ -54,6 +54,7 @@ func (h *HTTPProbe) Do() ([]byte, error) {
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
 		Plugin:    h.pluginName,
 		Type:      "bool",
+		VlTags:    "state",
 	}
 
 	for _, t := range h.target {

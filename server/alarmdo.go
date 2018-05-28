@@ -14,42 +14,32 @@ type channels struct {
 	emails []string
 	wchats []string
 }
-type alarmLink struct {
-	alarmname string
-	_type     string
-	list      string
-	channel   int32
-	channels
-}
 
-func sendAlarm(av *models.AlarmQueue) {
-	var al alarmLink
+func sendAlarm(aq *models.AlarmQueue) {
 
-	al.channels = channels{
-		emails: make([]string, 0),
-		wchats: make([]string, 0),
-	}
-	al.alarmname = fmt.Sprintf("%s[%s]", av.AlarmName, av.HostName)
-	err := monitorDB.QueryRow("select type,list,channel from alarm_link where alarmname=?",
-		al.alarmname).Scan(&al._type, &al.list, &al.channel)
-	if err != nil && err != sql.ErrNoRows {
-		Logger.Error.Println(al.alarmname, err)
+	var chans channels
+
+	al, err := models.AlarmLinkByAlarmName(monitorDB, aq.AlarmName+"["+aq.HostName+"]")
+
+	if err != nil {
+		if err != sql.ErrNoRows {
+			Logger.Error.Println(err)
+		}
 		return
 	}
-
-	if al.channel == 0 {
-		av.Stat = 1
-		err := av.Update(monitorDB)
+	if al.Channel == 0 {
+		aq.Stat = 1
+		err := aq.Update(monitorDB)
 		if err != nil {
 			Logger.Error.Println(err)
 		}
 		return
 	}
-	switch al._type {
+	switch al.Type.String() {
 	case "team":
-		teams := strings.Split(al.list, ",")
+		teams := strings.Split(al.List, ",")
 		if len(teams) < 1 {
-			Logger.Error.Printf("sendAlarm: invalid list field in alarm_link table  alarmname=%s", al.alarmname)
+			Logger.Error.Printf("sendAlarm: invalid list field in alarm_link table  alarmname=%s", al.AlarmName)
 			return
 		}
 		s := strings.Join(teams, "','")
@@ -67,17 +57,17 @@ func sendAlarm(av *models.AlarmQueue) {
 			var e, w string
 			err := rows.Scan(&e, &w)
 			if err == nil {
-				al.emails = append(al.emails, e)
-				al.wchats = append(al.wchats, w)
+				chans.emails = append(chans.emails, e)
+				chans.wchats = append(chans.wchats, w)
 			} else {
 				Logger.Error.Println(err)
 			}
 		}
 
 	case "staff":
-		staffs := strings.Split(al.list, ";")
+		staffs := strings.Split(al.List, ";")
 		if len(staffs) < 1 {
-			Logger.Error.Printf("sendAlarm: invalid list field in alarm_link table  alarmname=%s", al.alarmname)
+			Logger.Error.Printf("sendAlarm: invalid list field in alarm_link table  alarmname=%s", al.AlarmName)
 			return
 		}
 		s := strings.Join(staffs, "','")
@@ -90,18 +80,18 @@ func sendAlarm(av *models.AlarmQueue) {
 			var e, w string
 			err := rows.Scan(&e, &w)
 			if err == nil {
-				al.emails = append(al.emails, e)
-				al.wchats = append(al.wchats, w)
+				chans.emails = append(chans.emails, e)
+				chans.wchats = append(chans.wchats, w)
 			} else {
 				Logger.Error.Println(err)
 			}
 		}
 	default:
-		Logger.Warning.Printf("sendAlarm: invalid type field in alarm_link table alarmname=%s", al.alarmname)
+		Logger.Warning.Printf("sendAlarm: invalid type field in alarm_link table alarmname=%s", al.AlarmName)
 		return
 	}
-	if al.channel&1 == 1 && len(al.emails) > 0 {
-		data := fmt.Sprintf("to=%s&subject=MonitorAlarm&content=%s", strings.Join(al.emails, ","), av.String())
+	if al.Channel&1 == 1 && len(chans.emails) > 0 {
+		data := fmt.Sprintf("to=%s&subject=MonitorAlarm&content=%s", strings.Join(chans.emails, ","), aq.String())
 		Logger.Info.Println(data)
 		ret, err := http.Post(conf.EmailURL, "application/x-www-form-urlencoded", strings.NewReader(data))
 
@@ -110,24 +100,24 @@ func sendAlarm(av *models.AlarmQueue) {
 		} else {
 
 			Logger.Info.Println(ret)
-			av.Stat = 1
-			err := av.Update(monitorDB)
+			aq.Stat = 1
+			err := aq.Update(monitorDB)
 			if err != nil {
 				Logger.Error.Println(err)
 			}
 			ret.Body.Close()
 		}
 	}
-	if al.channel&2 == 2 && len(al.wchats) > 0 {
-		data := fmt.Sprintf("to=%s&content=%s", strings.Join(al.wchats, "|"), av.String())
+	if al.Channel&2 == 2 && len(chans.wchats) > 0 {
+		data := fmt.Sprintf("to=%s&content=%s", strings.Join(chans.wchats, "|"), aq.String())
 		Logger.Info.Println(data)
 		ret, err := http.Post(conf.WchatURL, "application/x-www-form-urlencoded", strings.NewReader(data))
 		if err != nil {
 			Logger.Error.Println(err)
 		} else {
 			Logger.Info.Println(ret)
-			av.Stat = 1
-			err := av.Update(monitorDB)
+			aq.Stat = 1
+			err := aq.Update(monitorDB)
 			if err != nil {
 				Logger.Error.Println(err)
 			}

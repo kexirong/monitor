@@ -131,10 +131,9 @@ func (t *TaskScheduled) AddTask(interval time.Duration, task Tasker) {
 	t.DeleteTask(task.Name())
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
-	fmt.Println("AddTask.1")
 	t.pTask = t.pTask.insert(genNode(interval, task))
 	t.nextTask()
-	fmt.Println("AddTask.2")
+
 }
 
 func genNode(interval time.Duration, task Tasker) *taskList {
@@ -251,7 +250,7 @@ func (t *TaskScheduled) Star(callback callback) {
 			go callback(nil, err)
 			continue
 		}
-		fmt.Println("t.do ..........................")
+
 		go callback(t.do())
 	}
 }

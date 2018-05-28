@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/kexirong/monitor/common"
+	"github.com/kexirong/monitor/server/models"
 )
 
 func init() {
@@ -18,8 +19,14 @@ func init() {
 		}
 		if r.Method == "GET" {
 			ip := strings.Split(r.RemoteAddr, ":")[0]
-			conf := pluginconfGet(ip)
-			ret.Result = conf
+			conf, err := models.PluginConfigByHostIP(monitorDB, ip)
+			if err != nil {
+				ret.Code = 400
+				ret.Msg = err.Error()
+			} else {
+				ret.Result = conf
+			}
+
 		} else {
 			ret.Code = 400
 			ret.Msg = "bad request"

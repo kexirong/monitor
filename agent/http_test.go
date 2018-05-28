@@ -113,9 +113,9 @@ func Test_temp(t *testing.T) {
 
 func Test_ProcessInfo(t *testing.T) {
 	go func() {
-		log.Fatal(http.ListenAndServe(":5101", nil))
+		//	log.Fatal(http.ListenAndServe(":5101", nil))
 	}()
-	time.Sleep(1)
+	//time.Sleep(30 * time.Second)
 	v := url.Values{}
 	v.Add("pattern", ".*code.*")
 	v.Add("pattern", ".*chrome.*")
@@ -129,5 +129,10 @@ func Test_ProcessInfo(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	log.Println(err, string(bt))
+	var ret common.HttpResp
+	var pl common.ProcessList
+	ret.Result = &pl
+
+	json.Unmarshal(bt, &ret)
+	fmt.Printf("%#v", pl)
 }

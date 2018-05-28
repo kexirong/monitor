@@ -1,12 +1,10 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"net/http"
 	"os"
 	"runtime"
-	"strings"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/kexirong/monitor/common/queue"
@@ -16,18 +14,10 @@ var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func main() {
 
-	var addr = flag.String("s", "ip:port", "server addrs multi delimit  with ',' ")
-	flag.Parse()
-
-	if *addr == "ip:port" {
-		Logger.Error.Fatalln("no servers;-h;exit")
-	}
-
-	servers := strings.Split(*addr, ",")
 	btq := queue.NewBtsQueue(4096)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	go sendStart(servers, btq)
+	go sendStart(conf.Servers, btq)
 
 	go goPluginScheduler(btq)
 	go scriptPluginScheduler(btq)

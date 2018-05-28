@@ -1,5 +1,7 @@
 package main
 
+import "net/http"
+
 func checkErr(err error) {
 	if err != nil {
 		panic(err)
@@ -7,9 +9,9 @@ func checkErr(err error) {
 }
 
 func main() {
-
+	go http.ListenAndServe(":5001", nil)
 	go heartdeamo()
-	//	go httpprobesched()
+	go activePluginScheduler()
 	go alarmdo()
 
 	Logger.Info.Println("runing,listen:,", conf.Service)

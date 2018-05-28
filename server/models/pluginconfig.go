@@ -161,6 +161,30 @@ func PluginConfigByPluginNameHostName(db XODB, pluginName string, hostName strin
 	return &pc, nil
 }
 
+// Generated from index 'UNIQUE_pluginConfig_hostip'.
+func PluginConfigByHostIP(db XODB, hostIP string) (*PluginConfig, error) {
+	var err error
+
+	// sql query
+	const sqlstr = `SELECT ` +
+		`id, host_ip, host_name, plugin_name, interval, timeout ` +
+		`FROM monitor.plugin_config ` +
+		`WHERE host_ip = ?  `
+
+	// run query
+	XOLog(sqlstr, hostIP)
+	pc := PluginConfig{
+		_exists: true,
+	}
+
+	err = db.QueryRow(sqlstr, hostIP).Scan(&pc.ID, &pc.HostIP, &pc.HostName, &pc.PluginName, &pc.Interval, &pc.Timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pc, nil
+}
+
 // PluginConfigByID retrieves a row from 'monitor.plugin_config' as a PluginConfig.
 //
 // Generated from index 'plugin_config_id_pkey'.

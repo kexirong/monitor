@@ -129,7 +129,7 @@ func (pl *ProcessList) LoadsProcessInfo() {
 		process.CPUtimes.Time = now
 		(*pl)[pid] = process
 	}
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 1000)
 	for k, v := range *pl {
 		now := time.Now()
 		line, err := ioutil.ReadFile(fmt.Sprintf("/proc/%s/stat", k))
@@ -148,8 +148,8 @@ func (pl *ProcessList) LoadsProcessInfo() {
 		t16, _ := strconv.Atoi(lines[15])
 		t17, _ := strconv.Atoi(lines[16])
 		//计算公式 Jiffies2-Jiffies1 / ((time2-time1)*hertz) * 100
-
 		v.CPUPercent = float64(t14+t15+t16+t17-v.CPUtimes.Jiffies) / now.Sub(v.CPUtimes.Time).Seconds()
+
 		(*pl)[k] = v
 		if (*pl)[k].CPUPercent > 0 {
 			fmt.Println(k, v.Name, v.CPUPercent)
