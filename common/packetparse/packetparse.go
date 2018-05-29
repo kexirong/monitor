@@ -1,12 +1,6 @@
 package packetparse
 
-import (
-	"bytes"
-	"errors"
-	"fmt"
-	"io"
-)
-
+/*
 func TargetPackage(pk TargetPacket) ([]byte, error) {
 
 	buf := new(bytes.Buffer)
@@ -203,3 +197,4 @@ func targetWriteBuf(buf io.Writer, seq uint16, data interface{}) error {
 	return nil
 
 }
+*/

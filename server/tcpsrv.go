@@ -51,25 +51,30 @@ func readHandle(conn *net.TCPConn) {
 		}
 		switch packetparse.PDUTypeMap[pdu.Type] {
 		case "targetpackage":
-			tp, err := packetparse.TargetParse(pdu.Payload)
+			tps, _, err := packetparse.TargetPacketsUnmarshal(pdu.Payload)
 			if err != nil {
 				Logger.Error.Println("packetparse.Parse error:", err.Error())
 				return
 			}
 
-			go func(p packetparse.TargetPacket) {
-				err := writeToInfluxdb(p)
-				if err != nil {
-					Logger.Error.Println("writeToInfluxdb error:", err.Error(), "\n", p.String())
+			go func(tps []*packetparse.TargetPacket) {
+				for i := range tps {
+					err := writeToInfluxdb(*tps[i])
+					if err != nil {
+						Logger.Error.Println("writeToInfluxdb error:", err.Error(), "\n", tps[i].String())
+					}
 				}
-			}(tp)
 
-			go func(p packetparse.TargetPacket) {
-				err := alarmJudge(p)
-				if err != nil {
-					Logger.Error.Println("writeToAlarmQueue error:", err.Error())
+			}(tps)
+
+			go func(tps []*packetparse.TargetPacket) {
+				for i := range tps {
+					err := alarmJudge(*tps[i])
+					if err != nil {
+						Logger.Error.Println("writeToAlarmQueue error:", err.Error())
+					}
 				}
-			}(tp)
+			}(tps)
 		case "heartbeat":
 			hostip := strings.Split(conn.RemoteAddr().String(), ":")[0]
 			if _, ok := ipHeartRecorde[hostip]; ok {

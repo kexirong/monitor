@@ -21,10 +21,10 @@ type MEM struct {
 }
 
 //Gather scheduler use
-func (m *MEM) Gather() ([]packetparse.TargetPacket, error) {
+func (m *MEM) Gather() ([]*packetparse.TargetPacket, error) {
 	var hostname, _ = os.Hostname()
-	var ret []packetparse.TargetPacket
-	var subret = packetparse.TargetPacket{
+	var ret []*packetparse.TargetPacket
+	var subret = &packetparse.TargetPacket{
 		Plugin:    "memory",
 		HostName:  hostname,
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),

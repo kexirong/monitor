@@ -21,22 +21,23 @@ type NET struct {
 }
 
 //Gather scheduler use
-func (n *NET) Gather() ([]packetparse.TargetPacket, error) {
+func (n *NET) Gather() ([]*packetparse.TargetPacket, error) {
 	var hostname, _ = os.Hostname()
-	var ret []packetparse.TargetPacket
-	var subret = packetparse.TargetPacket{
-		Plugin:    "net",
-		HostName:  hostname,
-		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
-		Type:      "derive",
-		VlTags:    n.vltags,
-	}
+	var ret []*packetparse.TargetPacket
+
 	valuenet, err := n.collect()
 	if err != nil {
 		return nil, err
 	}
 
 	for k, v := range valuenet {
+		var subret = &packetparse.TargetPacket{
+			Plugin:    "net",
+			HostName:  hostname,
+			TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
+			Type:      "derive",
+			VlTags:    n.vltags,
+		}
 		d, err := fsliced(n.lastValue[k], v)
 		if err != nil {
 			return nil, err

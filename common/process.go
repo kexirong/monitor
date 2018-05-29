@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"regexp"
@@ -34,7 +35,7 @@ type cpuInfo struct {
 	Jiffies int
 }
 
-func trimFunc() func(r rune) bool {
+func splitFunc() func(r rune) bool {
 	var t int
 	return func(r rune) bool {
 		switch {
@@ -49,7 +50,7 @@ func trimFunc() func(r rune) bool {
 	}
 }
 
-func isInt(s string) bool {
+func isNum(s string) bool {
 	for _, c := range s {
 		if '0' > c && '9' < c {
 			return false
@@ -66,7 +67,7 @@ func (pl *ProcessList) Init(pids ...string) {
 				continue
 			}
 			name := v.Name()
-			if isInt(name) {
+			if isNum(name) {
 				pids = append(pids, name)
 			}
 		}
@@ -74,6 +75,7 @@ func (pl *ProcessList) Init(pids ...string) {
 	*pl = make(ProcessList, len(pids))
 	for _, pid := range pids {
 		cmdline, _ := ioutil.ReadFile(fmt.Sprintf("/proc/%s/cmdline", pid))
+		cmdline = bytes.TrimSpace(bytes.Replace(cmdline, []byte{0x0}, []byte{0x20}, -1))
 		(*pl)[pid] = Process{CmdLine: string(cmdline)}
 	}
 }
@@ -108,7 +110,7 @@ func (pl *ProcessList) LoadsProcessInfo() {
 			continue
 		}
 
-		lines := strings.FieldsFunc(string(line), trimFunc())
+		lines := strings.FieldsFunc(string(line), splitFunc())
 		if len(lines) != 52 {
 			delete(*pl, pid)
 			continue
@@ -138,7 +140,7 @@ func (pl *ProcessList) LoadsProcessInfo() {
 			continue
 		}
 		//t=0
-		lines := strings.FieldsFunc(string(line), trimFunc())
+		lines := strings.FieldsFunc(string(line), splitFunc())
 		if len(lines) != 52 {
 			delete(*pl, k)
 			continue
@@ -151,8 +153,5 @@ func (pl *ProcessList) LoadsProcessInfo() {
 		v.CPUPercent = float64(t14+t15+t16+t17-v.CPUtimes.Jiffies) / now.Sub(v.CPUtimes.Time).Seconds()
 
 		(*pl)[k] = v
-		if (*pl)[k].CPUPercent > 0 {
-			fmt.Println(k, v.Name, v.CPUPercent)
-		}
 	}
 }

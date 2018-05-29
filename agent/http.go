@@ -93,7 +93,6 @@ func init() {
 			pl.LoadsProcessInfo()
 			ret.Result = pl
 		}
-		fmt.Println(len(pl))
 		b, _ := json.Marshal(ret)
 		w.Write(b)
 	})

@@ -80,7 +80,7 @@ func (p *ProcessProbe) Do() ([]byte, error) {
 		} else {
 			tp.Instance = p.CmdLine
 		}
-		tp.Value = append(tp.Value[:0], float64(p.Pid))
+		tp.Value = append([]float64{}, float64(p.Pid))
 		tp.Value = append(tp.Value, (p.CPUPercent))
 		tp.Value = append(tp.Value, float64(p.MemoryUse))
 		tps = append(tps, tp)

@@ -1,9 +1,0 @@
-schema="myschema"
-
-[mysql]
-  dbname="monitor"
-  host="10.1.1.222"
-  port=3306
-  user="monitor"
-  pass="monitor"
-  sslmode="false"

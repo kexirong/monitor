@@ -25,24 +25,25 @@ type DISK struct {
 }
 
 //Gather scheduler use
-func (d *DISK) Gather() ([]packetparse.TargetPacket, error) {
+func (d *DISK) Gather() ([]*packetparse.TargetPacket, error) {
 	var hostname, _ = os.Hostname()
-	var ret []packetparse.TargetPacket
-	var subret = packetparse.TargetPacket{
-		Plugin:    "disk",
-		HostName:  hostname,
-		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
-		Type:      "gauge",
-		VlTags:    d.vltags,
-	}
+	var ret []*packetparse.TargetPacket
+
 	diskinfo, err := d.collect()
 	if err != nil {
 		return nil, err
 	}
 	for k, v := range diskinfo {
-		value := make([]float64, 0)
-		for _, c := range d.valueC {
-			value = append(value, v[d.valueMap[c]])
+		var subret = &packetparse.TargetPacket{
+			Plugin:    "disk",
+			HostName:  hostname,
+			TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
+			Type:      "gauge",
+			VlTags:    d.vltags,
+		}
+		value := make([]float64, len(d.valueC))
+		for i, c := range d.valueC {
+			value[i] = v[d.valueMap[c]]
 		}
 		if err != nil {
 			return nil, err

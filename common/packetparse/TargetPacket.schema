@@ -1,0 +1,11 @@
+struct TargetPacket{
+	HostName  string    
+	TimeStamp float64   
+	Plugin    string    
+	Instance  string    
+	Type      string    
+	Value     []float64 
+	VlTags    string    
+	Message   string    
+}
+

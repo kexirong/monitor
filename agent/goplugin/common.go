@@ -14,7 +14,7 @@ import (
 
 //PLUGIN interface
 type PLUGIN interface {
-	Gather() ([]packetparse.TargetPacket, error)
+	Gather() ([]*packetparse.TargetPacket, error)
 	Config(key string, value interface{}) bool
 	GetInterval() int64
 }

@@ -4,10 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"fmt"
 	"hash/crc32"
 	"io"
-	"reflect"
 )
 
 /*PDU 数据包格式:
@@ -228,6 +226,8 @@ type    : uint16   --2byte
 length  : uint16   --2byte
 data    : []byte   --[length]byte
 */
+
+/*
 type TargetPacket struct {
 	HostName  string    `json:"hostname"`  //ops201
 	TimeStamp float64   `json:"timestamp"` //the number of seconds elapsed since January 1, 1970 UTC
@@ -289,3 +289,4 @@ func init() {
 		targetTypesMap[t.Field(k).Tag.Get("json")] = v.Field(k).Kind().String()
 	}
 }
+*/

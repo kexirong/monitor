@@ -25,21 +25,22 @@ type CPU struct {
 }
 
 //Gather scheduler use
-func (c *CPU) Gather() ([]packetparse.TargetPacket, error) {
+func (c *CPU) Gather() ([]*packetparse.TargetPacket, error) {
 	var hostname, _ = os.Hostname()
-	var ret []packetparse.TargetPacket
-	var subret = packetparse.TargetPacket{
-		Plugin:    "cpu",
-		HostName:  hostname,
-		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
-		Type:      "percent",
-		VlTags:    c.vltags,
-	}
+	var ret []*packetparse.TargetPacket
+
 	timescpu, err := c.collect()
 	if err != nil {
 		return nil, err
 	}
 	for k, v := range timescpu {
+		var subret = &packetparse.TargetPacket{
+			Plugin:    "cpu",
+			HostName:  hostname,
+			TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
+			Type:      "percent",
+			VlTags:    c.vltags,
+		}
 		d, err := fsliced(c.lastValue[k], v)
 		if err != nil {
 			return nil, err

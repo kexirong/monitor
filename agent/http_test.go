@@ -115,9 +115,9 @@ func Test_ProcessInfo(t *testing.T) {
 	go func() {
 		//	log.Fatal(http.ListenAndServe(":5101", nil))
 	}()
-	//time.Sleep(30 * time.Second)
+	time.Sleep(1 * time.Second)
 	v := url.Values{}
-	v.Add("pattern", ".*code.*")
+	//	v.Add("pattern", ".*code.*")
 	v.Add("pattern", ".*chrome.*")
 
 	resp, err := http.Get("http://127.0.0.1:5101/process?" + v.Encode())
@@ -135,4 +135,7 @@ func Test_ProcessInfo(t *testing.T) {
 
 	json.Unmarshal(bt, &ret)
 	fmt.Printf("%#v", pl)
+	for _, p := range pl {
+		fmt.Printf("%d  %d  %#v\n", len([]byte(p.CmdLine)), len([]rune(p.CmdLine)), []byte(p.CmdLine))
+	}
 }
