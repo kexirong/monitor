@@ -16,7 +16,7 @@ type ActiveProbe struct {
 	UpdatedAt  time.Time `json:"updated_at"`  // updated_at
 
 	// xo fields
-	_exists, _deleted bool
+	_exists, _deleted bool `json:"-"`
 }
 
 // Exists determines if the ActiveProbe exists in the database.
@@ -40,14 +40,14 @@ func (ap *ActiveProbe) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by autoincrement
 	const sqlstr = `INSERT INTO monitor.active_probe (` +
-		`plugin_name, host_name, ip, 'interval', updated_at` +
+		`plugin_name, host_name, ip, 'interval'` +
 		`) VALUES (` +
 		`?, ?, ?, ?, ?` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, ap.PluginName, ap.HostName, ap.IP, ap.Interval, ap.UpdatedAt)
-	res, err := db.Exec(sqlstr, ap.PluginName, ap.HostName, ap.IP, ap.Interval, ap.UpdatedAt)
+	XOLog(sqlstr, ap.PluginName, ap.HostName, ap.IP, ap.Interval)
+	res, err := db.Exec(sqlstr, ap.PluginName, ap.HostName, ap.IP, ap.Interval)
 	if err != nil {
 		return err
 	}
@@ -81,12 +81,12 @@ func (ap *ActiveProbe) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE monitor.active_probe SET ` +
-		`plugin_name = ?, host_name = ?, ip = ?, 'interval' = ?, updated_at = ?` +
+		`plugin_name = ?, host_name = ?, ip = ?, 'interval' = ? ` +
 		` WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, ap.PluginName, ap.HostName, ap.IP, ap.Interval, ap.UpdatedAt, ap.ID)
-	_, err = db.Exec(sqlstr, ap.PluginName, ap.HostName, ap.IP, ap.Interval, ap.UpdatedAt, ap.ID)
+	XOLog(sqlstr, ap.PluginName, ap.HostName, ap.IP, ap.Interval, ap.ID)
+	_, err = db.Exec(sqlstr, ap.PluginName, ap.HostName, ap.IP, ap.Interval, ap.ID)
 	return err
 }
 

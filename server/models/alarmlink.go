@@ -13,7 +13,7 @@ type AlarmLink struct {
 	Channel   int    `json:"channel"`    // channel
 
 	// xo fields
-	_exists, _deleted bool
+	_exists, _deleted bool `json:"-"`
 }
 
 // Exists determines if the AlarmLink exists in the database.

@@ -1,7 +1,5 @@
 package main
 
-import "net/http"
-
 func checkErr(err error) {
 	if err != nil {
 		panic(err)
@@ -9,7 +7,7 @@ func checkErr(err error) {
 }
 
 func main() {
-	go http.ListenAndServe(":5001", nil)
+	go startHTTPsrv()
 	go heartdeamo()
 	go activePluginScheduler()
 	go alarmdo()

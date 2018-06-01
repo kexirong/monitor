@@ -16,7 +16,7 @@ type ActiveProbeConfig struct {
 	UpdatedAt     time.Time `json:"updated_at"`      // updated_at
 
 	// xo fields
-	_exists, _deleted bool
+	_exists, _deleted bool `json:"-"`
 }
 
 // Exists determines if the ActiveProbeConfig exists in the database.
@@ -40,14 +40,14 @@ func (apc *ActiveProbeConfig) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by autoincrement
 	const sqlstr = `INSERT INTO monitor.active_probe_config (` +
-		`active_probe_id, target, arg1, arg2, updated_at` +
+		`active_probe_id, target, arg1, arg2` +
 		`) VALUES (` +
 		`?, ?, ?, ?, ?` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2, apc.UpdatedAt)
-	res, err := db.Exec(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2, apc.UpdatedAt)
+	XOLog(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2)
+	res, err := db.Exec(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2)
 	if err != nil {
 		return err
 	}
@@ -81,12 +81,12 @@ func (apc *ActiveProbeConfig) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE monitor.active_probe_config SET ` +
-		`active_probe_id = ?, target = ?, arg1 = ?, arg2 = ?, updated_at = ?` +
+		`active_probe_id = ?, target = ?, arg1 = ?, arg2 = ?  ` +
 		` WHERE id = ?`
 
 	// run query
 	XOLog(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2, apc.UpdatedAt, apc.ID)
-	_, err = db.Exec(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2, apc.UpdatedAt, apc.ID)
+	_, err = db.Exec(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2, apc.ID)
 	return err
 }
 
@@ -175,25 +175,25 @@ func ActiveProbeConfigsByActiveProbeID(db XODB, activeProbeID int64) ([]*ActiveP
 	return res, nil
 }
 
-// ActiveProbeConfigByActiveProbeIDTargetArg1Arg2 retrieves a row from 'monitor.active_probe_config' as a ActiveProbeConfig.
+// ActiveProbeConfigByActiveProbeIDTarget retrieves a row from 'monitor.active_probe_config' as a ActiveProbeConfig.
 //
-// Generated from index 'UNIQUE_ActiveProbeConfig_id_target_arg1_arg2'.
-func ActiveProbeConfigByActiveProbeIDTargetArg1Arg2(db XODB, activeProbeID int64, target string, arg1 string, arg2 string) (*ActiveProbeConfig, error) {
+// Generated from index 'UNIQUE_ActiveProbeConfig_id_target'.
+func ActiveProbeConfigByActiveProbeIDTarget(db XODB, activeProbeID int64, target string) (*ActiveProbeConfig, error) {
 	var err error
 
 	// sql query
 	const sqlstr = `SELECT ` +
 		`id, active_probe_id, target, arg1, arg2, updated_at ` +
 		`FROM monitor.active_probe_config ` +
-		`WHERE active_probe_id = ? AND target = ? AND arg1 = ? AND arg2 = ?`
+		`WHERE active_probe_id = ? AND target = ? `
 
 	// run query
-	XOLog(sqlstr, activeProbeID, target, arg1, arg2)
+	XOLog(sqlstr, activeProbeID, target)
 	apc := ActiveProbeConfig{
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, activeProbeID, target, arg1, arg2).Scan(&apc.ID, &apc.ActiveProbeID, &apc.Target, &apc.Arg1, &apc.Arg2, &apc.UpdatedAt)
+	err = db.QueryRow(sqlstr, activeProbeID, target).Scan(&apc.ID, &apc.ActiveProbeID, &apc.Target, &apc.Arg1, &apc.Arg2, &apc.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

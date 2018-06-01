@@ -92,12 +92,12 @@ func (aq *AlarmQueue) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE monitor.alarm_queue SET ` +
-		`host_name = ?, alarm_name = ?, alarmele = ?, value = ?, message = ?, handle_man = ?, stat = ?, level = ?, created_at = ?, updated_at = ?` +
+		`host_name = ?, alarm_name = ?, alarmele = ?, value = ?, message = ?, handle_man = ?, stat = ?, level = ? ` +
 		` WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, aq.HostName, aq.AlarmName, aq.Alarmele, aq.Value, aq.Message, aq.HandleMan, aq.Stat, aq.Level, aq.CreatedAt, aq.UpdatedAt, aq.ID)
-	_, err = db.Exec(sqlstr, aq.HostName, aq.AlarmName, aq.Alarmele, aq.Value, aq.Message, aq.HandleMan, aq.Stat, aq.Level, aq.CreatedAt, aq.UpdatedAt, aq.ID)
+	XOLog(sqlstr, aq.HostName, aq.AlarmName, aq.Alarmele, aq.Value, aq.Message, aq.HandleMan, aq.Stat, aq.Level, aq.ID)
+	_, err = db.Exec(sqlstr, aq.HostName, aq.AlarmName, aq.Alarmele, aq.Value, aq.Message, aq.HandleMan, aq.Stat, aq.Level, aq.ID)
 	return err
 }
 

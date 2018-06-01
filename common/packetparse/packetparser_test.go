@@ -121,7 +121,7 @@ func Benchmark_gencodebatch(b *testing.B) {
 }
 
 func Benchmark_jsoniter(b *testing.B) {
-	var json = jsoniter.ConfigFastest
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	jsonstr := `[{"plugin": "cpus1", "timestamp": 1524205995.484389, "hostname": "kk-debian", "value": [12.1, 0.0, 12.6, 73.7], "instance": "0", "vltags": "user|nice|system|idle", "type": "percent"}, 
 	{"plugin": "cpu1", "timestamp": 1524205995.484393, "hostname": "kk-debian", "value": [11.5, 0.0, 12.5, 74.5], "instance": "1", "vltags": "user|nice|system|idle", "type": "percent"},
 	{"plugin": "cpu1", "timestamp": 1524205995.484393, "hostname": "kk-debian", "value": [11.5, 0.0, 12.5, 74.5], "instance": "1", "vltags": "user|nice|system|idle", "type": "percent"},

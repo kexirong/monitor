@@ -75,10 +75,6 @@ func writeToInfluxdb(pk packetparse.TargetPacket) error {
 
 	sl := strings.Split(pk.VlTags, "|")
 
-	if len(sl) < len(pk.Value) {
-		return fmt.Errorf("value  and  vltags is not equals ")
-	}
-
 	for idx, value := range pk.Value {
 		fields[sl[idx]] = value
 		//	tags["metric"] = sl[idx]

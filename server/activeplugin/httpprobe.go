@@ -122,12 +122,11 @@ func (h *HTTPProbe) AddJob(param ...interface{}) error {
 }
 
 func (h *HTTPProbe) DeleteJob(param ...interface{}) error {
-	if len(param) != 4 {
+	if len(param) < 1 {
 		return errors.New("invalid param")
 	}
-	var method, _ = param[0].(string)
-	var URL, _ = param[1].(string)
-	var target = fmt.Sprintf("[%s]%s", method, URL)
+	var target, _ = param[0].(string)
+
 	for i := range h.target {
 		if target == fmt.Sprintf("[%s]%s", h.target[i].Method, h.target[i].URL) {
 			h.target = append(h.target[:i], h.target[i+1:]...)
@@ -172,7 +171,6 @@ func NewHTTPClient() *http.Client {
 			Dial: func(netw, addr string) (net.Conn, error) {
 				c, err := net.DialTimeout(netw, addr, time.Second*2)
 				if err != nil {
-					fmt.Println("dail timeout", err)
 					return nil, err
 				}
 				return c, nil

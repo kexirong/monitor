@@ -184,7 +184,7 @@ func (t *TaskScheduled) nextTask() {
 
 }
 
-func (t *TaskScheduled) AddJob(taskname string, param interface{}) error {
+func (t *TaskScheduled) AddJob(taskname string, param ...interface{}) error {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 
@@ -202,7 +202,7 @@ func (t *TaskScheduled) AddJob(taskname string, param interface{}) error {
 	return errors.New(taskname + " is not exist")
 }
 
-func (t *TaskScheduled) DeleteJob(taskname string, param interface{}) error {
+func (t *TaskScheduled) DeleteJob(taskname string, param ...interface{}) error {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 
@@ -275,7 +275,8 @@ func (t *TaskScheduled) EcheTaskList() string {
 	cur := t.pTask
 	var ret = `{"name":"%s","interval":"%v","nextime":"%s"}`
 	var plugins []string
-	for i := 0; i < t.Len(); i++ {
+	len := t.Len()
+	for i := 0; i < len; i++ {
 		plugins = append(plugins, fmt.Sprintf(ret,
 			cur.name(),
 			cur.interval(),

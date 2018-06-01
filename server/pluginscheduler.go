@@ -54,7 +54,7 @@ func activePluginScheduler() {
 	}
 	var callback = func(b []byte, err error) {
 		if err != nil {
-			Logger.Error.Println(err)
+			Logger.Error.Println(err.Error())
 			return
 		}
 		Logger.Info.Println(string(b))

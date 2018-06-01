@@ -7,15 +7,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kexirong/monitor/common"
-
 	"github.com/kexirong/monitor/agent/goplugin"
+	"github.com/kexirong/monitor/common"
 	"github.com/kexirong/monitor/common/packetparse"
 	"github.com/kexirong/monitor/common/queue"
 )
 
 func scriptPluginScheduler(qe *queue.BytesQueue) {
-	res, err := http.Get(fmt.Sprintf("http://%s/config/plugin", conf.ServerHTTP))
+	res, err := http.Get(fmt.Sprintf("http://%s/get_plugin_config", conf.ServerHTTP))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,7 +28,7 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 	var sconf []common.ScriptConf
 	resp.Result = &conf
 	json.Unmarshal(body, &resp)
-	downloaurl := fmt.Sprintf("http://%s/getscript/", conf.ServerHTTP)
+	downloaurl := fmt.Sprintf("http://%s/downloadsscript/", conf.ServerHTTP)
 	for _, ret := range sconf {
 		err := sp.CheckDownloads(downloaurl, ret.FileName, false)
 		if err != nil {
@@ -47,7 +46,6 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 			Logger.Error.Println(err)
 			continue
 		}
-		//Logger.Info.Println(ret)
 		go func(ret []byte) {
 			//fmt.Println(ret)
 			var tps []*packetparse.TargetPacket
@@ -77,7 +75,6 @@ func goPluginScheduler(qe *queue.BytesQueue) {
 					Logger.Error.Printf("gopluginScheduler error:%s, %s ", name, err.Error())
 					return
 				}
-
 				btps, err := packetparse.TargetPacketsMarshal(tps)
 				if err == nil {
 					if err := qe.PutWait(btps, 1000); err != nil {
@@ -86,7 +83,6 @@ func goPluginScheduler(qe *queue.BytesQueue) {
 				} else {
 					Logger.Error.Println("gopluginScheduler error: " + err.Error())
 				}
-
 			}
 		}(name, plugin)
 	}

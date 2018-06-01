@@ -1,8 +1,10 @@
 package packetparse
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 	"unsafe"
 )
@@ -44,6 +46,35 @@ func (tp *TargetPacket) String() string {
 		tp.VlTags,
 		tp.Message,
 	)
+}
+
+func (tp *TargetPacket) CheckRecord() error {
+
+	if tp.Type == "" {
+		return errors.New("TargetPacket.Type is none")
+	}
+
+	if tp.HostName == "" {
+		return errors.New("TargetPacket.HostName is none")
+	}
+
+	if tp.TimeStamp <= 0 {
+		return errors.New("TargetPacket.TimeStamp le 0")
+	}
+
+	if tp.Plugin == "" {
+		return errors.New("TargetPacket.Plugin is none")
+	}
+
+	if len(tp.Value) == 0 {
+		return errors.New("TargetPacket.Value is none")
+	}
+	if len(strings.Split(tp.VlTags, "|")) < len(tp.Value) {
+		return fmt.Errorf(" vltags:%s is not equals ", tp.VlTags)
+	}
+
+	return nil
+
 }
 
 func (d *TargetPacket) Size() (s uint64) {
@@ -356,9 +387,7 @@ func (d *TargetPacket) Unmarshal(buf []byte) (uint64, error) {
 
 	{
 		l := uint64(0)
-
 		{
-
 			bs := uint8(7)
 			t := uint64(buf[i+0] & 0x7F)
 			for buf[i+0]&0x80 == 0x80 {
@@ -367,9 +396,7 @@ func (d *TargetPacket) Unmarshal(buf []byte) (uint64, error) {
 				bs += 7
 			}
 			i++
-
 			l = t
-
 		}
 
 		d.HostName = string(buf[i+0 : i+0+l])

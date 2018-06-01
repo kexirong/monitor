@@ -59,22 +59,30 @@ func readHandle(conn *net.TCPConn) {
 
 			go func(tps []*packetparse.TargetPacket) {
 				for i := range tps {
-					err := writeToInfluxdb(*tps[i])
-					if err != nil {
-						Logger.Error.Println("writeToInfluxdb error:", err.Error(), "\n", tps[i].String())
+					{
+						err := tps[i].CheckRecord()
+						if err != nil {
+							Logger.Error.Println("CheckRecord error:", err.Error(), "\n", tps[i].String())
+							continue
+						}
 					}
+					{
+						err := writeToInfluxdb(*tps[i])
+						if err != nil {
+							Logger.Error.Println("writeToInfluxdb error:", err.Error(), "\n", tps[i].String())
+						}
+					}
+					{
+						err := alarmJudge(*tps[i])
+						if err != nil {
+							Logger.Error.Println("writeToAlarmQueue error:", err.Error())
+						}
+					}
+
 				}
 
 			}(tps)
 
-			go func(tps []*packetparse.TargetPacket) {
-				for i := range tps {
-					err := alarmJudge(*tps[i])
-					if err != nil {
-						Logger.Error.Println("writeToAlarmQueue error:", err.Error())
-					}
-				}
-			}(tps)
 		case "heartbeat":
 			hostip := strings.Split(conn.RemoteAddr().String(), ":")[0]
 			if _, ok := ipHeartRecorde[hostip]; ok {

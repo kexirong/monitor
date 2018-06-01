@@ -16,7 +16,7 @@ type AlarmJudge struct {
 	Level3    sql.NullInt64 `json:"level3"`     // level3
 
 	// xo fields
-	_exists, _deleted bool
+	_exists, _deleted bool `json:"-"`
 }
 
 // Exists determines if the AlarmJudge exists in the database.

@@ -22,12 +22,13 @@ func init() {
 		}
 		var console common.Console
 		req, err := ioutil.ReadAll(r.Body)
-		//defer r.Body.Close()
 		if err != nil {
 			Logger.Error.Println("fail to read requset data")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		defer r.Body.Close()
+
 		//不需要对Unmarshal 失败的错误信息进行处理
 		json.Unmarshal(req, &console)
 
@@ -35,7 +36,7 @@ func init() {
 		case "scriptplugin":
 			console.Events.UniqueID = common.NewUniqueID(10)
 			if console.Events.Method == "add" {
-				err := sp.CheckDownloads(fmt.Sprintf("http://%s/getscript/", conf.ServerHTTP), console.Events.Target, true)
+				err := sp.CheckDownloads(fmt.Sprintf("http://%s/downloadsscript/", conf.ServerHTTP), console.Events.Target, true)
 				if err != nil {
 					ret.Code = 500
 					ret.Msg = err.Error()

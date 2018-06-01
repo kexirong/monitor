@@ -131,7 +131,7 @@ func (pl *ProcessList) LoadsProcessInfo() {
 		process.CPUtimes.Time = now
 		(*pl)[pid] = process
 	}
-	time.Sleep(time.Millisecond * 1000)
+	time.Sleep(time.Millisecond * 250)
 	for k, v := range *pl {
 		now := time.Now()
 		line, err := ioutil.ReadFile(fmt.Sprintf("/proc/%s/stat", k))

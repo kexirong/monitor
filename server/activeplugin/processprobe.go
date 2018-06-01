@@ -104,7 +104,7 @@ func (p *ProcessProbe) AddJob(param ...interface{}) error {
 }
 
 func (p *ProcessProbe) DeleteJob(param ...interface{}) error {
-	if len(param) != 4 {
+	if len(param) < 1 {
 		return errors.New("invalid param")
 	}
 	var partten, _ = param[0].(string)

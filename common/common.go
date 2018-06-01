@@ -28,15 +28,23 @@ func NewUniqueID(n int) string {
 }
 
 type ScriptConf struct {
-	Name     string `json:"name"`
-	FileName string `json:"filename"`
-	HostName string `json:"hostname"`
-	Interval int    `json:"interval"`
-	TimeOut  int    `json:"timeout"`
+	ID         int    `json:"id"`          // id
+	HostIP     string `json:"host_ip"`     // host_ip
+	HostName   string `json:"host_name"`   // host_name
+	PluginName string `json:"plugin_name"` // plugin_name
+	Interval   int    `json:"interval"`    // interval
+	Timeout    int    `json:"timeout"`     // timeout
+	FileName   string `json:"file_name"`
+	PluginType string `json:"plugin_type"`
 }
 
 type HttpResp struct {
 	Code   int         `json:"code"`
 	Msg    string      `json:"msg"`
 	Result interface{} `json:"result,omitempty"`
+}
+
+type HttpReq struct {
+	Method string      `json:"method"`
+	Cause  interface{} `json:"result,omitempty"`
 }
