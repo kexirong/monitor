@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/kexirong/monitor/agent/goplugin"
@@ -14,7 +16,10 @@ import (
 )
 
 func scriptPluginScheduler(qe *queue.BytesQueue) {
-	res, err := http.Get(fmt.Sprintf("http://%s/get_plugin_config", conf.ServerHTTP))
+	res, err := http.Post(fmt.Sprintf("http://%s/plugin_config", conf.ServerHTTP),
+		"application/json",
+		strings.NewReader(`{"method":"getlist"}`),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,9 +32,18 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 	var resp common.HttpResp
 	var sconf []common.ScriptConf
 	resp.Result = &conf
+	if resp.Code != 200 {
+		log.Fatal(errors.New(resp.Msg))
+	}
 	json.Unmarshal(body, &resp)
+	if resp.Code != 200 {
+		log.Fatal(errors.New(resp.Msg))
+	}
 	downloaurl := fmt.Sprintf("http://%s/downloadsscript/", conf.ServerHTTP)
 	for _, ret := range sconf {
+		if ret.HostName != _hostname {
+			continue
+		}
 		err := sp.CheckDownloads(downloaurl, ret.FileName, false)
 		if err != nil {
 			Logger.Error.Println(err)

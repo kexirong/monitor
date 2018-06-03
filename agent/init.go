@@ -2,12 +2,13 @@ package main
 
 import (
 	"io/ioutil"
+	"os"
 
 	"github.com/kexirong/monitor/agent/scriptplugin"
 )
 
 var sp *scriptplugin.ScriptPlugin
-
+var _hostname = os.Hostname()
 var conf = struct {
 	Servers    []string
 	ScriptPath string
