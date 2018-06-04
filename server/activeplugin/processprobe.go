@@ -14,7 +14,7 @@ import (
 	"github.com/kexirong/monitor/common/packetparse"
 )
 
-//HTTPProbe built-in *http.Client
+//ProcessProbe built-in *http.Client ,and implement scheduler.Tasker interface
 type ProcessProbe struct {
 	client     *http.Client
 	parttens   []string

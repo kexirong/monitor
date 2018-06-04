@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-	"net/http"
 	"os"
 	"runtime"
 
@@ -22,7 +20,7 @@ func main() {
 	go goPluginScheduler(btq)
 	go scriptPluginScheduler(btq)
 
-	log.Fatal(http.ListenAndServe(conf.HTTPListen, nil))
+	startHTTPsrv()
 }
 
 func getCurrentPath() string {

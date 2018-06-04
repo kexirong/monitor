@@ -6,7 +6,6 @@ import  platform
 import json
 
 
-NAME = "cpu"
 
 def getvalue():
     '''
@@ -25,7 +24,7 @@ def getvalue():
     ret = {
         "hostname":hostname,
         "timestamp":time.time(),
-        "plugin":"cpu",
+        "plugin":"scpu",
         "instance":"",
         "type":"percent",
         "value":value,

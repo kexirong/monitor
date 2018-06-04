@@ -6,10 +6,12 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/kexirong/monitor/agent/goplugin"
+	"github.com/kexirong/monitor/agent/scriptplugin"
 	"github.com/kexirong/monitor/common"
 	"github.com/kexirong/monitor/common/packetparse"
 	"github.com/kexirong/monitor/common/queue"
@@ -23,6 +25,7 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	body, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
@@ -30,53 +33,54 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 	}
 
 	var resp common.HttpResp
-	var sconf []common.ScriptConf
-	resp.Result = &conf
-	if resp.Code != 200 {
-		log.Fatal(errors.New(resp.Msg))
-	}
+	var scs []*common.ScriptConf
+	resp.Result = &scs
 	json.Unmarshal(body, &resp)
 	if resp.Code != 200 {
 		log.Fatal(errors.New(resp.Msg))
 	}
 	downloaurl := fmt.Sprintf("http://%s/downloadsscript/", conf.ServerHTTP)
-	for _, ret := range sconf {
-		if ret.HostName != _hostname {
+	for _, sc := range scs {
+		if sc.HostName != _hostname {
 			continue
 		}
-		err := sp.CheckDownloads(downloaurl, ret.FileName, false)
+		err := scriptplugin.CheckDownloads(downloaurl, filepath.Join(scriptPath, sc.FileName), false)
+
 		if err != nil {
 			Logger.Error.Println(err)
+			continue
 		}
-		if err := sp.InsertEntry(ret.FileName, ret.Interval, ret.TimeOut); err != nil {
+		tasker := scriptplugin.NewScripter(filepath.Join(scriptPath, sc.FileName),
+			time.Duration(sc.Timeout)*time.Second)
+
+		scriptScheduled.AddTask(time.Duration(sc.Interval)*time.Second, tasker)
+	}
+
+	var callback = func(b []byte, err error) {
+		if err != nil {
 			Logger.Error.Println(err.Error())
+			return
+		}
+		Logger.Info.Println(string(b))
+
+		var tps []*packetparse.TargetPacket
+		err = json.Unmarshal(b, &tps)
+		if err != nil {
+			Logger.Error.Println("callback json.Unmarshal TargetPacket error:", err.Error())
+			return
+		}
+		btps, err := packetparse.TargetPacketsMarshal(tps)
+		if err != nil {
+			Logger.Error.Println("callback packetparse.TargetPacketsMarshal TargetPackets error:", err.Error())
+			return
+		}
+		if err := qe.PutWait(btps, 1000); err != nil {
+			Logger.Error.Println("scriptPluginScheduler error: " + err.Error())
 		}
 	}
 
-	for {
-		sp.WaitAndEventDeal()
-		ret, err := sp.Scheduler()
-		if err != nil {
-			Logger.Error.Println(err)
-			continue
-		}
-		go func(ret []byte) {
-			//fmt.Println(ret)
-			var tps []*packetparse.TargetPacket
-			err = json.Unmarshal(ret, &tps)
-			if err != nil {
-				Logger.Error.Println(err.Error())
-			}
-			btps, err := packetparse.TargetPacketsMarshal(tps)
-			if err == nil {
-				if err := qe.PutWait(btps, 1000); err != nil {
-					Logger.Error.Println("scriptPluginScheduler error: " + err.Error())
-				}
-			} else {
-				Logger.Error.Println("scriptPluginScheduler error: " + err.Error())
-			}
-		}(ret)
-	}
+	Logger.Info.Println("activePluginScheduler staring")
+	scriptScheduled.Star(callback)
 }
 
 //gopluginScheduler

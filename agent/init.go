@@ -4,11 +4,15 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/kexirong/monitor/agent/scriptplugin"
+	"github.com/kexirong/monitor/common/scheduler"
 )
 
-var sp *scriptplugin.ScriptPlugin
-var _hostname = os.Hostname()
+//var sp *scriptplugin.ScriptPlugin
+
+var scriptScheduled = scheduler.New()
+var scriptPath string
+
+var _hostname, _ = os.Hostname()
 var conf = struct {
 	Servers    []string
 	ScriptPath string
@@ -26,9 +30,11 @@ func init() {
 }
 
 func init() {
-	var err error
-	sp, err = scriptplugin.Initialize(conf.ScriptPath)
-	if err != nil {
-		panic(err)
-	}
+	//var err error
+	//sp, err = scriptplugin.Initialize(conf.ScriptPath)
+	//if err != nil {
+	//	panic(err)
+	//}
+
+	scriptPath = conf.ScriptPath
 }

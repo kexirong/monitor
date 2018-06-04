@@ -6,9 +6,7 @@ import time
 import platform
 import json
 
-NAME = "cpus"
 
-interval = 30
 
 def getvalue():
     '''
@@ -29,7 +27,7 @@ def getvalue():
     ret0 = {
         "hostname":hostname,
         "timestamp":time.time(),
-        "plugin":"cpus2",
+        "plugin":"scpus2",
         "instance":"0",
         "type":"percent",
         "value":value0,

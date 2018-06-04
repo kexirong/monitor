@@ -3,60 +3,53 @@ package scriptplugin
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"testing"
+	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/kexirong/monitor/common"
+	"github.com/kexirong/monitor/common/scheduler"
 )
+
+var scriptScheduled = scheduler.New()
+var scriptPath string
+
+const testJSON = `[{"id":1,"host_ip":"127.0.0.1","host_name":"kk-debian","plugin_name":"cpu","interval":1,"timeout":3,"file_name":"cpu.py","plugin_type":"python"},{"id":2,"host_ip":"127.0.0.1","host_name":"kk-debian","plugin_name":"cpus","interval":3,"timeout":3,"file_name":"cpus.py","plugin_type":"python"},{"id":5,"host_ip":"127.0.0.1","host_name":"kk-debian","plugin_name":"cpus1","interval":2,"timeout":3,"file_name":"cpus1.py","plugin_type":"python"},{"id":3,"host_ip":"127.0.0.1","host_name":"kk-debian","plugin_name":"cpus2","interval":5,"timeout":3,"file_name":"cpus2.py","plugin_type":"python"},{"id":4,"host_ip":"127.0.0.1","host_name":"kk-debian","plugin_name":"cpus3","interval":7,"timeout":3,"file_name":"cpus3.py","plugin_type":"python"}]`
 
 func Test_scriptplugin(t *testing.T) {
 
-	pp, err := Initialize("./")
+	var scs []*common.ScriptConf
 
-	if err != nil {
-		panic(err)
-	}
+	json.Unmarshal([]byte(testJSON), &scs)
 
-	err = pp.InsertEntry("cpu.py", 5, 3)
-	if err != nil {
-		t.Log(err)
-	}
+	downloaurl := fmt.Sprintf("http://%s/downloadsscript/", "127.0.0.1:5001")
+	for _, sc := range scs {
 
-	err = pp.InsertEntry("cpus.py", 2, 3)
-	if err != nil {
-		t.Log(err)
-	}
+		err := CheckDownloads(downloaurl, filepath.Join(scriptPath, sc.FileName), false)
 
-	go func() {
-		es := `[{"method":"add", "target":"cpus1.py","arg":{"interval":"1"}},{"method":"add", "target":"cpus2.py","arg":{"interval":"2"}},{"method":"add", "target":"cpus3.py","arg":{"interval":"2"}},{"method":"delete", "target":"cpus1.py"},{"method":"getlist" }]`
-		var events []common.Event
-		err := json.Unmarshal([]byte(es), &events)
 		if err != nil {
-			t.Log(err)
-			return
+			t.Error(err)
+			continue
 		}
-		for i := 0; i < len(events); i++ {
-			nv := pp.AddEventAndWaitResult(events[i])
-			events[i].Result = nv.Result
-			if events[i].UniqueID != nv.UniqueID {
-				events[i].Result = "server internal error"
-			}
-		}
-		b, e := json.MarshalIndent(events, "", "    ")
-		if e == nil {
-			fmt.Println(string(b))
-		} else {
-			t.Log(e)
-		}
+		tasker := NewScripter(filepath.Join(scriptPath, sc.FileName),
+			time.Duration(sc.Timeout)*time.Second)
+		fmt.Println(tasker.Name())
+		scriptScheduled.AddTask(time.Duration(sc.Interval)*time.Second, tasker)
+		s := scriptScheduled.EcheTaskList()
+		var tmp interface{}
+		jsoniter.Unmarshal([]byte(s), &tmp)
+		r, _ := jsoniter.MarshalIndent(tmp, "", "    ")
+		fmt.Println("#######################################################################\n", string(r), "\n", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-	}()
-	for {
-		fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`")
-		fmt.Println(pp.foreche())
-		fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`")
-		pp.WaitAndEventDeal()
+		fmt.Println(scriptScheduled.Len())
+	}
 
-		fmt.Println(pp.Scheduler())
+	var callback = func(b []byte, err error) {
 
 	}
+
+	t.Log("activePluginScheduler staring")
+	scriptScheduled.Star(callback)
 
 }

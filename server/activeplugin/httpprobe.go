@@ -18,7 +18,7 @@ import (
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-//HTTPProbe built-in *http.Client
+//HTTPProbe built-in *http.Client,implement scheduler.Tasker interface
 type HTTPProbe struct {
 	client     *http.Client
 	target     []target

@@ -2,6 +2,7 @@ package main
 
 import (
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 
@@ -419,5 +420,5 @@ func startHTTPsrv() {
 
 	http.Handle("/downloadsscript/", http.StripPrefix("/downloadsscript/", http.FileServer(http.Dir("./scriptrepo/"))))
 
-	http.ListenAndServe(":5001", nil)
+	log.Fatal(http.ListenAndServe(":5001", nil))
 }

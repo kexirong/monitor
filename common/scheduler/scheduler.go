@@ -26,6 +26,9 @@ type taskList struct {
 
 //insert 在t节点的前面插入
 func (t *taskList) insert(node *taskList) *taskList {
+	if node == nil {
+		return t
+	}
 	if t == nil {
 		node.pPrev = node
 		node.pNext = node
@@ -58,7 +61,7 @@ func (t *taskList) findPos() (n int) {
 		if t.nextTime.Before(next.nextTime) {
 			break
 		}
-		next = t.pNext
+		next = next.pNext
 		n++
 	}
 	return
@@ -105,7 +108,7 @@ func (t *taskList) len() int {
 	n := 0
 	if t != nil {
 		n = 1
-		for r := t.pNext; r != t; t = t.pNext {
+		for r := t.pNext; r != t; r = r.pNext {
 			n++
 		}
 	}
@@ -126,14 +129,16 @@ func New() *TaskScheduled {
 	return ts
 }
 
-//AddTask  为了不重复，添加前都尝试一次删除 ,interval单位s ，单位s
+//AddTask  为了不重复，添加前都尝试一次删除 ,interval 要大于 1秒
 func (t *TaskScheduled) AddTask(interval time.Duration, task Tasker) {
 	t.DeleteTask(task.Name())
+	if interval < time.Second {
+		interval = time.Second * 10
+	}
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	t.pTask = t.pTask.insert(genNode(interval, task))
 	t.nextTask()
-
 }
 
 func genNode(interval time.Duration, task Tasker) *taskList {
@@ -232,7 +237,6 @@ func (t *TaskScheduled) scheduled() (*taskList, error) {
 	pe.nextTime = pe.nextTime.Add(pe.invl)
 	t.nextTask()
 	t.mutex.Unlock()
-
 	<-wait
 	return pe, nil
 }
@@ -245,13 +249,13 @@ func (t *TaskScheduled) Star(callback callback) {
 			time.Sleep(512 * time.Millisecond)
 			continue
 		}
-		t, err := t.scheduled()
+		pe, err := t.scheduled()
 		if err != nil {
 			go callback(nil, err)
 			continue
 		}
 
-		go callback(t.do())
+		go callback(pe.do())
 	}
 }
 
