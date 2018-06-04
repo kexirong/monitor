@@ -16,14 +16,6 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Current Database: `monitor`
---
-
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `monitor` /*!40100 DEFAULT CHARACTER SET utf8 */;
-
-USE `monitor`;
-
---
 -- Table structure for table `active_probe`
 --
 
@@ -31,14 +23,14 @@ DROP TABLE IF EXISTS `active_probe`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `active_probe` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `plugin_name` varchar(30) NOT NULL,
   `host_name` varchar(50) NOT NULL,
   `ip` varchar(15) NOT NULL,
   `interval` int(10) NOT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UNIQUE_ActiveProbeConfig_name_hostname` (`plugin_name`,`host_name`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `UNI_ActiveProbe_plugin_name_host_name` (`plugin_name`,`host_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -51,15 +43,15 @@ DROP TABLE IF EXISTS `active_probe_config`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `active_probe_config` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
-  `active_probe_id` bigint(20) NOT NULL,
+  `active_probe_id` int(11) NOT NULL,
   `target` varchar(255) NOT NULL,
   `arg1` varchar(255) NOT NULL DEFAULT '',
   `arg2` varchar(255) NOT NULL DEFAULT '',
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `UNIQUE_ActiveProbeConfig_id_target_arg1_arg2` (`active_probe_id`,`target`,`arg1`,`arg2`),
-  KEY `IDX_ActiveProbeConfig_id` (`active_probe_id`) USING BTREE,
-  CONSTRAINT `active_probe_config_id` FOREIGN KEY (`active_probe_id`) REFERENCES `active_probe` (`id`)
+  UNIQUE KEY `UNIQUE_ActiveProbeConfig_id_target` (`active_probe_id`,`target`) USING BTREE,
+  KEY `IDX_ActiveProbeConfig_id` (`id`) USING BTREE,
+  CONSTRAINT `active_probe_config_ibfk_1` FOREIGN KEY (`active_probe_id`) REFERENCES `active_probe` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -119,7 +111,7 @@ CREATE TABLE `alarm_queue` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `IDX_AlarmQueue_stat` (`stat`)
-) ENGINE=InnoDB AUTO_INCREMENT=19569 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=61352 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -132,7 +124,7 @@ DROP TABLE IF EXISTS `plugin`;
 CREATE TABLE `plugin` (
   `plugin_name` varchar(32) NOT NULL,
   `plugin_type` varchar(16) NOT NULL DEFAULT '' COMMENT 'python;shell..',
-  `file_path` varchar(128) NOT NULL,
+  `file_name` varchar(128) NOT NULL,
   `comment` varchar(256) NOT NULL DEFAULT '',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`plugin_name`) USING BTREE
@@ -153,10 +145,11 @@ CREATE TABLE `plugin_config` (
   `plugin_name` varchar(255) NOT NULL,
   `interval` int(255) NOT NULL DEFAULT 0,
   `timeout` int(11) NOT NULL DEFAULT 3,
+  `update_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `UNIQUE_pluginConfig_pluginname_hostnamae` (`plugin_name`,`host_name`) USING BTREE,
+  UNIQUE KEY `UNIQUE_PluginConfig_host_name_plugin_name` (`plugin_name`,`host_name`) USING BTREE,
   CONSTRAINT `plugin_config_ibfk_1` FOREIGN KEY (`plugin_name`) REFERENCES `plugin` (`plugin_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -168,4 +161,4 @@ CREATE TABLE `plugin_config` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-05-29 13:48:51
+-- Dump completed on 2018-06-04 17:58:08
