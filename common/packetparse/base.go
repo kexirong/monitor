@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"hash/crc32"
 	"io"
 )
@@ -157,14 +158,21 @@ func ReadPDU(conn io.Reader) ([]byte, error) {
 
 	leng := int(Network.BytesToUint16(tmp))
 	rst := make([]byte, leng)
-	n, err = reader.Read(rst)
+	for {
+		n = 0
+		i, err := reader.Read(rst[n:])
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+		n += i
+		if n >= leng {
+			break
+		}
 	}
 
 	if n != leng {
-		return nil, errors.New("ReadPDU error: data leng not equal length")
+		return nil, fmt.Errorf("ReadPDU error: data leng(%d) not equal length(%d)", n, leng)
 	}
 
 	tmp = make([]byte, 2)

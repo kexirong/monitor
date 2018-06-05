@@ -1,5 +1,7 @@
 package main
 
+import "runtime"
+
 func checkErr(err error) {
 	if err != nil {
 		panic(err)
@@ -7,6 +9,7 @@ func checkErr(err error) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	go startHTTPsrv()
 	go heartdeamo()
 	go activePluginScheduler()

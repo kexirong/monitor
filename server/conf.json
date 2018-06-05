@@ -1,6 +1,6 @@
 {
 	"service":":5000",
-    "mysqlconnetstring":"monitor:monitor@tcp(10.1.1.222:3306)/monitor?charset=utf8&parseTime=true&sql_mode=ansi",
+    "mysqlconnetstring":"monitor:rotinom@tcp(192.168.2.81:3306)/monitor?charset=utf8&parseTime=true&sql_mode=ansi",
     "influxdb" : "monitor",
 	"influxuser" : "monitor",
 	"influxpasswd" : "monitor",

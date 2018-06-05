@@ -61,6 +61,10 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 			Logger.Error.Println(err.Error())
 			return
 		}
+		if b == nil {
+			Logger.Error.Println("callback error arg b is nil")
+			return
+		}
 		Logger.Info.Println(string(b))
 
 		var tps []*packetparse.TargetPacket
@@ -69,13 +73,15 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 			Logger.Error.Println("callback json.Unmarshal TargetPacket error:", err.Error())
 			return
 		}
-		btps, err := packetparse.TargetPacketsMarshal(tps)
-		if err != nil {
-			Logger.Error.Println("callback packetparse.TargetPacketsMarshal TargetPackets error:", err.Error())
-			return
-		}
-		if err := qe.PutWait(btps, 1000); err != nil {
-			Logger.Error.Println("scriptPluginScheduler error: " + err.Error())
+		//	btps, err := packetparse.TargetPacketsMarshal(tps)
+		//	if err != nil {
+		//		Logger.Error.Println("callback packetparse.TargetPacketsMarshal TargetPackets error:", err.Error())
+		//		return
+		//	}
+		for _, tp := range tps {
+			if err := qe.PutWait(tp, 1000); err != nil {
+				Logger.Error.Println("scriptPluginScheduler error: " + err.Error())
+			}
 		}
 	}
 
@@ -93,14 +99,17 @@ func goPluginScheduler(qe *queue.BytesQueue) {
 					Logger.Error.Printf("gopluginScheduler error:%s, %s ", name, err.Error())
 					return
 				}
-				btps, err := packetparse.TargetPacketsMarshal(tps)
-				if err == nil {
-					if err := qe.PutWait(btps, 1000); err != nil {
+				//btps, err := packetparse.TargetPacketsMarshal(tps)
+				//	if err == nil {
+				for _, tp := range tps {
+					if err := qe.PutWait(tp, 1000); err != nil {
 						Logger.Error.Println("gopluginScheduler error: " + err.Error())
 					}
-				} else {
-					Logger.Error.Println("gopluginScheduler error: " + err.Error())
 				}
+
+				//	} else {
+				//		Logger.Error.Println("gopluginScheduler error: " + err.Error())
+				//	}
 			}
 		}(name, plugin)
 	}

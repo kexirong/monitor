@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"net"
 	"time"
 
@@ -48,9 +47,27 @@ func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 			Logger.Info.Println("send heartbeat")
 			send(conn.conn, packetparse.Heartbeat())
 		default:
-			vl, err := que.GetWait()
-			if err == queue.ErrTimeout {
-				//Logger.Warning.Println(err.Error())
+			var tps []*packetparse.TargetPacket
+			for {
+				value, err := que.GetWait(10000)
+				if err == queue.ErrTimeout {
+					Logger.Warning.Println(err)
+					continue
+				}
+				if tp, ok := value.(*packetparse.TargetPacket); ok {
+					tps = append(tps, tp)
+				} else {
+					Logger.Error.Printf("get value type error: %#v", tp)
+				}
+				if len(tps) == 10 {
+					break
+				}
+			}
+
+			//Logger.Info.Println("get data success")
+			vl, err := packetparse.TargetPacketsMarshal(tps)
+			if err != nil {
+				Logger.Error.Println(err)
 				continue
 			}
 			pdu, err := packetparse.GenPduWithPayload(0x05, vl)
@@ -63,22 +80,24 @@ func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 				Logger.Error.Println(err)
 				continue
 			}
+
 			if err := send(conn.conn, bits); err != nil {
-				err1 := que.PutWait(vl)
-				Logger.Error.Printf("server:%s,error:%s:%s", conn.addr.String(), err.Error(), err1.Error())
+				Logger.Error.Printf("server:%s,error:%s", conn.addr.String(), err)
 				conn.Close()
 				continue
 			}
-
+			Logger.Info.Println("send data success, len: ", len(bits))
 		}
+
 		// 此处逻辑需要修改
-
-		if tmp, err := read(conn.conn); err != nil || !bytes.Equal(tmp, []byte("ok")) {
-			Logger.Error.Printf("server:%s,error:%s", conn.addr.String(), err.Error())
-			conn.Close()
-		}
-		//Logger.Info.Printf("rec from: %s, msg: %s", conn.addr.String(), string(tmp))
-
+		/*
+			if tmp, err := read(conn.conn); err != nil || !bytes.Equal(tmp, []byte("ok")) {
+				Logger.Error.Printf("server:%s,error:%s", conn.addr.String(), err.Error())
+				conn.Close()
+			} else {
+				Logger.Info.Println("send data finish")
+			}
+		*/
 	}
 
 }

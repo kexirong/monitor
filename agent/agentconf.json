@@ -1,6 +1,6 @@
 {
-    "servers":["127.0.0.1:5000"],
-    "serverhttp":"127.0.0.1:5001",
+    "servers":["192.168.2.81:5000"],
+    "serverhttp":"192.168.2.81:5001",
     "httplisten":":5101",
     "scriptpath":"./scriptplugin"
 }

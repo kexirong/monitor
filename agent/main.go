@@ -13,7 +13,7 @@ var json = jsoniter.ConfigCompatibleWithStandardLibrary
 func main() {
 
 	btq := queue.NewBtsQueue(4096)
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU() / 2)
 
 	go sendStart(conf.Servers, btq)
 

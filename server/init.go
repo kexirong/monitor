@@ -38,7 +38,7 @@ func init() {
 	//mysql init
 	monitorDB, err = sql.Open("mysql", conf.MysqlConnetString)
 	checkErr(err)
-	monitorDB.SetMaxOpenConns(100)
+	monitorDB.SetMaxOpenConns(5)
 	monitorDB.SetMaxIdleConns(20)
 
 	//judge init 需要在 mysql init 后面
