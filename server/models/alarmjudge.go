@@ -122,28 +122,66 @@ func (aj *AlarmJudge) Delete(db XODB) error {
 	return nil
 }
 
-// AlarmJudgeByAlarmele retrieves a row from 'monitor.alarm_judge' as a AlarmJudge.
+// AlarmJudgeByAlarmNameAndAlarmele retrieves a row from 'monitor.alarm_judge' as a AlarmJudge.
 //
 // Generated from index 'alarm_judge_alarmele_pkey'.
-func AlarmJudgeByAlarmele(db XODB, alarmele string) (*AlarmJudge, error) {
+func AlarmJudgeByAlarmNameAndAlarmele(db XODB, alarmname, alarmele string) (*AlarmJudge, error) {
 	var err error
 
 	// sql query
 	const sqlstr = `SELECT ` +
 		`alarm_name, alarmele, ajtype, level1, level2, level3 ` +
 		`FROM monitor.alarm_judge ` +
-		`WHERE alarmele = ?`
+		`WHERE alarmname = ? and alarmele = ?`
 
 	// run query
-	XOLog(sqlstr, alarmele)
+	XOLog(sqlstr, alarmname, alarmele)
 	aj := AlarmJudge{
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, alarmele).Scan(&aj.AlarmName, &aj.Alarmele, &aj.Ajtype, &aj.Level1, &aj.Level2, &aj.Level3)
+	err = db.QueryRow(sqlstr, alarmname, alarmele).Scan(&aj.AlarmName, &aj.Alarmele, &aj.Ajtype, &aj.Level1, &aj.Level2, &aj.Level3)
 	if err != nil {
 		return nil, err
 	}
 
 	return &aj, nil
+}
+
+// AlarmJudgesAll retrieves all from 'monitor.Alarm_judge' as a AlarmJudge.
+//
+//
+func AlarmJudgesAll(db XODB) ([]*AlarmJudge, error) {
+	var err error
+
+	// sql query
+	const sqlstr = `SELECT ` +
+		`alarm_name, alarmele, ajtype, level1, level2, level3 ` +
+		`FROM monitor.alarm_judge `
+
+	// run query
+	XOLog(sqlstr)
+	q, err := db.Query(sqlstr)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	// load results
+	res := []*AlarmJudge{}
+	for q.Next() {
+		aj := AlarmJudge{
+			_exists: true,
+		}
+
+		// scan
+		err = q.Scan(&aj.AlarmName, &aj.Alarmele, &aj.Ajtype, &aj.Level1, &aj.Level2, &aj.Level3)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, &aj)
+	}
+
+	return res, nil
 }

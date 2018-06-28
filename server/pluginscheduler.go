@@ -37,7 +37,7 @@ func activePluginScheduler() {
 			taskScheduled.AddTask(time.Second*time.Duration(ap.Interval), tasker)
 
 		case "process_probe":
-			var tasker = activeplugin.NewProcessProbe(ap.HostName, ap.IP)
+			var tasker = activeplugin.NewProcessProbe(ap.HostName, ap.HostIP)
 			apcs, err := models.ActiveProbeConfigsByActiveProbeID(monitorDB, ap.ID)
 			if err != nil {
 				panic(err)

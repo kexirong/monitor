@@ -51,14 +51,14 @@ func (aq *AlarmQueue) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by autoincrement
 	const sqlstr = `INSERT INTO monitor.alarm_queue (` +
-		`host_name, alarm_name, alarmele, value, message, handle_man, stat, level, created_at` +
+		`host_name, alarm_name, alarmele, value, message, handle_man, stat, level` +
 		`) VALUES (` +
-		`?, ?, ?, ?, ?, ?, ?, ?,  ?` +
+		`?, ?, ?, ?, ?, ?, ?, ?` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, aq.HostName, aq.AlarmName, aq.Alarmele, aq.Value, aq.Message, aq.HandleMan, aq.Stat, aq.Level, aq.CreatedAt)
-	res, err := db.Exec(sqlstr, aq.HostName, aq.AlarmName, aq.Alarmele, aq.Value, aq.Message, aq.HandleMan, aq.Stat, aq.Level, aq.CreatedAt)
+	XOLog(sqlstr, aq.HostName, aq.AlarmName, aq.Alarmele, aq.Value, aq.Message, aq.HandleMan, aq.Stat, aq.Level)
+	res, err := db.Exec(sqlstr, aq.HostName, aq.AlarmName, aq.Alarmele, aq.Value, aq.Message, aq.HandleMan, aq.Stat, aq.Level)
 	if err != nil {
 		return err
 	}

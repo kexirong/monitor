@@ -46,5 +46,5 @@ type HttpResp struct {
 
 type HttpReq struct {
 	Method string      `json:"method"`
-	Cause  interface{} `json:"result,omitempty"`
+	Cause  interface{} `json:"cause,omitempty"`
 }

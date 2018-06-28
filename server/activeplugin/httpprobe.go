@@ -88,6 +88,7 @@ var httpprobeRegex = regexp.MustCompile(`\[(\w+)\](https?://\S+)`)
 
 //AddJob args value must be has (target,contentType,reqdata)
 func (h *HTTPProbe) AddJob(param ...interface{}) error {
+	fmt.Println("httpprobe.go 91 len(param): ", len(param), param)
 	if len(param) != 3 {
 		return errors.New("invalid param")
 	}

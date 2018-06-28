@@ -42,7 +42,7 @@ func (apc *ActiveProbeConfig) Insert(db XODB) error {
 	const sqlstr = `INSERT INTO monitor.active_probe_config (` +
 		`active_probe_id, target, arg1, arg2` +
 		`) VALUES (` +
-		`?, ?, ?, ?, ?` +
+		`?, ?, ?, ?` +
 		`)`
 
 	// run query
@@ -225,4 +225,41 @@ func ActiveProbeConfigByID(db XODB, id int) (*ActiveProbeConfig, error) {
 	}
 
 	return &apc, nil
+}
+
+// ActiveProbeConfigsAll retrieves all from 'monitor.active_probe_config'
+//
+func ActiveProbeConfigsAll(db XODB) ([]*ActiveProbeConfig, error) {
+	var err error
+
+	// sql query
+	const sqlstr = `SELECT ` +
+		`id, active_probe_id, target, arg1, arg2, updated_at ` +
+		`FROM monitor.active_probe_config `
+
+	// run query
+	XOLog(sqlstr)
+	q, err := db.Query(sqlstr)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	// load results
+	res := []*ActiveProbeConfig{}
+	for q.Next() {
+		apc := ActiveProbeConfig{
+			_exists: true,
+		}
+
+		// scan
+		err = q.Scan(&apc.ID, &apc.ActiveProbeID, &apc.Target, &apc.Arg1, &apc.Arg2, &apc.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, &apc)
+	}
+
+	return res, nil
 }

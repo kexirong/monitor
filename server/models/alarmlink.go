@@ -183,3 +183,41 @@ func AlarmLinksByChannel(db XODB, channel int) ([]*AlarmLink, error) {
 
 	return res, nil
 }
+
+// AlarmLinksAll retrieves all from 'monitor.alarm_link' as a AlarmLink.
+//
+// Generated from index 'channel'.
+func AlarmLinksAll(db XODB) ([]*AlarmLink, error) {
+	var err error
+
+	// sql query
+	const sqlstr = `SELECT ` +
+		`alarm_name, list, type, channel ` +
+		`FROM monitor.alarm_link `
+
+	// run query
+	XOLog(sqlstr)
+	q, err := db.Query(sqlstr)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	// load results
+	res := []*AlarmLink{}
+	for q.Next() {
+		al := AlarmLink{
+			_exists: true,
+		}
+
+		// scan
+		err = q.Scan(&al.AlarmName, &al.List, &al.Type, &al.Channel)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, &al)
+	}
+
+	return res, nil
+}

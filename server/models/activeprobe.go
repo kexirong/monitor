@@ -11,7 +11,7 @@ type ActiveProbe struct {
 	ID         int64     `json:"id"`          // id
 	PluginName string    `json:"plugin_name"` // plugin_name
 	HostName   string    `json:"host_name"`   // host_name
-	IP         string    `json:"ip"`          // ip
+	HostIP     string    `json:"host_ip"`     // host_ip
 	Interval   int       `json:"interval"`    // interval
 	UpdatedAt  time.Time `json:"updated_at"`  // updated_at
 
@@ -40,14 +40,14 @@ func (ap *ActiveProbe) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by autoincrement
 	const sqlstr = `INSERT INTO monitor.active_probe (` +
-		`plugin_name, host_name, ip, 'interval'` +
+		"plugin_name, host_name, host_ip, `interval`" +
 		`) VALUES (` +
-		`?, ?, ?, ?, ?` +
+		`?, ?, ?, ?` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, ap.PluginName, ap.HostName, ap.IP, ap.Interval)
-	res, err := db.Exec(sqlstr, ap.PluginName, ap.HostName, ap.IP, ap.Interval)
+	XOLog(sqlstr, ap.PluginName, ap.HostName, ap.HostIP, ap.Interval)
+	res, err := db.Exec(sqlstr, ap.PluginName, ap.HostName, ap.HostIP, ap.Interval)
 	if err != nil {
 		return err
 	}
@@ -81,12 +81,12 @@ func (ap *ActiveProbe) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE monitor.active_probe SET ` +
-		`plugin_name = ?, host_name = ?, ip = ?, 'interval' = ? ` +
+		"plugin_name = ?, host_name = ?, host_ip = ?, `interval` = ? " +
 		` WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, ap.PluginName, ap.HostName, ap.IP, ap.Interval, ap.ID)
-	_, err = db.Exec(sqlstr, ap.PluginName, ap.HostName, ap.IP, ap.Interval, ap.ID)
+	XOLog(sqlstr, ap.PluginName, ap.HostName, ap.HostIP, ap.Interval, ap.ID)
+	_, err = db.Exec(sqlstr, ap.PluginName, ap.HostName, ap.HostIP, ap.Interval, ap.ID)
 	return err
 }
 
@@ -137,7 +137,7 @@ func ActiveProbeByPluginNameHostName(db XODB, pluginName string, hostName string
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, plugin_name, host_name, ip, 'interval', updated_at ` +
+		"id, plugin_name, host_name, host_ip, `interval`, updated_at " +
 		`FROM monitor.active_probe ` +
 		`WHERE plugin_name = ? AND host_name = ?`
 
@@ -147,7 +147,7 @@ func ActiveProbeByPluginNameHostName(db XODB, pluginName string, hostName string
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, pluginName, hostName).Scan(&ap.ID, &ap.PluginName, &ap.HostName, &ap.IP, &ap.Interval, &ap.UpdatedAt)
+	err = db.QueryRow(sqlstr, pluginName, hostName).Scan(&ap.ID, &ap.PluginName, &ap.HostName, &ap.HostIP, &ap.Interval, &ap.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func ActiveProbeByID(db XODB, id int64) (*ActiveProbe, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, plugin_name, host_name, ip, 'interval', updated_at ` +
+		"id, plugin_name, host_name, host_ip, `interval`, updated_at " +
 		`FROM monitor.active_probe ` +
 		`WHERE id = ?`
 
@@ -173,7 +173,7 @@ func ActiveProbeByID(db XODB, id int64) (*ActiveProbe, error) {
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, id).Scan(&ap.ID, &ap.PluginName, &ap.HostName, &ap.IP, &ap.Interval, &ap.UpdatedAt)
+	err = db.QueryRow(sqlstr, id).Scan(&ap.ID, &ap.PluginName, &ap.HostName, &ap.HostIP, &ap.Interval, &ap.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func ActiveProbeAll(db XODB) ([]*ActiveProbe, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		"id, plugin_name, host_name, ip, `interval`, updated_at " +
+		"id, plugin_name, host_name, host_ip, `interval`, updated_at " +
 		`FROM monitor.active_probe `
 
 	// run query
@@ -205,7 +205,7 @@ func ActiveProbeAll(db XODB) ([]*ActiveProbe, error) {
 		}
 
 		// scan
-		err = q.Scan(&ap.ID, &ap.PluginName, &ap.HostName, &ap.IP, &ap.Interval, &ap.UpdatedAt)
+		err = q.Scan(&ap.ID, &ap.PluginName, &ap.HostName, &ap.HostIP, &ap.Interval, &ap.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

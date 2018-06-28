@@ -41,7 +41,7 @@ func (p *Plugin) Insert(db XODB) error {
 	const sqlstr = `INSERT INTO monitor.plugin (` +
 		`plugin_name, plugin_type, file_name, comment` +
 		`) VALUES (` +
-		`?, ?, ?, ?, ?` +
+		`?, ?, ?, ?` +
 		`)`
 
 	// run query

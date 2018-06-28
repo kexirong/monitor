@@ -56,8 +56,8 @@ func (t *taskList) popNext() *taskList {
 //findPos 找到合适的相对位置,n >= 0
 func (t *taskList) findPos() (n int) {
 	next := t.pNext
-	len := t.len()
-	for i := 0; i < len-1; i++ {
+	leng := t.len()
+	for i := 0; i < leng-1; i++ {
 		if t.nextTime.Before(next.nextTime) {
 			break
 		}
@@ -156,14 +156,14 @@ func (t *TaskScheduled) DeleteTask(name string) {
 	if t.pTask == nil {
 		return
 	}
-	len := t.Len()
+	leng := t.Len()
 	cur := t.pTask
-	for i := 0; i < len; i++ {
+	for i := 0; i < leng; i++ {
 		if name != cur.name() {
 			cur = cur.next()
 			continue
 		}
-		if len == 1 {
+		if leng == 1 {
 			t.pTask = nil
 			return
 		}
@@ -196,11 +196,12 @@ func (t *TaskScheduled) AddJob(taskname string, param ...interface{}) error {
 	if t.pTask == nil {
 		return errors.New("Task List is nil")
 	}
-	len := t.Len()
+	leng := t.Len()
 	cur := t.pTask
-	for i := 0; i < len; i++ {
+	for i := 0; i < leng; i++ {
 		if taskname == cur.name() {
-			return cur.task.AddJob(param)
+
+			return cur.task.AddJob(param...)
 		}
 		cur = cur.next()
 	}
@@ -214,11 +215,11 @@ func (t *TaskScheduled) DeleteJob(taskname string, param ...interface{}) error {
 	if t.pTask == nil {
 		return errors.New("Task List is nil")
 	}
-	len := t.Len()
+	leng := t.Len()
 	cur := t.pTask
-	for i := 0; i < len; i++ {
+	for i := 0; i < leng; i++ {
 		if taskname == cur.name() {
-			return cur.task.DeleteJob(param)
+			return cur.task.DeleteJob(param...)
 		}
 		cur = cur.next()
 	}
@@ -279,8 +280,8 @@ func (t *TaskScheduled) EcheTaskList() string {
 	cur := t.pTask
 	var ret = `{"name":"%s","interval":"%v","nextime":"%s"}`
 	var plugins []string
-	len := t.Len()
-	for i := 0; i < len; i++ {
+	leng := t.Len()
+	for i := 0; i < leng; i++ {
 		plugins = append(plugins, fmt.Sprintf(ret,
 			cur.name(),
 			cur.interval(),
