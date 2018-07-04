@@ -40,7 +40,6 @@ func judgemapGet() judgeMap {
 			level3: l3,
 		}
 	}
-
 	//rows.Close()
 	return judgemap
 }

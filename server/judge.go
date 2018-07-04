@@ -77,12 +77,11 @@ func doJudge(aq models.AlarmQueue, jv judge) string {
 func alarmJudge(pk packetparse.TargetPacket) error {
 	var aq models.AlarmQueue
 	var jkey string
-	iv, ok := judgemap[pk.Plugin]
+	iv, ok := judgemap[pk.Plugin+"["+pk.HostName+"]"]
 
 	if !ok {
 		return nil
 	}
-
 	aq.HostName = pk.HostName
 	aq.AlarmName = pk.Plugin
 	aq.CreatedAt = time.Unix(int64(pk.TimeStamp), 0)
@@ -95,7 +94,7 @@ func alarmJudge(pk packetparse.TargetPacket) error {
 
 	if leng == 1 {
 		aq.Value = pk.Value[0]
-		aq.AlarmName = pk.Instance + "." + pk.VlTags
+		aq.Alarmele = pk.Instance + "." + pk.VlTags
 
 		if pk.Instance == "" {
 			aq.Alarmele = pk.VlTags
@@ -105,6 +104,7 @@ func alarmJudge(pk packetparse.TargetPacket) error {
 		if !ok {
 			return nil
 		}
+
 		err := aq.Level.UnmarshalText([]byte(doJudge(aq, jv)))
 		if err != nil {
 			return nil
@@ -130,7 +130,7 @@ func alarmJudge(pk packetparse.TargetPacket) error {
 
 			aq.Value = value
 			if pk.Instance != "" {
-				aq.AlarmName = pk.Instance + "." + sl[idx]
+				aq.Alarmele = pk.Instance + "." + sl[idx]
 			} else {
 				aq.Alarmele = sl[idx]
 			}

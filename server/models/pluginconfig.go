@@ -185,7 +185,7 @@ func PluginConfigByPluginNameHostName(db XODB, pluginName string, hostName strin
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		"id, host_ip, host_name, plugin_name, `interval`, timeout, update_at " +
+		"id, host_ip, host_name, plugin_name, `interval`, timeout, updated_at " +
 		`FROM monitor.plugin_config ` +
 		`WHERE plugin_name = ? AND host_name = ?`
 
@@ -211,7 +211,7 @@ func PluginConfigByID(db XODB, id int) (*PluginConfig, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		"id, host_ip, host_name, plugin_name, `interval`, timeout, update_at " +
+		"id, host_ip, host_name, plugin_name, `interval`, timeout, updated_at " +
 		`FROM monitor.plugin_config ` +
 		`WHERE id = ?`
 

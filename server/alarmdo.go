@@ -18,6 +18,11 @@ type channels struct {
 func sendAlarm(aq *models.AlarmQueue) {
 
 	var chans channels
+	aq.Stat = 1
+	err := aq.Update(monitorDB)
+	if err != nil {
+		Logger.Error.Println(err)
+	}
 
 	al, err := models.AlarmLinkByAlarmName(monitorDB, aq.AlarmName+"["+aq.HostName+"]")
 
@@ -28,11 +33,7 @@ func sendAlarm(aq *models.AlarmQueue) {
 		return
 	}
 	if al.Channel == 0 {
-		aq.Stat = 1
-		err := aq.Update(monitorDB)
-		if err != nil {
-			Logger.Error.Println(err)
-		}
+
 		return
 	}
 	switch al.Type.String() {

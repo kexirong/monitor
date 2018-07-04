@@ -2,18 +2,17 @@
 package models
 
 import (
-	"database/sql"
 	"errors"
 )
 
 // AlarmJudge represents a row from 'monitor.alarm_judge'.
 type AlarmJudge struct {
-	AlarmName string        `json:"alarm_name"` // alarm_name
-	Alarmele  string        `json:"alarmele"`   // alarmele
-	Ajtype    Ajtype        `json:"ajtype"`     // ajtype
-	Level1    sql.NullInt64 `json:"level1"`     // level1
-	Level2    sql.NullInt64 `json:"level2"`     // level2
-	Level3    sql.NullInt64 `json:"level3"`     // level3
+	AlarmName string    `json:"alarm_name"` // alarm_name
+	Alarmele  string    `json:"alarmele"`   // alarmele
+	Ajtype    Ajtype    `json:"ajtype"`     // ajtype
+	Level1    NullInt64 `json:"level1"`     // level1
+	Level2    NullInt64 `json:"level2"`     // level2
+	Level3    NullInt64 `json:"level3"`     // level3
 
 	// xo fields
 	_exists, _deleted bool `json:"-"`
@@ -132,7 +131,7 @@ func AlarmJudgeByAlarmNameAndAlarmele(db XODB, alarmname, alarmele string) (*Ala
 	const sqlstr = `SELECT ` +
 		`alarm_name, alarmele, ajtype, level1, level2, level3 ` +
 		`FROM monitor.alarm_judge ` +
-		`WHERE alarmname = ? and alarmele = ?`
+		`WHERE alarm_name = ? and alarmele = ?`
 
 	// run query
 	XOLog(sqlstr, alarmname, alarmele)

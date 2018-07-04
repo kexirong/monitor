@@ -14,7 +14,7 @@ import (
 )
 
 func startHTTPsrv() {
-	models.XOLog = func(str string, param ...interface{}) { Logger.Info.Println(str, param) }
+	//	models.XOLog = func(str string, param ...interface{}) { Logger.Info.Println(str, param) }
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
@@ -247,7 +247,7 @@ func startHTTPsrv() {
 
 			case "delete":
 				if nap == nil {
-					ret.Code = 200
+					ret.Code = 400
 					ret.Msg = "not exist"
 					break
 				}
@@ -372,7 +372,7 @@ func startHTTPsrv() {
 
 			case "delete":
 				if napc == nil {
-					ret.Code = 200
+					ret.Code = 400
 					ret.Msg = "not exist"
 					break
 				}
@@ -495,7 +495,11 @@ func startHTTPsrv() {
 				}
 
 			case "delete":
-
+				if nal == nil {
+					ret.Code = 400
+					ret.Msg = "not exist"
+					break
+				}
 				err = nal.Delete(monitorDB)
 				if err != nil {
 					ret.Code = 400
@@ -577,7 +581,11 @@ func startHTTPsrv() {
 				}
 
 			case "delete":
-
+				if naj == nil {
+					ret.Code = 400
+					ret.Msg = "not exist"
+					break
+				}
 				err = naj.Delete(monitorDB)
 				if err != nil {
 					ret.Code = 400

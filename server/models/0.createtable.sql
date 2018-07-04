@@ -26,12 +26,12 @@ CREATE TABLE `active_probe` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `plugin_name` varchar(30) NOT NULL,
   `host_name` varchar(50) NOT NULL,
-  `ip` varchar(15) NOT NULL,
-  `interval` int(10) NOT NULL,
+  `host_ip` varchar(15) NOT NULL,
+  `interval` int(11) NOT NULL DEFAULT 0,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `UNI_ActiveProbe_plugin_name_host_name` (`plugin_name`,`host_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -52,7 +52,7 @@ CREATE TABLE `active_probe_config` (
   UNIQUE KEY `UNIQUE_ActiveProbeConfig_id_target` (`active_probe_id`,`target`) USING BTREE,
   KEY `IDX_ActiveProbeConfig_id` (`id`) USING BTREE,
   CONSTRAINT `active_probe_config_ibfk_1` FOREIGN KEY (`active_probe_id`) REFERENCES `active_probe` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -111,7 +111,7 @@ CREATE TABLE `alarm_queue` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `IDX_AlarmQueue_stat` (`stat`)
-) ENGINE=InnoDB AUTO_INCREMENT=61352 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=65243 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -143,13 +143,13 @@ CREATE TABLE `plugin_config` (
   `host_ip` varchar(255) NOT NULL,
   `host_name` varchar(255) NOT NULL,
   `plugin_name` varchar(255) NOT NULL,
-  `interval` int(255) NOT NULL DEFAULT 0,
+  `interval` int(11) NOT NULL DEFAULT 0,
   `timeout` int(11) NOT NULL DEFAULT 3,
-  `update_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQUE_PluginConfig_host_name_plugin_name` (`plugin_name`,`host_name`) USING BTREE,
   CONSTRAINT `plugin_config_ibfk_1` FOREIGN KEY (`plugin_name`) REFERENCES `plugin` (`plugin_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -161,4 +161,4 @@ CREATE TABLE `plugin_config` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-06-04 17:58:08
+-- Dump completed on 2018-07-02 18:24:14

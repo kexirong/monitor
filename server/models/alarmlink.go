@@ -209,15 +209,12 @@ func AlarmLinksAll(db XODB) ([]*AlarmLink, error) {
 		al := AlarmLink{
 			_exists: true,
 		}
-
 		// scan
 		err = q.Scan(&al.AlarmName, &al.List, &al.Type, &al.Channel)
 		if err != nil {
 			return nil, err
 		}
-
 		res = append(res, &al)
 	}
-
 	return res, nil
 }

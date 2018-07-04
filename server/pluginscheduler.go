@@ -57,7 +57,7 @@ func activePluginScheduler() {
 			Logger.Error.Println(err.Error())
 			return
 		}
-		Logger.Info.Println("callback arg b is: ", string(b))
+		//	Logger.Info.Println("callback arg b is: ", string(b))
 		var tps []packetparse.TargetPacket
 		err = json.Unmarshal(b, &tps)
 		if err != nil {
