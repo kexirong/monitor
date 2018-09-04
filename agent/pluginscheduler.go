@@ -20,9 +20,10 @@ import (
 func scriptPluginScheduler(qe *queue.BytesQueue) {
 	res, err := http.Post(fmt.Sprintf("http://%s/plugin_config", conf.ServerHTTP),
 		"application/json",
-		strings.NewReader(`{"method":"getlist"}`),
+		strings.NewReader(`{"method":"getown"}`),
 	)
 	if err != nil {
+		Logger.Warning.Println("The server may be down!")
 		log.Fatal(err)
 	}
 
@@ -35,6 +36,7 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 	var resp common.HttpResp
 	var scs []*common.ScriptConf
 	resp.Result = &scs
+	//fmt.Println(string(body))
 	json.Unmarshal(body, &resp)
 	if resp.Code != 200 {
 		log.Fatal(errors.New(resp.Msg))
@@ -44,6 +46,7 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 		if sc.HostName != _hostname {
 			continue
 		}
+		fmt.Println(sc.FileName)
 		err := scriptplugin.CheckDownloads(downloaurl, filepath.Join(scriptPath, sc.FileName), false)
 
 		if err != nil {

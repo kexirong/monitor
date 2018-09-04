@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/kexirong/monitor/common/scheduler"
@@ -115,7 +116,7 @@ func startHTTPsrv() {
 		if r.Method == "POST" {
 
 			npc, err := models.PluginConfigByID(monitorDB, pc.ID)
-			if err != nil && !(req.Method == "add" || req.Method == "getlist") {
+			if err != nil && !(req.Method == "add" || req.Method == "getlist" || req.Method == "getown") {
 				ret.Code = 400
 				ret.Msg = err.Error()
 			}
@@ -155,8 +156,15 @@ func startHTTPsrv() {
 				}
 
 			case "getlist":
-
 				ret.Result, err = models.PluginConfigsAll(monitorDB)
+				if err != nil {
+					ret.Code = 400
+					ret.Msg = err.Error()
+				}
+
+			case "getown":
+				ip := strings.Split(r.RemoteAddr, ":")[0]
+				ret.Result, err = models.GetPluginConfigsByHostIP(monitorDB, ip)
 				if err != nil {
 					ret.Code = 400
 					ret.Msg = err.Error()

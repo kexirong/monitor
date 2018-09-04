@@ -4,6 +4,8 @@ package models
 import (
 	"errors"
 	"time"
+
+	"github.com/kexirong/monitor/common"
 )
 
 // PluginConfig represents a row from 'monitor.plugin_config'.
@@ -229,16 +231,13 @@ func PluginConfigByID(db XODB, id int) (*PluginConfig, error) {
 	return &pc, nil
 }
 
-/*
-
 // GetPluginConfigsByHostIP custom sql funcs,don't use what you don't know
 func GetPluginConfigsByHostIP(db XODB, hostIP string) ([]*common.ScriptConf, error) {
 
 	var err error
-
 	// sql query
 	const sqlstr = `SELECT ` +
-		`a.plugin_name, b.file_name,a.host_name,a.interval,a.timeout  ` +
+		`a.id, a.host_ip, a.host_name, a.plugin_name, b.plugin_type, b.file_name, a.interval,a.timeout  ` +
 		`FROM plugin_config a JOIN plugin b on  a.plugin_name=b.plugin_name  ` +
 		`WHERE host_ip  = ?`
 	XOLog(sqlstr, hostIP)
@@ -248,14 +247,12 @@ func GetPluginConfigsByHostIP(db XODB, hostIP string) ([]*common.ScriptConf, err
 		return nil, err
 	}
 	defer q.Close()
-
 	// load results
 	res := []*common.ScriptConf{}
 	for q.Next() {
 		sc := common.ScriptConf{}
-
 		// scan
-		err = q.Scan(&sc.Name, &sc.FileName, &sc.HostName, &sc.Interval, &sc.TimeOut)
+		err = q.Scan(&sc.ID, &sc.HostIP, &sc.HostName, &sc.PluginName, &sc.PluginType, &sc.FileName, &sc.Interval, &sc.Timeout)
 		if err != nil {
 			return nil, err
 		}
@@ -265,7 +262,6 @@ func GetPluginConfigsByHostIP(db XODB, hostIP string) ([]*common.ScriptConf, err
 
 	return res, nil
 }
-*/
 
 //PluginConfigsAll  retrun all
 func PluginConfigsAll(db XODB) ([]*PluginConfig, error) {

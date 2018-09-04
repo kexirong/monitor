@@ -51,6 +51,7 @@ func CheckDownloads(url, filePath string, check bool) error {
 	}
 	res, err := http.Get(url + path.Base(filePath))
 	if err != nil {
+
 		return err
 	}
 	robots, _ := ioutil.ReadAll(res.Body)
