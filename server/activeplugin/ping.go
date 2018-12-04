@@ -10,7 +10,7 @@ import (
 //HostPinger  timeout 单位s，host为域名或者ip
 func HostPinger(timeout int, host string) (string, error) {
 	var args []string
-	//ping 非root用户最低200ms间隔
+	//ping 非root用户最低0.2s间隔
 	args = append(args, "-i 0.2", "-c 4", host)
 	out, err := common.Command("ping", time.Second*time.Duration(timeout), args...)
 	return string(out), err

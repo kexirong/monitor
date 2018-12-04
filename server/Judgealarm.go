@@ -11,6 +11,7 @@ import (
 	"github.com/kexirong/monitor/server/models"
 )
 
+//Judge 全局线程安全
 var Judge *judge.Judge
 
 func judgeInit() *judge.Judge {
@@ -29,7 +30,11 @@ func judgeInit() *judge.Judge {
 }
 
 func judgeAlarm(tp *packetparse.TargetPacket) {
+	if Judge == nil {
+
+	}
 	ret := Judge.DoJudge(tp)
+
 	for _, v := range ret {
 		sendAlarm(v)
 	}
@@ -105,7 +110,7 @@ func sendAlarm(aq *models.AlarmEvent) {
 			}
 		}
 	default:
-		Logger.Error.Println("sendAlarm: invalid type field in alarm_link table AnchorPoint=%s", al.AnchorPoint)
+		Logger.Error.Printf("sendAlarm: invalid type field in alarm_link table AnchorPoint=%s", al.AnchorPoint)
 		return
 	}
 	if al.Channel&1 == 1 && len(chans.emails) > 0 {

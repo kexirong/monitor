@@ -65,12 +65,13 @@ func activePluginScheduler() {
 			return
 		}
 		for _, tp := range tps {
-
 			go func(p *packetparse.TargetPacket) {
+
 				err := influxdbwriter.Write(p)
 				if err != nil {
 					Logger.Error.Println("writeToInfluxdb error:", err.Error(), "\n", p.String())
 				}
+
 				judgeAlarm(p)
 			}(tp)
 

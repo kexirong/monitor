@@ -5,7 +5,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sync"
 
+	_ "github.com/go-sql-driver/mysql"
 	client "github.com/influxdata/influxdb/client/v2"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -21,6 +23,7 @@ var conf = struct {
 		Passwd    string
 		Host      string
 		Precision string
+		BatchSize int
 	}
 	WchatURL string
 	EmailURL string
@@ -46,7 +49,7 @@ func init() {
 	monitorDB.SetMaxIdleConns(20)
 
 	//judge init 需要在 mysql init 后面
-	//	judgemap = judgemapGet()
+	Judge = judgeInit()
 
 	//influxdb
 
@@ -57,6 +60,10 @@ func init() {
 	})
 
 	checkErr(err)
-	influxdbwriter = &Influxdb{clt: clt}
+	influxdbwriter = &Influxdb{
+		clt:       clt,
+		mu:        new(sync.Mutex),
+		batchSize: conf.Influx.BatchSize,
+	}
 
 }

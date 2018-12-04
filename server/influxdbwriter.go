@@ -43,7 +43,7 @@ func timestamp2Time(ts float64) time.Time {
 //Influxdb writeToInfluxdb
 type Influxdb struct {
 	batchSize int
-	mu        sync.Mutex
+	mu        *sync.Mutex
 
 	clt client.Client
 	bp  client.BatchPoints
@@ -52,14 +52,14 @@ type Influxdb struct {
 func (db *Influxdb) Write(tp *packetparse.TargetPacket) error {
 
 	// Make client+
-
+	db.mu.Lock()
+	defer db.mu.Unlock()
 	// Create a new point batch
 	if db.bp == nil {
 		db.bp, _ = client.NewBatchPoints(client.BatchPointsConfig{
 			Database:  conf.Influx.Database,
 			Precision: "s",
 		})
-
 	}
 
 	// Create a point and add to batch
@@ -86,9 +86,8 @@ func (db *Influxdb) Write(tp *packetparse.TargetPacket) error {
 		return err
 	}
 	db.bp.AddPoint(pt)
-
 	//fmt.Println(pk.Plugin, tags, fields, timestamp2Time(pk.TimeStamp))
-	if db.batchSize < len(db.bp.Points()) {
+	if db.batchSize > len(db.bp.Points()) {
 		return nil
 	}
 	err = db.clt.Write(db.bp)

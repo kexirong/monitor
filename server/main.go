@@ -9,7 +9,7 @@ func checkErr(err error) {
 }
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU() / 2)
 	go startHTTPsrv()
 	go heartdeamo()
 	go activePluginScheduler()

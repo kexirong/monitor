@@ -7,7 +7,8 @@
 			"user":      "monitor",
 			"passwd":    "monitor",
 			"host":      "http://10.1.1.222:8086",
-			"precision": "s"
+			"precision": "s",
+			"batchSize": 100
 		},
 	
 	"wchaturl" :"http://10.8.12.152:4000/sender/wechat",
