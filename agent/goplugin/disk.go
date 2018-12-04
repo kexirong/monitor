@@ -25,9 +25,9 @@ type DISK struct {
 }
 
 //Gather scheduler use
-func (d *DISK) Gather() ([]*packetparse.TargetPacket, error) {
+func (d *DISK) Gather() (packetparse.TargetPackets, error) {
 	var hostname, _ = os.Hostname()
-	var ret []*packetparse.TargetPacket
+	var ret packetparse.TargetPackets
 
 	diskinfo, err := d.collect()
 	if err != nil {

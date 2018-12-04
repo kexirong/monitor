@@ -1,10 +1,15 @@
 {
 	"service":":5000",
     "mysqlconnetstring":"monitor:monitor@tcp(10.1.1.222:3306)/monitor?charset=utf8&parseTime=true&sql_mode=ansi",
-    "influxdb" : "monitor",
-	"influxuser" : "monitor",
-	"influxpasswd" : "monitor",
-	"influxhost" :"http://10.1.1.222:8086",
+   
+		"Influx":{
+			"database":  "monitor",
+			"user":      "monitor",
+			"passwd":    "monitor",
+			"host":      "http://10.1.1.222:8086",
+			"precision": "s"
+		},
+	
 	"wchaturl" :"http://10.8.12.152:4000/sender/wechat",
 	"emailurl" : "http://10.8.12.152:4000/sender/mail"
 

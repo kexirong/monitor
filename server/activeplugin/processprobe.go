@@ -39,7 +39,7 @@ func (p *ProcessProbe) Name() string {
 
 func (p *ProcessProbe) Do() ([]byte, error) {
 
-	var tps []packetparse.TargetPacket
+	var tps packetparse.TargetPackets
 	var tp = packetparse.TargetPacket{
 		HostName:  p.hostName,
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
@@ -83,10 +83,10 @@ func (p *ProcessProbe) Do() ([]byte, error) {
 		tp.Value = append([]float64{}, float64(p.Pid))
 		tp.Value = append(tp.Value, (p.CPUPercent))
 		tp.Value = append(tp.Value, float64(p.MemoryUse))
-		tps = append(tps, tp)
+		tps = append(tps, &tp)
 	}
 
-	return json.Marshal(tps)
+	return tps.Marshal()
 }
 
 //AddJob args value must be has (partten),partten is a  regular expression

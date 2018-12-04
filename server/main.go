@@ -13,8 +13,7 @@ func main() {
 	go startHTTPsrv()
 	go heartdeamo()
 	go activePluginScheduler()
-	go alarmdo()
 
-	Logger.Info.Println("runing,listen:,", conf.Service)
+	Logger.Info.Println("runing, listen:,", conf.Service)
 	startTCPsrv()
 }

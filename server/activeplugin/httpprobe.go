@@ -48,8 +48,8 @@ func (h *HTTPProbe) Name() string {
 
 func (h *HTTPProbe) Do() ([]byte, error) {
 
-	var tps []packetparse.TargetPacket
-	var tp = packetparse.TargetPacket{
+	var tps packetparse.TargetPackets
+	var tp = &packetparse.TargetPacket{
 		HostName:  h.hostName,
 		TimeStamp: packetparse.Nsecond2Unix(time.Now().UnixNano()),
 		Plugin:    h.pluginName,
@@ -81,7 +81,7 @@ func (h *HTTPProbe) Do() ([]byte, error) {
 		}
 		tps = append(tps, tp)
 	}
-	return json.Marshal(tps)
+	return tps.Marshal()
 }
 
 var httpprobeRegex = regexp.MustCompile(`\[(\w+)\](https?://\S+)`)

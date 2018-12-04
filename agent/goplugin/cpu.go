@@ -25,9 +25,9 @@ type CPU struct {
 }
 
 //Gather scheduler use
-func (c *CPU) Gather() ([]*packetparse.TargetPacket, error) {
+func (c *CPU) Gather() (packetparse.TargetPackets, error) {
 	var hostname, _ = os.Hostname()
-	var ret []*packetparse.TargetPacket
+	var ret packetparse.TargetPackets
 
 	timescpu, err := c.collect()
 	if err != nil {

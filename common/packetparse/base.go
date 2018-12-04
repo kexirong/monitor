@@ -31,9 +31,9 @@ check   : crc32    --4byte
 0x04 reply //接收端 接收到数据包之后 需要reply, check:填收到的载核的crc32；payload为 ”ok“
 */
 type PDU struct {
-	Type    uint8
+	Type    _type
 	Length  uint16
-	Payload []byte
+	Payload []byte //最长65000个字节，超过encode报错
 	Check   uint32
 }
 
@@ -42,26 +42,34 @@ var (
 	pduVersion = "0.1"
 
 	//PDUhead 供校验头部信息使用
-	PDUhead = append([]byte{07, 02}, pduVersion...)
+	PDUhead = append([]byte{0x07, 0x02}, pduVersion...)
 
 	//PDUeof 供校验尾部信息使用
 	PDUeof = []byte{'\r', '\n'}
 )
 
-//PDUTypeMap 供调用者封包解包使用
-var PDUTypeMap = map[uint8]string{
-	0x01: "reply",
-	0x02: "heartbeat",
-	0x03: "json",
-	0x04: "normal",
-	0x05: "targetpackage",
-}
+//PDUType 供调用者封包解包使用
+type _type uint8
 
-func GenPduWithPayload(tp uint8, payload []byte) (PDU, error) {
+// 后续可能将 类型跟类别分开定义
+const (
+	// PDUReply  应答报文
+	PDUReply = _type(0x01)
+	// PDUHeartBeat  心跳包
+	PDUHeartBeat = _type(0x02)
+	// PDUJson  TargetPacket的json报文
+	PDUJson = _type(0x03)
+	// PDUTargetPacket  TargetPacket报文的msgp包
+	PDUTargetPacket = _type(0x04)
+	// PDUTargetPackets  TargetPacket 批量报文的msgp包
+	PDUTargetPackets = _type(0x05)
+	// PDUOther  未定义
+	PDUOther = _type(0x06)
+)
+
+func GenPduWithPayload(tp _type, payload []byte) (PDU, error) {
 	var pdu PDU
-	if _, ok := PDUTypeMap[tp]; !ok {
-		return pdu, errors.New("GenPduWithPayload error: tp not in PDUTypeMap")
-	}
+
 	pdu.Type = tp
 	if len(payload) == 0 || len(payload) > 65000 {
 		return pdu, errors.New("GenPduWithPayload error: payload length is 0 or too long ")
@@ -194,10 +202,8 @@ func ReadPDU(conn io.Reader) ([]byte, error) {
 */
 func PDUDecode(bits []byte) (PDU, error) {
 	var pdu PDU
-	pdu.Type = uint8(bits[0])
-	if _, ok := PDUTypeMap[pdu.Type]; !ok {
-		return pdu, errors.New("PDUDecode error: type check failed")
-	}
+	pdu.Type = _type(bits[0])
+
 	leng := len(bits)
 	pdu.Payload = bits[1 : leng-4]
 	pdu.Check = Network.BytesToUint32(bits[leng-4:])

@@ -47,7 +47,7 @@ func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 			Logger.Info.Println("send heartbeat")
 			send(conn.conn, packetparse.Heartbeat())
 		default:
-			var tps []*packetparse.TargetPacket
+			var tps packetparse.TargetPackets
 			for {
 				value, err := que.GetWait(10000)
 				if err == queue.ErrTimeout {
@@ -65,12 +65,12 @@ func cHandleFunc(conn *tcpConn, que *queue.BytesQueue) {
 			}
 
 			//Logger.Info.Println("get data success")
-			vl, err := packetparse.TargetPacketsMarshal(tps)
+			vl, err := tps.MarshalMsg(nil)
 			if err != nil {
 				Logger.Error.Println(err)
 				continue
 			}
-			pdu, err := packetparse.GenPduWithPayload(0x05, vl)
+			pdu, err := packetparse.GenPduWithPayload(packetparse.PDUTargetPackets, vl)
 			if err != nil {
 				Logger.Error.Println(err)
 				continue

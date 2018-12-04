@@ -6,9 +6,8 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-func Benchmark_gencode(b *testing.B) {
-
-	var pp = []TargetPacket{TargetPacket{
+func Benchmark_MsgTargetPacket(b *testing.B) {
+	v := TargetPacket{
 		HostName:  "kk-debian",
 		TimeStamp: 1524205995.484389,
 		Plugin:    "cpus1",
@@ -16,123 +15,88 @@ func Benchmark_gencode(b *testing.B) {
 		Instance:  "0",
 		Value:     []float64{12.1, 0.0, 12.6, 73.7},
 		VlTags:    "user|nice|system|idle",
-	},
-		TargetPacket{
-			HostName:  "kk-debian",
-			TimeStamp: 1524205995.484393,
-			Plugin:    "cpus1",
-			Type:      "percent",
-			Instance:  "1",
-			Value:     []float64{11.5, 0.0, 12.5, 74.5},
-			VlTags:    "user|nice|system|idle",
-		},
-		TargetPacket{
-			HostName:  "kk-debian",
-			TimeStamp: 1524205995.484393,
-			Plugin:    "cpus1",
-			Type:      "percent",
-			Instance:  "1",
-			Value:     []float64{11.5, 0.0, 12.5, 74.5},
-			VlTags:    "user|nice|system|idle",
-		},
-		TargetPacket{
-			HostName:  "kk-debian",
-			TimeStamp: 1524205995.484393,
-			Plugin:    "cpus1",
-			Type:      "percent",
-			Instance:  "1",
-			Value:     []float64{11.5, 0.0, 12.5, 74.5},
-			VlTags:    "user|nice|system|idle",
-		},
 	}
 
+	//b.SetBytes(int64(len(bts)))
+	//b.ReportAllocs()
+	bts, err := v.MarshalMsg(nil)
+	_ = bts
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for _, p := range pp {
-			bb, err := p.Marshal(nil)
-
-			if err != nil {
-				b.Error(err)
-			}
-
-			_, err = p.Unmarshal(bb)
-			if err != nil {
-				b.Error(err)
-			}
-
+		_, err = v.UnmarshalMsg(bts)
+		if err != nil {
+			b.Fatal(err)
 		}
-	}
 
+	}
 }
 
-func Benchmark_gencodebatch(b *testing.B) {
+func Benchmark_gencode(b *testing.B) {
 
-	var tps = []*TargetPacket{
-		&TargetPacket{
-			HostName:  "kk-debian",
-			TimeStamp: 1524205995.484389,
-			Plugin:    "cpus1",
-			Type:      "percent",
-			Instance:  "0",
-			Value:     []float64{12.1, 0.0, 12.6, 73.7},
-			VlTags:    "user|nice|system|idle",
-		},
-		&TargetPacket{
-			HostName:  "kk-debian",
-			TimeStamp: 1524205995.484393,
-			Plugin:    "cpus1",
-			Type:      "percent",
-			Instance:  "1",
-			Value:     []float64{11.5, 0.0, 12.5, 74.5},
-			VlTags:    "user|nice|system|idle",
-		},
-		&TargetPacket{
-			HostName:  "kk-debian",
-			TimeStamp: 1524205995.484393,
-			Plugin:    "cpus1",
-			Type:      "percent",
-			Instance:  "1",
-			Value:     []float64{11.5, 0.0, 12.5, 74.5},
-			VlTags:    "user|nice|system|idle",
-		},
-		&TargetPacket{
-			HostName:  "kk-debian",
-			TimeStamp: 1524205995.484393,
-			Plugin:    "cpus1",
-			Type:      "percent",
-			Instance:  "1",
-			Value:     []float64{11.5, 0.0, 12.5, 74.5},
-			VlTags:    "user|nice|system|idle",
-		},
+	var p = TargetPacket{
+		HostName:  "kk-debian",
+		TimeStamp: 1524205995.484389,
+		Plugin:    "cpus1",
+		Type:      "percent",
+		Instance:  "0",
+		Value:     []float64{12.1, 0.0, 12.6, 73.7},
+		VlTags:    "user|nice|system|idle",
 	}
+	bb, err := p.Marshal(nil)
+	_ = bb
+	if err != nil {
+		b.Error(err)
+	}
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		bs, err := TargetPacketsMarshal(tps)
+
+		ubb, err := p.Unmarshal(bb)
+		_ = ubb
 		if err != nil {
 			b.Error(err)
 		}
 
-		{
-			_, _, err := TargetPacketsUnmarshal(bs)
-			if err != nil {
-				b.Error(err)
-			}
+	}
+	b.Log(p)
+}
 
+func Benchmark_easyjson(b *testing.B) {
+	t := TargetPacket{
+		HostName:  "kk-debian",
+		TimeStamp: 1524205995.484389,
+		Plugin:    "cpus1",
+		Type:      "percent",
+		Instance:  "0",
+		Value:     []float64{12.1, 0.0, 12.6, 73.7},
+		VlTags:    "user|nice|system|idle",
+	}
+
+	for i := 0; i < b.N; i++ {
+		bs, err := t.MarshalJSON()
+		if err != nil {
+			b.Error(err)
+		}
+
+		err = t.UnmarshalJSON(bs)
+		if err != nil {
+			b.Error(err)
 		}
 	}
 }
 
 func Benchmark_jsoniter(b *testing.B) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-	jsonstr := `[{"plugin": "cpus1", "timestamp": 1524205995.484389, "hostname": "kk-debian", "value": [12.1, 0.0, 12.6, 73.7], "instance": "0", "vltags": "user|nice|system|idle", "type": "percent"}, 
-	{"plugin": "cpu1", "timestamp": 1524205995.484393, "hostname": "kk-debian", "value": [11.5, 0.0, 12.5, 74.5], "instance": "1", "vltags": "user|nice|system|idle", "type": "percent"},
-	{"plugin": "cpu1", "timestamp": 1524205995.484393, "hostname": "kk-debian", "value": [11.5, 0.0, 12.5, 74.5], "instance": "1", "vltags": "user|nice|system|idle", "type": "percent"},
-	{"plugin": "cpu1", "timestamp": 1524205995.484393, "hostname": "kk-debian", "value": [11.5, 0.0, 12.5, 74.5], "instance": "1", "vltags": "user|nice|system|idle", "type": "percent"}]`
-	var pp []TargetPacket
+	jsonstr := `{"plugin": "cpus1", "timestamp": 1524205995.484389, "hostname": "kk-debian", "value": [12.1, 0.0, 12.6, 73.7], "instance": "0", "vltags": "user|nice|system|idle", "type": "percent"}`
+	var p TargetPacket
 	for i := 0; i < b.N; i++ {
-		err := json.Unmarshal([]byte(jsonstr), &pp)
+		err := json.Unmarshal([]byte(jsonstr), &p)
 		if err != nil {
 			b.Error(err)
 		}
-		_, err = json.Marshal(pp)
+		_, err = json.Marshal(p)
 		if err != nil {
 			b.Error(err)
 		}
@@ -160,4 +124,48 @@ func Test_jsoniter(t *testing.T) {
 		t.Logf("%#v", p)
 	}
 
+}
+
+func Test_gencode(t *testing.T) {
+
+	var tps = TargetPackets{
+		&TargetPacket{
+			HostName:  "kk-debian",
+			TimeStamp: 1524205995.484389,
+			Plugin:    "cpus",
+			Type:      "percent",
+			Instance:  "0",
+			Value:     []float64{12.1, 0.0, 12.6, 73.7},
+			VlTags:    "user|nice|system|idle",
+		},
+		&TargetPacket{
+			HostName:  "kk-debian",
+			TimeStamp: 1524205996.484389,
+			Plugin:    "cpus1",
+			Type:      "percent",
+			Instance:  "1",
+			Value:     []float64{12.1, 0.0, 12.6, 73.7},
+			VlTags:    "user|nice|system|idle",
+		},
+		&TargetPacket{
+			HostName:  "kk-debian",
+			TimeStamp: 1524205997.484389,
+			Plugin:    "cpus2",
+			Type:      "percent",
+			Instance:  "2",
+			Value:     []float64{12.1, 0.0, 12.6, 73.7},
+			VlTags:    "user|nice|system|idle",
+		},
+	}
+	bb, err := tps.Marshal()
+	_ = bb
+	if err != nil {
+		t.Error(err)
+	}
+	tps = TargetPackets{}
+	l, err := tps.Unmarshal(bb)
+	if err != nil || len(bb) != int(l) {
+		t.Error(err)
+	}
+	t.Log(tps)
 }

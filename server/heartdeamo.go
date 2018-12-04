@@ -16,7 +16,7 @@ func scanAssetdb() int {
 		name string
 		ip   string
 	}
-	rows, err := monitorDB.Query("SELECT HostName,ip FROM opsmgt.cmdb_asset where is_active =1")
+	rows, err := monitorDB.Query("SELECT HostName,ip FROM dashboard.cmdb_asset where is_active =1")
 	checkErr(err)
 	cur := time.Now().Unix()
 	for rows.Next() {
@@ -45,26 +45,26 @@ func hostIPMapAdd(hostname, ip string) bool {
 
 func heartdeamo() {
 	scanAssetdb()
-	var av models.AlarmQueue
+	var ae models.AlarmEvent
 	for range time.Tick(time.Second * 10) {
 		now := time.Now().Unix()
 		for k, v := range ipHeartRecorde {
 			if now-v > 30 {
-				av.AlarmName = "heartbeat"
-				av.Alarmele = "heartbeat.timeout"
-				av.HostName = ipHostnameMap[k]
-				av.CreatedAt = time.Unix(now, 0)
-				av.Level = models.LevelLevel2
-				av.Value = float64(now - v)
-				go func(ip string, av models.AlarmQueue) {
+				//av.AlarmName = "heartbeat"
+				ae.AnchorPoint = "heartbeat.timeout"
+				ae.HostName = ipHostnameMap[k]
+				ae.CreatedAt = time.Unix(now, 0)
+				ae.Level = models.LevelWarning
+				ae.Value = float64(now - v)
+				go func(ip string, ae models.AlarmEvent) {
 					out, err := activeplugin.HostPinger(4000, ip)
 					if err == nil {
-						av.Message = fmt.Sprintf("heartbeat lost %g；ping ok", av.Value)
+						ae.Message = fmt.Sprintf("heartbeat lost %g；ping ok", ae.Value)
 					} else {
-						av.Message = fmt.Sprintf("heartbeat lost %g；ping %s", av.Value, out)
+						ae.Message = fmt.Sprintf("heartbeat lost %g；ping %s", ae.Value, out)
 					}
-					av.Insert(monitorDB)
-				}(k, av)
+					ae.Insert(monitorDB)
+				}(k, ae)
 			}
 		}
 	}

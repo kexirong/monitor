@@ -15,6 +15,11 @@ var (
 	_ = time.Now()
 )
 
+//go:generate msgp -io=false
+//easyjson:json
+type TargetPackets []*TargetPacket
+
+//easyjson:json
 type TargetPacket struct {
 	HostName  string    `json:"hostname"`  //ops201
 	TimeStamp float64   `json:"timestamp"` //the number of seconds elapsed since January 1, 1970 UTC
@@ -546,7 +551,7 @@ func (d *TargetPacket) Unmarshal(buf []byte) (uint64, error) {
 	return i + 8, nil
 }
 
-func TargetPacketsSize(tps []*TargetPacket) (s uint64) {
+func (tps TargetPackets) Size() (s uint64) {
 
 	l := uint64(len(tps))
 	{
@@ -564,8 +569,9 @@ func TargetPacketsSize(tps []*TargetPacket) (s uint64) {
 
 	return
 }
-func TargetPacketsMarshal(tps []*TargetPacket) ([]byte, error) {
-	size := TargetPacketsSize(tps)
+
+func (tps TargetPackets) Marshal() ([]byte, error) {
+	size := tps.Size()
 
 	buf := make([]byte, size)
 
@@ -595,7 +601,7 @@ func TargetPacketsMarshal(tps []*TargetPacket) ([]byte, error) {
 	return buf[:i+0], nil
 }
 
-func TargetPacketsUnmarshal(buf []byte) ([]*TargetPacket, uint64, error) {
+func (tps *TargetPackets) Unmarshal(buf []byte) (uint64, error) {
 	i := uint64(0)
 
 	l := uint64(0)
@@ -613,16 +619,16 @@ func TargetPacketsUnmarshal(buf []byte) ([]*TargetPacket, uint64, error) {
 
 	}
 
-	var tps = make([]*TargetPacket, l)
+	*tps = make(TargetPackets, l)
 
-	for k0 := range tps {
-		tps[k0] = &TargetPacket{}
-		ni, err := tps[k0].Unmarshal(buf[i+0:])
+	for k0 := range *tps {
+		(*tps)[k0] = &TargetPacket{}
+		ni, err := (*tps)[k0].Unmarshal(buf[i+0:])
 		if err != nil {
-			return nil, 0, err
+			return 0, err
 		}
 		i += ni
 	}
 
-	return tps, i, nil
+	return i, nil
 }

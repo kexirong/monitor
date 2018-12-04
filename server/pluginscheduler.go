@@ -58,27 +58,22 @@ func activePluginScheduler() {
 			return
 		}
 		//	Logger.Info.Println("callback arg b is: ", string(b))
-		var tps []packetparse.TargetPacket
-		err = json.Unmarshal(b, &tps)
+		var tps packetparse.TargetPackets
+		_, err = tps.Unmarshal(b)
 		if err != nil {
 			Logger.Error.Println("callback Unmarshal TargetPacket error:", err.Error())
 			return
 		}
 		for _, tp := range tps {
 
-			go func(p packetparse.TargetPacket) {
-				err := writeToInfluxdb(p)
+			go func(p *packetparse.TargetPacket) {
+				err := influxdbwriter.Write(p)
 				if err != nil {
 					Logger.Error.Println("writeToInfluxdb error:", err.Error(), "\n", p.String())
 				}
+				judgeAlarm(p)
 			}(tp)
 
-			go func(p packetparse.TargetPacket) {
-				err := alarmJudge(p)
-				if err != nil {
-					Logger.Error.Println("writeToAlarmQueue error:", err.Error())
-				}
-			}(tp)
 		}
 	}
 	Logger.Info.Println("activePluginScheduler staring")

@@ -15,15 +15,19 @@ var json = jsoniter.ConfigCompatibleWithStandardLibrary
 var conf = struct {
 	Service           string
 	MysqlConnetString string
-	InfluxDB          string
-	InfluxUser        string
-	InfluxPasswd      string
-	InfluxHost        string
-	WchatURL          string
-	EmailURL          string
+	Influx            struct {
+		Database  string
+		User      string
+		Passwd    string
+		Host      string
+		Precision string
+	}
+	WchatURL string
+	EmailURL string
 }{}
 
 var monitorDB *sql.DB
+var influxdbwriter *Influxdb
 
 func init() {
 	dat, err := ioutil.ReadFile("./conf.json")
@@ -42,14 +46,17 @@ func init() {
 	monitorDB.SetMaxIdleConns(20)
 
 	//judge init 需要在 mysql init 后面
-	judgemap = judgemapGet()
+	//	judgemap = judgemapGet()
 
 	//influxdb
-	clt, err = client.NewHTTPClient(client.HTTPConfig{
-		Addr:     conf.InfluxHost,
-		Username: conf.InfluxUser,
-		Password: conf.InfluxPasswd,
+
+	clt, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr:     conf.Influx.Host,
+		Username: conf.Influx.User,
+		Password: conf.Influx.Passwd,
 	})
+
 	checkErr(err)
+	influxdbwriter = &Influxdb{clt: clt}
 
 }

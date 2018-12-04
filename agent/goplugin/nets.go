@@ -21,9 +21,9 @@ type NET struct {
 }
 
 //Gather scheduler use
-func (n *NET) Gather() ([]*packetparse.TargetPacket, error) {
+func (n *NET) Gather() (packetparse.TargetPackets, error) {
 	var hostname, _ = os.Hostname()
-	var ret []*packetparse.TargetPacket
+	var ret packetparse.TargetPackets
 
 	valuenet, err := n.collect()
 	if err != nil {

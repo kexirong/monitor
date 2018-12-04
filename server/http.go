@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kexirong/monitor/common/scheduler"
-
 	"github.com/kexirong/monitor/common"
+	"github.com/kexirong/monitor/common/scheduler"
 	"github.com/kexirong/monitor/server/activeplugin"
 	"github.com/kexirong/monitor/server/models"
 )
@@ -68,7 +67,6 @@ func startHTTPsrv() {
 				}
 
 			case "delete":
-
 				err = np.Delete(monitorDB)
 				if err != nil {
 					ret.Code = 400
@@ -203,7 +201,6 @@ func startHTTPsrv() {
 		json.Unmarshal(body, &req)
 
 		if r.Method == "POST" {
-
 			nap, err := models.ActiveProbeByID(monitorDB, ap.ID)
 			if err != nil && !(req.Method == "add" || req.Method == "getlist" || req.Method == "getruninglist") {
 				Logger.Error.Println(err.Error())
@@ -460,7 +457,7 @@ func startHTTPsrv() {
 			Code: 200,
 			Msg:  "ok",
 		}
-		var al = &models.AlarmLink{}
+		var al = &models.AlarmSend{}
 
 		req.Cause = al
 		//不需要对Unmarshal 失败的错误信息进行处理
@@ -468,7 +465,7 @@ func startHTTPsrv() {
 
 		if r.Method == "POST" {
 
-			nal, err := models.AlarmLinkByAlarmName(monitorDB, al.AlarmName)
+			nal, err := models.AlarmSendByAnchorPoint(monitorDB, al.AnchorPoint)
 			if err != nil && !(req.Method == "add" || req.Method == "getlist") {
 				ret.Code = 400
 				ret.Msg = err.Error()
@@ -479,7 +476,7 @@ func startHTTPsrv() {
 				ret.Result = nal
 			case "getlist":
 
-				ret.Result, err = models.AlarmLinksAll(monitorDB)
+				ret.Result, err = models.AlarmSendsAll(monitorDB)
 				if err != nil {
 					ret.Code = 400
 					ret.Msg = err.Error()
@@ -489,7 +486,7 @@ func startHTTPsrv() {
 				if nal == nil {
 					nal = al
 				} else {
-					nal.AlarmName = al.AlarmName
+					nal.AnchorPoint = al.AnchorPoint
 					nal.Channel = al.Channel
 					nal.List = al.List
 					nal.Type = al.Type
@@ -550,7 +547,7 @@ func startHTTPsrv() {
 
 		if r.Method == "POST" {
 
-			naj, err := models.AlarmJudgeByAlarmNameAndAlarmele(monitorDB, aj.AlarmName, aj.Alarmele)
+			naj, err := models.AlarmJudgeByAnchorPointAndExpress(monitorDB, aj.AnchorPoint, aj.Express)
 			if err != nil && !(req.Method == "add" || req.Method == "getlist") {
 				ret.Code = 400
 				ret.Msg = err.Error()
@@ -574,12 +571,9 @@ func startHTTPsrv() {
 				if naj == nil {
 					naj = aj
 				} else {
-					naj.AlarmName = aj.AlarmName
-					naj.Alarmele = aj.Alarmele
-					naj.Ajtype = aj.Ajtype
-					naj.Level1 = aj.Level1
-					naj.Level2 = aj.Level2
-					naj.Level3 = aj.Level3
+					naj.AnchorPoint = aj.AnchorPoint
+					naj.Express = aj.Express
+					naj.Level = aj.Level
 				}
 				err = naj.Save(monitorDB)
 				if err != nil {

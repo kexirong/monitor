@@ -70,8 +70,8 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 		}
 		Logger.Info.Println(string(b))
 
-		var tps []*packetparse.TargetPacket
-		err = json.Unmarshal(b, &tps)
+		var tps packetparse.TargetPackets
+		err = tps.UnmarshalJSON(b)
 		if err != nil {
 			Logger.Error.Println("callback json.Unmarshal TargetPacket error:", err.Error())
 			return
@@ -109,10 +109,6 @@ func goPluginScheduler(qe *queue.BytesQueue) {
 						Logger.Error.Println("gopluginScheduler error: " + err.Error())
 					}
 				}
-
-				//	} else {
-				//		Logger.Error.Println("gopluginScheduler error: " + err.Error())
-				//	}
 			}
 		}(name, plugin)
 	}
