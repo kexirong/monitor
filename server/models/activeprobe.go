@@ -15,7 +15,7 @@ type ActiveProbe struct {
 	HostName   string    `json:"host_name"`   // host_name
 	HostIP     string    `json:"host_ip"`     // host_ip
 	Interval   int       `json:"interval"`    // interval
-	UpdatedAt  time.Time `json:"updated_at"`  // updated_at
+	CreatedAt  time.Time `json:"created_at"`  // updated_at
 
 	// xo fields
 	_exists, _deleted bool
@@ -48,8 +48,8 @@ func (ap *ActiveProbe) Insert(db XODB) error {
 		`)`
 
 	// run query
-	XOLog(sqlstr, ap.PluginName, ap.HostName, ap.HostIP, ap.Interval, ap.UpdatedAt)
-	res, err := db.Exec(sqlstr, ap.PluginName, ap.HostName, ap.HostIP, ap.Interval, ap.UpdatedAt)
+	XOLog(sqlstr, ap.PluginName, ap.HostName, ap.HostIP, ap.Interval, ap.CreatedAt)
+	res, err := db.Exec(sqlstr, ap.PluginName, ap.HostName, ap.HostIP, ap.Interval, ap.CreatedAt)
 	if err != nil {
 		return err
 	}
@@ -87,8 +87,8 @@ func (ap *ActiveProbe) Update(db XODB) error {
 		` WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, ap.PluginName, ap.HostName, ap.HostIP, ap.Interval, ap.UpdatedAt, ap.ID)
-	_, err = db.Exec(sqlstr, ap.PluginName, ap.HostName, ap.HostIP, ap.Interval, ap.UpdatedAt, ap.ID)
+	XOLog(sqlstr, ap.PluginName, ap.HostName, ap.HostIP, ap.Interval, ap.CreatedAt, ap.ID)
+	_, err = db.Exec(sqlstr, ap.PluginName, ap.HostName, ap.HostIP, ap.Interval, ap.CreatedAt, ap.ID)
 	return err
 }
 
@@ -149,7 +149,7 @@ func ActiveProbeByPluginNameHostName(db XODB, pluginName string, hostName string
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, pluginName, hostName).Scan(&ap.ID, &ap.PluginName, &ap.HostName, &ap.HostIP, &ap.Interval, &ap.UpdatedAt)
+	err = db.QueryRow(sqlstr, pluginName, hostName).Scan(&ap.ID, &ap.PluginName, &ap.HostName, &ap.HostIP, &ap.Interval, &ap.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func ActiveProbeByID(db XODB, id int64) (*ActiveProbe, error) {
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, id).Scan(&ap.ID, &ap.PluginName, &ap.HostName, &ap.HostIP, &ap.Interval, &ap.UpdatedAt)
+	err = db.QueryRow(sqlstr, id).Scan(&ap.ID, &ap.PluginName, &ap.HostName, &ap.HostIP, &ap.Interval, &ap.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func ActiveProbeAll(db XODB) ([]*ActiveProbe, error) {
 		}
 
 		// scan
-		err = q.Scan(&ap.ID, &ap.PluginName, &ap.HostName, &ap.HostIP, &ap.Interval, &ap.UpdatedAt)
+		err = q.Scan(&ap.ID, &ap.PluginName, &ap.HostName, &ap.HostIP, &ap.Interval, &ap.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

@@ -15,6 +15,7 @@ var pageSize = syscall.Getpagesize()
 
 const userHZ = 100 //linux normal
 
+//easyjson:json
 type ProcessList map[string]Process
 
 type Process struct {

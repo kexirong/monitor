@@ -18,7 +18,6 @@ func startHTTPsrv() {
 	})
 
 	http.HandleFunc("/scriptplugin", func(w http.ResponseWriter, r *http.Request) {
-
 		var req common.HttpReq
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -26,7 +25,7 @@ func startHTTPsrv() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		defer r.Body.Close()
+		//defer r.Body.Close()
 		var ret = common.HttpResp{
 			Code: 200,
 			Msg:  "ok",

@@ -3,28 +3,25 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/kexirong/monitor/common"
-
-	"github.com/kexirong/monitor/common/queue"
 )
 
+/*
 var testJSON = `{
     "category": "scriptplugin",
-    "events": 
+    "events":
         {
             "method": "getlist"
         }
-    
+
 }`
 
-/*
+
 [
         {
             "method": "add",
@@ -45,7 +42,7 @@ var testJSON = `{
             "method": "delete",
             "target": "cpus1"
         },
-*/
+
 func Test_scriptpluginConsole(t *testing.T) {
 	go func() {
 		log.Fatal(http.ListenAndServe(":5101", nil))
@@ -72,7 +69,7 @@ func Test_scriptpluginConsole(t *testing.T) {
 	log.Println(err, string(bt))
 
 }
-
+*/
 func Test_getpluginconfig(t *testing.T) {
 	res, err := http.Get(fmt.Sprintf("http://%s/config/plugin", conf.ServerHTTP))
 	if err != nil {

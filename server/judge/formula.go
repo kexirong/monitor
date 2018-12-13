@@ -126,7 +126,7 @@ func genBinTreeFormula(formula string) (*binTreeNode, error) {
 					top.pLeft = v2
 					top.pRight = v1
 					stack1.Push(top)
-					stack2.Pop()
+					//stack2.Pop()
 				} else {
 					return nil, errors.New("invalid formula format")
 				}

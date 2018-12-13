@@ -12,7 +12,7 @@ func Test_judge(t *testing.T) {
 
 	express1 := "diff(${feild1}+${feild3},3,3)>1.23"
 	express2 := "avg(((${feild1}+(${feild}-${feild4})*${feild2})*${feild3}), 3) > -1.23"
-	express3 := "avg(${feild1}/${feild2},3 , 2) > -1.23"
+	express3 := "all((${user}+${system})-${nice},5,5)>70"
 	_, _, _ = express1, express2, express3
 	re1, err := regexp.Compile(`(?P<func>\w+)\((?P<formula>\(?[^,]+\)?),(?P<total>\d+),?(?P<limit>\d*)?\)(?P<operator>[<!=>]+)(?P<compare>[-]?\d+(?:\.\d+)?$)`)
 	if err != nil {
@@ -20,9 +20,10 @@ func Test_judge(t *testing.T) {
 	}
 	n1 := re1.SubexpNames()
 	t.Log(n1)
+	express2 = strings.Replace(express2, " ", "", -1)
 	result1 := re1.FindStringSubmatch(express2)
+	t.Log(result1)
 
-	(strings.Replace(express2, " ", "", -1))
 	var formula *binTreeNode
 	for k, v := range result1 {
 		fmt.Println(n1[k], ":", v)
@@ -30,7 +31,7 @@ func Test_judge(t *testing.T) {
 			var err error
 			formula, err = genBinTreeFormula(v)
 			if err != nil {
-				fmt.Println(err)
+				t.Error(err)
 			}
 		}
 	}

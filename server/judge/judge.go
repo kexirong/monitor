@@ -82,7 +82,7 @@ func (j *Judge) DelRule(aj *models.AlarmJudge) {
 
 //DoJudge 对数据包进行告警判定
 func (j *Judge) DoJudge(tp *packetparse.TargetPacket) []*models.AlarmEvent {
-	//[host].plugin.instance:type
+	//[*].cpu.cpu0:percent
 
 	var results []*models.AlarmEvent
 	j.mu.Lock()

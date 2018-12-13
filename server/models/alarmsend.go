@@ -192,7 +192,7 @@ func AlarmSendsAll(db XODB) ([]*AlarmSend, error) {
 	// sql query
 	const sqlstr = `SELECT ` +
 		`anchor_point, list, type, channel ` +
-		`FROM monitor.alarm_link `
+		`FROM monitor.alarm_send `
 
 	// run query
 	XOLog(sqlstr)

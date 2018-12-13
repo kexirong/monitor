@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -28,7 +29,7 @@ func startHTTPsrv() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		defer r.Body.Close()
+		//defer r.Body.Close()
 		var ret = common.HttpResp{
 			Code: 200,
 			Msg:  "ok",
@@ -100,7 +101,7 @@ func startHTTPsrv() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		defer r.Body.Close()
+		//defer r.Body.Close()
 		var ret = common.HttpResp{
 			Code: 200,
 			Msg:  "ok",
@@ -189,7 +190,7 @@ func startHTTPsrv() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		defer r.Body.Close()
+		//defer r.Body.Close()
 		var ret = common.HttpResp{
 			Code: 200,
 			Msg:  "ok",
@@ -310,7 +311,7 @@ func startHTTPsrv() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		defer r.Body.Close()
+		//defer r.Body.Close()
 		var ret = common.HttpResp{
 			Code: 200,
 			Msg:  "ok",
@@ -442,7 +443,7 @@ func startHTTPsrv() {
 
 	http.Handle("/downloadsscript/", http.StripPrefix("/downloadsscript/", http.FileServer(http.Dir("./scriptrepo/"))))
 
-	http.HandleFunc("/alarm_link", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/alarm_send", func(w http.ResponseWriter, r *http.Request) {
 
 		var req common.HttpReq
 		body, err := ioutil.ReadAll(r.Body)
@@ -452,7 +453,7 @@ func startHTTPsrv() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		defer r.Body.Close()
+		//defer r.Body.Close()
 		var ret = common.HttpResp{
 			Code: 200,
 			Msg:  "ok",
@@ -534,7 +535,7 @@ func startHTTPsrv() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		defer r.Body.Close()
+		//defer r.Body.Close()
 		var ret = common.HttpResp{
 			Code: 200,
 			Msg:  "ok",
@@ -543,11 +544,16 @@ func startHTTPsrv() {
 
 		req.Cause = aj
 		//不需要对Unmarshal 失败的错误信息进行处理
-		json.Unmarshal(body, &req)
-
+		err = json.Unmarshal(body, &req)
+		if err != nil {
+			req.Method = "other"
+			ret.Code = 400
+			ret.Msg = err.Error()
+		}
+		fmt.Println(err)
 		if r.Method == "POST" {
 
-			naj, err := models.AlarmJudgeByAnchorPointAndExpress(monitorDB, aj.AnchorPoint, aj.Express)
+			naj, err := models.AlarmJudgeByID(monitorDB, aj.ID)
 			if err != nil && !(req.Method == "add" || req.Method == "getlist") {
 				ret.Code = 400
 				ret.Msg = err.Error()
@@ -579,7 +585,6 @@ func startHTTPsrv() {
 				if err != nil {
 					ret.Code = 400
 					ret.Msg = err.Error()
-
 				}
 
 			case "delete":
@@ -593,7 +598,6 @@ func startHTTPsrv() {
 					ret.Code = 400
 					ret.Msg = err.Error()
 				}
-
 			}
 		} else {
 			ret.Code = 400

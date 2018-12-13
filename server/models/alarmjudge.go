@@ -9,6 +9,7 @@ import (
 
 // AlarmJudge represents a row from 'monitor.alarm_judge'.
 type AlarmJudge struct {
+	ID          int64  `json:"id"`           // id
 	AnchorPoint string `json:"anchor_point"` // anchor_point
 	Express     string `json:"express"`      // express
 	Level       Level  `json:"level"`        // level
@@ -36,7 +37,7 @@ func (aj *AlarmJudge) Insert(db XODB) error {
 		return errors.New("insert failed: already exists")
 	}
 
-	// sql insert query, primary key must be provided
+	// sql insert query, primary key provided by autoincrement
 	const sqlstr = `INSERT INTO monitor.alarm_judge (` +
 		`anchor_point, express, level` +
 		`) VALUES (` +
@@ -45,12 +46,19 @@ func (aj *AlarmJudge) Insert(db XODB) error {
 
 	// run query
 	XOLog(sqlstr, aj.AnchorPoint, aj.Express, aj.Level)
-	_, err = db.Exec(sqlstr, aj.AnchorPoint, aj.Express, aj.Level)
+	res, err := db.Exec(sqlstr, aj.AnchorPoint, aj.Express, aj.Level)
 	if err != nil {
 		return err
 	}
 
-	// set existence
+	// retrieve id
+	id, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	// set primary key and existence
+	aj.ID = int64(id)
 	aj._exists = true
 
 	return nil
@@ -70,14 +78,14 @@ func (aj *AlarmJudge) Update(db XODB) error {
 		return errors.New("update failed: marked for deletion")
 	}
 
-	// sql query with composite primary key
+	// sql query
 	const sqlstr = `UPDATE monitor.alarm_judge SET ` +
-		`level = ?` +
-		` WHERE anchor_point = ? AND express = ?`
+		`anchor_point = ?, express = ?, level = ?` +
+		` WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, aj.Level, aj.AnchorPoint, aj.Express)
-	_, err = db.Exec(sqlstr, aj.Level, aj.AnchorPoint, aj.Express)
+	XOLog(sqlstr, aj.AnchorPoint, aj.Express, aj.Level, aj.ID)
+	_, err = db.Exec(sqlstr, aj.AnchorPoint, aj.Express, aj.Level, aj.ID)
 	return err
 }
 
@@ -104,12 +112,12 @@ func (aj *AlarmJudge) Delete(db XODB) error {
 		return nil
 	}
 
-	// sql query with composite primary key
-	const sqlstr = `DELETE FROM monitor.alarm_judge WHERE anchor_point = ? AND express = ?`
+	// sql query
+	const sqlstr = `DELETE FROM monitor.alarm_judge WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, aj.AnchorPoint, aj.Express)
-	_, err = db.Exec(sqlstr, aj.AnchorPoint, aj.Express)
+	XOLog(sqlstr, aj.ID)
+	_, err = db.Exec(sqlstr, aj.ID)
 	if err != nil {
 		return err
 	}
@@ -120,25 +128,25 @@ func (aj *AlarmJudge) Delete(db XODB) error {
 	return nil
 }
 
-// AlarmJudgeByExpress retrieves a row from 'monitor.alarm_judge' as a AlarmJudge.
+// AlarmJudgeByAnchorPointExpress retrieves a row from 'monitor.alarm_judge' as a AlarmJudge.
 //
-// Generated from index 'alarm_judge_express_pkey'.
-func AlarmJudgeByAnchorPointAndExpress(db XODB, anchorPoint, express string) (*AlarmJudge, error) {
+// Generated from index 'UNI_AlarmJudge_AnchorPoint_Express'.
+func AlarmJudgeByAnchorPointExpress(db XODB, anchorPoint string, express string) (*AlarmJudge, error) {
 	var err error
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`anchor_point, express, level ` +
+		`id, anchor_point, express, level ` +
 		`FROM monitor.alarm_judge ` +
 		`WHERE anchor_point = ? AND express = ?`
 
 	// run query
-	XOLog(sqlstr, express)
+	XOLog(sqlstr, anchorPoint, express)
 	aj := AlarmJudge{
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, anchorPoint, express).Scan(&aj.AnchorPoint, &aj.Express, &aj.Level)
+	err = db.QueryRow(sqlstr, anchorPoint, express).Scan(&aj.ID, &aj.AnchorPoint, &aj.Express, &aj.Level)
 	if err != nil {
 		return nil, err
 	}
@@ -146,43 +154,30 @@ func AlarmJudgeByAnchorPointAndExpress(db XODB, anchorPoint, express string) (*A
 	return &aj, nil
 }
 
-// AlarmJudgesByAnchorPoint retrieves a row from 'monitor.alarm_judge' as a AlarmJudge.
+// AlarmJudgeByID retrieves a row from 'monitor.alarm_judge' as a AlarmJudge.
 //
-// Generated from index 'name'.
-func AlarmJudgesByAnchorPoint(db XODB, anchorPoint string) ([]*AlarmJudge, error) {
+// Generated from index 'alarm_judge_id_pkey'.
+func AlarmJudgeByID(db XODB, id int64) (*AlarmJudge, error) {
 	var err error
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`anchor_point, express, level ` +
+		`id, anchor_point, express, level ` +
 		`FROM monitor.alarm_judge ` +
-		`WHERE anchor_point = ?`
+		`WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, anchorPoint)
-	q, err := db.Query(sqlstr, anchorPoint)
+	XOLog(sqlstr, id)
+	aj := AlarmJudge{
+		_exists: true,
+	}
+
+	err = db.QueryRow(sqlstr, id).Scan(&aj.ID, &aj.AnchorPoint, &aj.Express, &aj.Level)
 	if err != nil {
 		return nil, err
 	}
-	defer q.Close()
 
-	// load results
-	res := []*AlarmJudge{}
-	for q.Next() {
-		aj := AlarmJudge{
-			_exists: true,
-		}
-
-		// scan
-		err = q.Scan(&aj.AnchorPoint, &aj.Express, &aj.Level)
-		if err != nil {
-			return nil, err
-		}
-
-		res = append(res, &aj)
-	}
-
-	return res, nil
+	return &aj, nil
 }
 
 func AlarmJudgesAll(db XODB) ([]*AlarmJudge, error) {
@@ -190,7 +185,7 @@ func AlarmJudgesAll(db XODB) ([]*AlarmJudge, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`anchor_point, express, level ` +
+		`id, anchor_point, express, level ` +
 		`FROM monitor.alarm_judge `
 
 	// run query
@@ -209,7 +204,7 @@ func AlarmJudgesAll(db XODB) ([]*AlarmJudge, error) {
 		}
 
 		// scan
-		err = q.Scan(&aj.AnchorPoint, &aj.Express, &aj.Level)
+		err = q.Scan(&aj.ID, &aj.AnchorPoint, &aj.Express, &aj.Level)
 		if err != nil {
 			return nil, err
 		}

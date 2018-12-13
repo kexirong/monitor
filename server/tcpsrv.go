@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"net"
 	"strings"
@@ -77,9 +76,7 @@ func readHandle(conn *net.TCPConn) {
 					}
 					{
 						judgeAlarm(tps[i])
-
 					}
-
 				}
 
 			}(tps)
@@ -90,8 +87,7 @@ func readHandle(conn *net.TCPConn) {
 				ipHeartRecorde[hostip] = time.Now().Unix()
 			}
 
-			fmt.Println("heartbeat:", hostip)
-
+			Logger.Info.Println("heartbeat from:", hostip)
 		}
 	}
 
