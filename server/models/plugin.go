@@ -123,7 +123,34 @@ func (p *Plugin) Delete(db XODB) error {
 	return nil
 }
 
-// PluginByPluginName retrieves a row from 'monitor.plugin' as a Plugin.
+func PluginsAll(db XODB) ([]*Plugin, error) {
+	const sqlstr = `SELECT ` +
+		`plugin_name, plugin_type, file_name, comment, created_at ` +
+		`FROM monitor.plugin `
+	q, err := db.Query(sqlstr)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	// load results
+	res := []*Plugin{}
+	for q.Next() {
+		p := Plugin{
+			_exists: true,
+		}
+
+		// scan
+		err = q.Scan(&p.PluginName, &p.PluginType, &p.FileName, &p.Comment, &p.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, &p)
+	}
+
+	return res, nil
+} // PluginByPluginName retrieves a row from 'monitor.plugin' as a Plugin.
 //
 // Generated from index 'plugin_plugin_name_pkey'.
 func PluginByPluginName(db XODB, pluginName string) (*Plugin, error) {
@@ -147,38 +174,4 @@ func PluginByPluginName(db XODB, pluginName string) (*Plugin, error) {
 	}
 
 	return &p, nil
-}
-
-// PluginAll  all the Plugin info
-func PluginAll(db XODB) ([]*Plugin, error) {
-	var err error
-
-	// sql query
-	const sqlstr = `SELECT ` +
-		`plugin_name, plugin_type, file_name, comment, created_at ` +
-		`FROM monitor.plugin `
-
-	// run query
-	XOLog(sqlstr)
-	q, err := db.Query(sqlstr)
-	if err != nil {
-		return nil, err
-	}
-	defer q.Close()
-
-	// load results
-	res := []*Plugin{}
-	for q.Next() {
-		p := Plugin{
-			_exists: true,
-		}
-		// scan
-		err = q.Scan(&p.PluginName, &p.PluginType, &p.FileName, &p.Comment, &p.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-		res = append(res, &p)
-	}
-
-	return res, nil
 }

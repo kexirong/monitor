@@ -36,18 +36,18 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 	var resp common.HttpResp
 	var scs []*common.ScriptConf
 	resp.Result = &scs
-	//fmt.Println(string(body))
+
 	json.Unmarshal(body, &resp)
 	if resp.Code != 200 {
 		log.Fatal(errors.New(resp.Msg))
 	}
-	downloaurl := fmt.Sprintf("http://%s/downloadsscript/", conf.ServerHTTP)
+	downloadurl := fmt.Sprintf("http://%s/scriptdownloads/", conf.ServerHTTP)
 	for _, sc := range scs {
 		if sc.HostName != _hostname {
 			continue
 		}
 		fmt.Println(sc.FileName)
-		err := scriptplugin.CheckDownloads(downloaurl, filepath.Join(scriptPath, sc.FileName), false)
+		err := scriptplugin.CheckDownloads(downloadurl, filepath.Join(scriptPath, sc.FileName), false)
 
 		if err != nil {
 			Logger.Error.Println(err)
@@ -76,11 +76,7 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 			Logger.Error.Println("callback json.Unmarshal TargetPacket error:", err.Error())
 			return
 		}
-		//	btps, err := packetparse.TargetPacketsMarshal(tps)
-		//	if err != nil {
-		//		Logger.Error.Println("callback packetparse.TargetPacketsMarshal TargetPackets error:", err.Error())
-		//		return
-		//	}
+
 		for _, tp := range tps {
 			if err := qe.PutWait(tp, 1000); err != nil {
 				Logger.Error.Println("scriptPluginScheduler error: " + err.Error())

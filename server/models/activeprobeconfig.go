@@ -16,6 +16,8 @@ type ActiveProbeConfig struct {
 	Arg1          string    `json:"arg1"`            // arg1
 	Arg2          string    `json:"arg2"`            // arg2
 	UpdatedAt     time.Time `json:"updated_at"`      // updated_at
+	//  active_probe_config_ibfk_1
+	*ActiveProbe
 
 	// xo fields
 	_exists, _deleted bool
@@ -131,11 +133,40 @@ func (apc *ActiveProbeConfig) Delete(db XODB) error {
 	return nil
 }
 
-// ActiveProbe returns the ActiveProbe associated with the ActiveProbeConfig's ActiveProbeID (active_probe_id).
+func ActiveProbeConfigsAll(db XODB) ([]*ActiveProbeConfig, error) {
+	const sqlstr = `SELECT ` +
+		`id, active_probe_id, target, arg1, arg2, updated_at ` +
+		`FROM monitor.active_probe_config `
+	q, err := db.Query(sqlstr)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	// load results
+	res := []*ActiveProbeConfig{}
+	for q.Next() {
+		apc := ActiveProbeConfig{
+			_exists: true,
+		}
+
+		// scan
+		err = q.Scan(&apc.ID, &apc.ActiveProbeID, &apc.Target, &apc.Arg1, &apc.Arg2, &apc.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, &apc)
+	}
+
+	return res, nil
+} // ActiveProbe returns the ActiveProbe associated with the ActiveProbeConfig's ActiveProbeID (active_probe_id).
 //
 // Generated from foreign key 'active_probe_config_ibfk_1'.
-func (apc *ActiveProbeConfig) ActiveProbe(db XODB) (*ActiveProbe, error) {
-	return ActiveProbeByID(db, apc.ActiveProbeID)
+func (apc *ActiveProbeConfig) ActiveProbeByActiveProbeID(db XODB) (*ActiveProbe, error) {
+	var err error
+	apc.ActiveProbe, err = ActiveProbeByID(db, apc.ActiveProbeID)
+	return apc.ActiveProbe, err
 }
 
 // ActiveProbeConfigsByActiveProbeID retrieves a row from 'monitor.active_probe_config' as a ActiveProbeConfig.
@@ -227,41 +258,4 @@ func ActiveProbeConfigByID(db XODB, id int64) (*ActiveProbeConfig, error) {
 	}
 
 	return &apc, nil
-}
-
-// ActiveProbeConfigsAll retrieves all from 'monitor.active_probe_config'
-//
-func ActiveProbeConfigsAll(db XODB) ([]*ActiveProbeConfig, error) {
-	var err error
-
-	// sql query
-	const sqlstr = `SELECT ` +
-		`id, active_probe_id, target, arg1, arg2, updated_at ` +
-		`FROM monitor.active_probe_config `
-
-	// run query
-	XOLog(sqlstr)
-	q, err := db.Query(sqlstr)
-	if err != nil {
-		return nil, err
-	}
-	defer q.Close()
-
-	// load results
-	res := []*ActiveProbeConfig{}
-	for q.Next() {
-		apc := ActiveProbeConfig{
-			_exists: true,
-		}
-
-		// scan
-		err = q.Scan(&apc.ID, &apc.ActiveProbeID, &apc.Target, &apc.Arg1, &apc.Arg2, &apc.UpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-
-		res = append(res, &apc)
-	}
-
-	return res, nil
 }

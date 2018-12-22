@@ -6,8 +6,6 @@ package models
 import (
 	"errors"
 	"time"
-
-	"github.com/kexirong/monitor/common"
 )
 
 // PluginConfig represents a row from 'monitor.plugin_config'.
@@ -19,6 +17,8 @@ type PluginConfig struct {
 	Interval   int       `json:"interval"`    // interval
 	Timeout    int       `json:"timeout"`     // timeout
 	UpdatedAt  time.Time `json:"updated_at"`  // updated_at
+	//  plugin_config_ibfk_1
+	*Plugin
 
 	// xo fields
 	_exists, _deleted bool
@@ -45,7 +45,7 @@ func (pc *PluginConfig) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by autoincrement
 	const sqlstr = `INSERT INTO monitor.plugin_config (` +
-		"host_ip, host_name, plugin_name, `interval`, timeout, updated_at" +
+		`host_ip, host_name, plugin_name, interval, timeout, updated_at` +
 		`) VALUES (` +
 		`?, ?, ?, ?, ?, ?` +
 		`)`
@@ -86,7 +86,7 @@ func (pc *PluginConfig) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE monitor.plugin_config SET ` +
-		"host_ip = ?, host_name = ?, plugin_name = ?, `interval` = ?, timeout = ?, updated_at = ?" +
+		`host_ip = ?, host_name = ?, plugin_name = ?, interval = ?, timeout = ?, updated_at = ?` +
 		` WHERE id = ?`
 
 	// run query
@@ -134,11 +134,40 @@ func (pc *PluginConfig) Delete(db XODB) error {
 	return nil
 }
 
-// Plugin returns the Plugin associated with the PluginConfig's PluginName (plugin_name).
+func PluginConfigsAll(db XODB) ([]*PluginConfig, error) {
+	const sqlstr = `SELECT ` +
+		`id, host_ip, host_name, plugin_name, interval, timeout, updated_at ` +
+		`FROM monitor.plugin_config `
+	q, err := db.Query(sqlstr)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	// load results
+	res := []*PluginConfig{}
+	for q.Next() {
+		pc := PluginConfig{
+			_exists: true,
+		}
+
+		// scan
+		err = q.Scan(&pc.ID, &pc.HostIP, &pc.HostName, &pc.PluginName, &pc.Interval, &pc.Timeout, &pc.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, &pc)
+	}
+
+	return res, nil
+} // Plugin returns the Plugin associated with the PluginConfig's PluginName (plugin_name).
 //
 // Generated from foreign key 'plugin_config_ibfk_1'.
-func (pc *PluginConfig) Plugin(db XODB) (*Plugin, error) {
-	return PluginByPluginName(db, pc.PluginName)
+func (pc *PluginConfig) PluginByPluginName(db XODB) (*Plugin, error) {
+	var err error
+	pc.Plugin, err = PluginByPluginName(db, pc.PluginName)
+	return pc.Plugin, err
 }
 
 // PluginConfigByPluginNameHostName retrieves a row from 'monitor.plugin_config' as a PluginConfig.
@@ -149,7 +178,7 @@ func PluginConfigByPluginNameHostName(db XODB, pluginName string, hostName strin
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		"id, host_ip, host_name, plugin_name, `interval`, timeout, updated_at " +
+		`id, host_ip, host_name, plugin_name, interval, timeout, updated_at ` +
 		`FROM monitor.plugin_config ` +
 		`WHERE plugin_name = ? AND host_name = ?`
 
@@ -175,7 +204,7 @@ func PluginConfigByID(db XODB, id int64) (*PluginConfig, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		"id, host_ip, host_name, plugin_name, `interval`, timeout, updated_at " +
+		`id, host_ip, host_name, plugin_name, interval, timeout, updated_at ` +
 		`FROM monitor.plugin_config ` +
 		`WHERE id = ?`
 
@@ -191,74 +220,4 @@ func PluginConfigByID(db XODB, id int64) (*PluginConfig, error) {
 	}
 
 	return &pc, nil
-}
-
-// GetPluginConfigsByHostIP custom sql funcs,don't use what you don't know
-func GetPluginConfigsByHostIP(db XODB, hostIP string) ([]*common.ScriptConf, error) {
-
-	var err error
-	// sql query
-	const sqlstr = `SELECT ` +
-		`a.id, a.host_ip, a.host_name, a.plugin_name, b.plugin_type, b.file_name, a.interval,a.timeout  ` +
-		`FROM plugin_config a JOIN plugin b on  a.plugin_name=b.plugin_name  ` +
-		`WHERE host_ip  = ?`
-	XOLog(sqlstr, hostIP)
-
-	q, err := db.Query(sqlstr, hostIP)
-	if err != nil {
-		return nil, err
-	}
-	defer q.Close()
-	// load results
-	res := []*common.ScriptConf{}
-	for q.Next() {
-		sc := common.ScriptConf{}
-		// scan
-		err = q.Scan(&sc.ID, &sc.HostIP, &sc.HostName, &sc.PluginName, &sc.PluginType, &sc.FileName, &sc.Interval, &sc.Timeout)
-		if err != nil {
-			return nil, err
-		}
-
-		res = append(res, &sc)
-	}
-
-	return res, nil
-}
-
-//PluginConfigsAll  retrun all
-func PluginConfigsAll(db XODB) ([]*PluginConfig, error) {
-	var err error
-
-	// sql query
-	const sqlstr = `SELECT ` +
-		//	`a.id, a.host_ip, a.host_name, a.plugin_name, a.interval, a.timeout ,b.file_name, b.plugin_type ` +
-		//	`FROM plugin_config as a JOIN plugin as b on  a.plugin_name=b.plugin_name`
-		"id, host_ip, host_name, plugin_name,`interval` ,timeout , updated_at " +
-		`FROM plugin_config`
-
-	// run query
-	XOLog(sqlstr)
-	q, err := db.Query(sqlstr)
-	if err != nil {
-		return nil, err
-	}
-	defer q.Close()
-
-	// load results
-	res := []*PluginConfig{}
-	for q.Next() {
-		pc := PluginConfig{
-			_exists: true,
-		}
-
-		// scan
-		err = q.Scan(&pc.ID, &pc.HostIP, &pc.HostName, &pc.PluginName, &pc.Interval, &pc.Timeout, &pc.UpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-
-		res = append(res, &pc)
-	}
-
-	return res, nil
 }

@@ -121,7 +121,34 @@ func (as *AlarmSend) Delete(db XODB) error {
 	return nil
 }
 
-// AlarmSendByAnchorPoint retrieves a row from 'monitor.alarm_send' as a AlarmSend.
+func AlarmSendsAll(db XODB) ([]*AlarmSend, error) {
+	const sqlstr = `SELECT ` +
+		`anchor_point, list, type, channel ` +
+		`FROM monitor.alarm_send `
+	q, err := db.Query(sqlstr)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	// load results
+	res := []*AlarmSend{}
+	for q.Next() {
+		as := AlarmSend{
+			_exists: true,
+		}
+
+		// scan
+		err = q.Scan(&as.AnchorPoint, &as.List, &as.Type, &as.Channel)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, &as)
+	}
+
+	return res, nil
+} // AlarmSendByAnchorPoint retrieves a row from 'monitor.alarm_send' as a AlarmSend.
 //
 // Generated from index 'alarm_send_anchor_point_pkey'.
 func AlarmSendByAnchorPoint(db XODB, anchorPoint string) (*AlarmSend, error) {
@@ -145,75 +172,4 @@ func AlarmSendByAnchorPoint(db XODB, anchorPoint string) (*AlarmSend, error) {
 	}
 
 	return &as, nil
-}
-
-// AlarmSendsByChannel retrieves a row from 'monitor.alarm_send' as a AlarmSend.
-//
-// Generated from index 'channel'.
-func AlarmSendsByChannel(db XODB, channel int) ([]*AlarmSend, error) {
-	var err error
-
-	// sql query
-	const sqlstr = `SELECT ` +
-		`anchor_point, list, type, channel ` +
-		`FROM monitor.alarm_send ` +
-		`WHERE channel = ?`
-
-	// run query
-	XOLog(sqlstr, channel)
-	q, err := db.Query(sqlstr, channel)
-	if err != nil {
-		return nil, err
-	}
-	defer q.Close()
-
-	// load results
-	res := []*AlarmSend{}
-	for q.Next() {
-		as := AlarmSend{
-			_exists: true,
-		}
-
-		// scan
-		err = q.Scan(&as.AnchorPoint, &as.List, &as.Type, &as.Channel)
-		if err != nil {
-			return nil, err
-		}
-
-		res = append(res, &as)
-	}
-
-	return res, nil
-}
-
-func AlarmSendsAll(db XODB) ([]*AlarmSend, error) {
-	var err error
-
-	// sql query
-	const sqlstr = `SELECT ` +
-		`anchor_point, list, type, channel ` +
-		`FROM monitor.alarm_send `
-
-	// run query
-	XOLog(sqlstr)
-	q, err := db.Query(sqlstr)
-	if err != nil {
-		return nil, err
-	}
-	defer q.Close()
-
-	// load results
-	res := []*AlarmSend{}
-	for q.Next() {
-		al := AlarmSend{
-			_exists: true,
-		}
-		// scan
-		err = q.Scan(&al.AnchorPoint, &al.List, &al.Type, &al.Channel)
-		if err != nil {
-			return nil, err
-		}
-		res = append(res, &al)
-	}
-	return res, nil
 }

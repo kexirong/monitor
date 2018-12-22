@@ -228,16 +228,15 @@ func (t *TaskScheduled) DeleteJob(taskname string, param ...interface{}) error {
 
 func (t *TaskScheduled) scheduled() (*taskList, error) {
 	t.mutex.Lock()
+	defer t.mutex.Unlock()
 	pe := t.pTask
 	if pe.isRuning() {
-		t.mutex.Unlock()
 		return nil, fmt.Errorf("%sis runing, may interval Too brief", pe.task.Name())
 	}
 	now := time.Now()
 	wait := time.After(pe.nextTime.Sub(now))
 	pe.nextTime = pe.nextTime.Add(pe.invl)
 	t.nextTask()
-	t.mutex.Unlock()
 	<-wait
 	return pe, nil
 }

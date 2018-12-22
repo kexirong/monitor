@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -441,7 +442,7 @@ func startHTTPsrv() {
 
 	})
 
-	http.Handle("/downloadsscript/", http.StripPrefix("/downloadsscript/", http.FileServer(http.Dir("./scriptrepo/"))))
+	http.Handle("/scriptdownloads/", http.StripPrefix("/scriptdownloads/", http.FileServer(http.Dir("./scriptrepo/"))))
 
 	http.HandleFunc("/alarm_send", func(w http.ResponseWriter, r *http.Request) {
 

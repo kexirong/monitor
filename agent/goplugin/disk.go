@@ -11,12 +11,12 @@ import (
 	"github.com/kexirong/monitor/common/packetparse"
 )
 
-var (
+const (
 	diskmtabFlie = "/proc/mounts"
 	diskfsFile   = "/proc/filesystems"
 )
 
-//硬盘容量值使用了float64保存，单位字节。目前硬盘远小于1000TB，理论上不会有精度问题
+//硬盘容量值使用了float64保存，单位字节。目前硬盘远小于1PB，理论上不会有精度问题
 
 //DISK exproted method has Init GetTarget
 type DISK struct {

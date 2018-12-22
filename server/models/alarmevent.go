@@ -5,11 +5,10 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"time"
 )
 
-// AlarmQueue represents a row from 'monitor.alarm_event'.
+// AlarmEvent represents a row from 'monitor.alarm_event'.
 type AlarmEvent struct {
 	ID          int64     `json:"id"`           // id
 	HostName    string    `json:"host_name"`    // host_name
@@ -27,34 +26,22 @@ type AlarmEvent struct {
 	_exists, _deleted bool
 }
 
-func (aq *AlarmEvent) String() string {
-	return fmt.Sprintf(`
-	[%s]
-	seq: %d, 
-	Time: %s,
-	HostName: %s,
-	AnchorPoint: %s,
-	Value: %g,
-	Message: %s`,
-		aq.Level, aq.ID, aq.CreatedAt, aq.HostName, aq.AnchorPoint, aq.Value, aq.Message)
+// Exists determines if the AlarmEvent exists in the database.
+func (ae *AlarmEvent) Exists() bool {
+	return ae._exists
 }
 
-// Exists determines if the AlarmQueue exists in the database.
-func (aq *AlarmEvent) Exists() bool {
-	return aq._exists
+// Deleted provides information if the AlarmEvent has been deleted from the database.
+func (ae *AlarmEvent) Deleted() bool {
+	return ae._deleted
 }
 
-// Deleted provides information if the AlarmQueue has been deleted from the database.
-func (aq *AlarmEvent) Deleted() bool {
-	return aq._deleted
-}
-
-// Insert inserts the AlarmQueue to the database.
-func (aq *AlarmEvent) Insert(db XODB) error {
+// Insert inserts the AlarmEvent to the database.
+func (ae *AlarmEvent) Insert(db XODB) error {
 	var err error
 
 	// if already exist, bail
-	if aq._exists {
+	if ae._exists {
 		return errors.New("insert failed: already exists")
 	}
 
@@ -66,8 +53,8 @@ func (aq *AlarmEvent) Insert(db XODB) error {
 		`)`
 
 	// run query
-	XOLog(sqlstr, aq.HostName, aq.AnchorPoint, aq.Rule, aq.Value, aq.Message, aq.Level, aq.Stat, aq.HandleMan, aq.CreatedAt, aq.UpdatedAt)
-	res, err := db.Exec(sqlstr, aq.HostName, aq.AnchorPoint, aq.Rule, aq.Value, aq.Message, aq.Level, aq.Stat, aq.HandleMan, aq.CreatedAt, aq.UpdatedAt)
+	XOLog(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan, ae.CreatedAt, ae.UpdatedAt)
+	res, err := db.Exec(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan, ae.CreatedAt, ae.UpdatedAt)
 	if err != nil {
 		return err
 	}
@@ -79,23 +66,23 @@ func (aq *AlarmEvent) Insert(db XODB) error {
 	}
 
 	// set primary key and existence
-	aq.ID = int64(id)
-	aq._exists = true
+	ae.ID = int64(id)
+	ae._exists = true
 
 	return nil
 }
 
-// Update updates the AlarmQueue in the database.
-func (aq *AlarmEvent) Update(db XODB) error {
+// Update updates the AlarmEvent in the database.
+func (ae *AlarmEvent) Update(db XODB) error {
 	var err error
 
 	// if doesn't exist, bail
-	if !aq._exists {
+	if !ae._exists {
 		return errors.New("update failed: does not exist")
 	}
 
 	// if deleted, bail
-	if aq._deleted {
+	if ae._deleted {
 		return errors.New("update failed: marked for deletion")
 	}
 
@@ -105,31 +92,31 @@ func (aq *AlarmEvent) Update(db XODB) error {
 		` WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, aq.HostName, aq.AnchorPoint, aq.Rule, aq.Value, aq.Message, aq.Level, aq.Stat, aq.HandleMan, aq.CreatedAt, aq.UpdatedAt, aq.ID)
-	_, err = db.Exec(sqlstr, aq.HostName, aq.AnchorPoint, aq.Rule, aq.Value, aq.Message, aq.Level, aq.Stat, aq.HandleMan, aq.CreatedAt, aq.UpdatedAt, aq.ID)
+	XOLog(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan, ae.CreatedAt, ae.UpdatedAt, ae.ID)
+	_, err = db.Exec(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan, ae.CreatedAt, ae.UpdatedAt, ae.ID)
 	return err
 }
 
-// Save saves the AlarmQueue to the database.
-func (aq *AlarmEvent) Save(db XODB) error {
-	if aq.Exists() {
-		return aq.Update(db)
+// Save saves the AlarmEvent to the database.
+func (ae *AlarmEvent) Save(db XODB) error {
+	if ae.Exists() {
+		return ae.Update(db)
 	}
 
-	return aq.Insert(db)
+	return ae.Insert(db)
 }
 
-// Delete deletes the AlarmQueue from the database.
-func (aq *AlarmEvent) Delete(db XODB) error {
+// Delete deletes the AlarmEvent from the database.
+func (ae *AlarmEvent) Delete(db XODB) error {
 	var err error
 
 	// if doesn't exist, bail
-	if !aq._exists {
+	if !ae._exists {
 		return nil
 	}
 
 	// if deleted, bail
-	if aq._deleted {
+	if ae._deleted {
 		return nil
 	}
 
@@ -137,22 +124,49 @@ func (aq *AlarmEvent) Delete(db XODB) error {
 	const sqlstr = `DELETE FROM monitor.alarm_event WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, aq.ID)
-	_, err = db.Exec(sqlstr, aq.ID)
+	XOLog(sqlstr, ae.ID)
+	_, err = db.Exec(sqlstr, ae.ID)
 	if err != nil {
 		return err
 	}
 
 	// set deleted
-	aq._deleted = true
+	ae._deleted = true
 
 	return nil
 }
 
-// AlarmQueuesByStat retrieves a row from 'monitor.alarm_event' as a AlarmQueue.
+func AlarmEventsAll(db XODB) ([]*AlarmEvent, error) {
+	const sqlstr = `SELECT ` +
+		`id, host_name, anchor_point, rule, value, message, level, stat, handle_man, created_at, updated_at ` +
+		`FROM monitor.alarm_event `
+	q, err := db.Query(sqlstr)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	// load results
+	res := []*AlarmEvent{}
+	for q.Next() {
+		ae := AlarmEvent{
+			_exists: true,
+		}
+
+		// scan
+		err = q.Scan(&ae.ID, &ae.HostName, &ae.AnchorPoint, &ae.Rule, &ae.Value, &ae.Message, &ae.Level, &ae.Stat, &ae.HandleMan, &ae.CreatedAt, &ae.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, &ae)
+	}
+
+	return res, nil
+} // AlarmEventsByStat retrieves a row from 'monitor.alarm_event' as a AlarmEvent.
 //
 // Generated from index 'IDX_AlarmEvent_stat'.
-func AlarmQueuesByStat(db XODB, stat int) ([]*AlarmEvent, error) {
+func AlarmEventsByStat(db XODB, stat int) ([]*AlarmEvent, error) {
 	var err error
 
 	// sql query
@@ -172,26 +186,26 @@ func AlarmQueuesByStat(db XODB, stat int) ([]*AlarmEvent, error) {
 	// load results
 	res := []*AlarmEvent{}
 	for q.Next() {
-		aq := AlarmEvent{
+		ae := AlarmEvent{
 			_exists: true,
 		}
 
 		// scan
-		err = q.Scan(&aq.ID, &aq.HostName, &aq.AnchorPoint, &aq.Rule, &aq.Value, &aq.Message, &aq.Level, &aq.Stat, &aq.HandleMan, &aq.CreatedAt, &aq.UpdatedAt)
+		err = q.Scan(&ae.ID, &ae.HostName, &ae.AnchorPoint, &ae.Rule, &ae.Value, &ae.Message, &ae.Level, &ae.Stat, &ae.HandleMan, &ae.CreatedAt, &ae.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
 
-		res = append(res, &aq)
+		res = append(res, &ae)
 	}
 
 	return res, nil
 }
 
-// AlarmQueueByID retrieves a row from 'monitor.alarm_event' as a AlarmQueue.
+// AlarmEventByID retrieves a row from 'monitor.alarm_event' as a AlarmEvent.
 //
 // Generated from index 'alarm_event_id_pkey'.
-func AlarmQueueByID(db XODB, id int64) (*AlarmEvent, error) {
+func AlarmEventByID(db XODB, id int64) (*AlarmEvent, error) {
 	var err error
 
 	// sql query
@@ -202,14 +216,14 @@ func AlarmQueueByID(db XODB, id int64) (*AlarmEvent, error) {
 
 	// run query
 	XOLog(sqlstr, id)
-	aq := AlarmEvent{
+	ae := AlarmEvent{
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, id).Scan(&aq.ID, &aq.HostName, &aq.AnchorPoint, &aq.Rule, &aq.Value, &aq.Message, &aq.Level, &aq.Stat, &aq.HandleMan, &aq.CreatedAt, &aq.UpdatedAt)
+	err = db.QueryRow(sqlstr, id).Scan(&ae.ID, &ae.HostName, &ae.AnchorPoint, &ae.Rule, &ae.Value, &ae.Message, &ae.Level, &ae.Stat, &ae.HandleMan, &ae.CreatedAt, &ae.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 
-	return &aq, nil
+	return &ae, nil
 }

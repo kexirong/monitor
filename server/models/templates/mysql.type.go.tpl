@@ -9,6 +9,10 @@ type {{ .Name }} struct {
 {{- range .Fields }}
 	{{ .Name }} {{ retype .Type }} `json:"{{ .Col.ColumnName }}"` // {{ .Col.ColumnName }}
 {{- end }}
+ {{-  range $k,$v := .FkMap }}
+ //  {{ $k }}
+ *{{ $v.RefType.Name }}
+ {{- end }}
 {{- if .PrimaryKey }}
 
 	// xo fields
@@ -176,3 +180,33 @@ func ({{ $short }} *{{ .Name }}) Delete(db XODB) error {
 }
 {{- end }}
 
+func {{ .Name }}sAll (db XODB)([]*{{ .Name }}, error){
+	const sqlstr = `SELECT ` +
+		`{{ colnames .Type.Fields }} ` +
+		`FROM {{ $table }} `
+	q, err := db.Query(sqlstr)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	// load results
+	res := []*{{ .Type.Name }}{}
+	for q.Next() {
+		{{ $short }} := {{ .Type.Name }}{
+		{{- if .Type.PrimaryKey }}
+			_exists: true,
+		{{ end -}}
+		}
+
+		// scan
+		err = q.Scan({{ fieldnames .Type.Fields (print "&" $short) }})
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, &{{ $short }})
+	}
+
+	return res, nil
+}

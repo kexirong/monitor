@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
@@ -9,10 +10,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	client "github.com/influxdata/influxdb/client/v2"
-	jsoniter "github.com/json-iterator/go"
 )
-
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 var conf = struct {
 	Service           string

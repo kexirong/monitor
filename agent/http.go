@@ -45,8 +45,8 @@ func startHTTPsrv() {
 			switch req.Method {
 
 			case "add":
-				downloaurl := fmt.Sprintf("http://%s/downloadsscript/", conf.ServerHTTP)
-				err := scriptplugin.CheckDownloads(downloaurl, path.Join(scriptPath, sc.FileName), false)
+				downloadurl := fmt.Sprintf("http://%s/scriptdownloads/", conf.ServerHTTP)
+				err := scriptplugin.CheckDownloads(downloadurl, path.Join(scriptPath, sc.FileName), false)
 				if err != nil {
 					Logger.Error.Println(err)
 					break

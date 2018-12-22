@@ -1,6 +1,7 @@
 package packetparse
 
 import (
+	"encoding/json"
 	"testing"
 
 	jsoniter "github.com/json-iterator/go"
@@ -60,7 +61,7 @@ func Benchmark_gencode(b *testing.B) {
 		}
 
 	}
-	b.Log(p)
+
 }
 
 func Benchmark_easyjson(b *testing.B) {
@@ -73,12 +74,12 @@ func Benchmark_easyjson(b *testing.B) {
 		Value:     []float64{12.1, 0.0, 12.6, 73.7},
 		VlTags:    "user|nice|system|idle",
 	}
-
+	bs, err := t.MarshalJSON()
+	if err != nil {
+		b.Error(err)
+	}
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		bs, err := t.MarshalJSON()
-		if err != nil {
-			b.Error(err)
-		}
 
 		err = t.UnmarshalJSON(bs)
 		if err != nil {
@@ -96,11 +97,23 @@ func Benchmark_jsoniter(b *testing.B) {
 		if err != nil {
 			b.Error(err)
 		}
-		_, err = json.Marshal(p)
+
+	}
+
+}
+
+func Benchmark_stdjson(b *testing.B) {
+
+	jsonstr := `{"plugin": "cpus1", "timestamp": 1524205995.484389, "hostname": "kk-debian", "value": [12.1, 0.0, 12.6, 73.7], "instance": "0", "vltags": "user|nice|system|idle", "type": "percent"}`
+	var p TargetPacket
+	for i := 0; i < b.N; i++ {
+		err := json.Unmarshal([]byte(jsonstr), &p)
 		if err != nil {
 			b.Error(err)
 		}
+
 	}
+
 }
 
 func Test_jsoniter(t *testing.T) {
