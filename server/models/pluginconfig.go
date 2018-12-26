@@ -45,14 +45,14 @@ func (pc *PluginConfig) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by autoincrement
 	const sqlstr = `INSERT INTO monitor.plugin_config (` +
-		`host_ip, host_name, plugin_name, interval, timeout, updated_at` +
+		"host_ip, host_name, plugin_name, `interval`, timeout" +
 		`) VALUES (` +
-		`?, ?, ?, ?, ?, ?` +
+		`?, ?, ?, ?, ?` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, pc.HostIP, pc.HostName, pc.PluginName, pc.Interval, pc.Timeout, pc.UpdatedAt)
-	res, err := db.Exec(sqlstr, pc.HostIP, pc.HostName, pc.PluginName, pc.Interval, pc.Timeout, pc.UpdatedAt)
+	XOLog(sqlstr, pc.HostIP, pc.HostName, pc.PluginName, pc.Interval, pc.Timeout)
+	res, err := db.Exec(sqlstr, pc.HostIP, pc.HostName, pc.PluginName, pc.Interval, pc.Timeout)
 	if err != nil {
 		return err
 	}
@@ -86,12 +86,12 @@ func (pc *PluginConfig) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE monitor.plugin_config SET ` +
-		`host_ip = ?, host_name = ?, plugin_name = ?, interval = ?, timeout = ?, updated_at = ?` +
+		"host_ip = ?, host_name = ?, plugin_name = ?, `interval` = ?, timeout = ?" +
 		` WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, pc.HostIP, pc.HostName, pc.PluginName, pc.Interval, pc.Timeout, pc.UpdatedAt, pc.ID)
-	_, err = db.Exec(sqlstr, pc.HostIP, pc.HostName, pc.PluginName, pc.Interval, pc.Timeout, pc.UpdatedAt, pc.ID)
+	XOLog(sqlstr, pc.HostIP, pc.HostName, pc.PluginName, pc.Interval, pc.Timeout, pc.ID)
+	_, err = db.Exec(sqlstr, pc.HostIP, pc.HostName, pc.PluginName, pc.Interval, pc.Timeout, pc.ID)
 	return err
 }
 
@@ -136,7 +136,7 @@ func (pc *PluginConfig) Delete(db XODB) error {
 
 func PluginConfigsAll(db XODB) ([]*PluginConfig, error) {
 	const sqlstr = `SELECT ` +
-		`id, host_ip, host_name, plugin_name, interval, timeout, updated_at ` +
+		"id, host_ip, host_name, plugin_name, `interval`, timeout, updated_at " +
 		`FROM monitor.plugin_config `
 	q, err := db.Query(sqlstr)
 	if err != nil {
@@ -164,10 +164,49 @@ func PluginConfigsAll(db XODB) ([]*PluginConfig, error) {
 } // Plugin returns the Plugin associated with the PluginConfig's PluginName (plugin_name).
 //
 // Generated from foreign key 'plugin_config_ibfk_1'.
-func (pc *PluginConfig) PluginByPluginName(db XODB) (*Plugin, error) {
+func (pc *PluginConfig) LoadPlugin(db XODB) error {
 	var err error
 	pc.Plugin, err = PluginByPluginName(db, pc.PluginName)
-	return pc.Plugin, err
+	return err
+}
+
+// PluginConfigsByHostName retrieves a row from 'monitor.plugin_config' as a PluginConfig.
+//
+// Generated from index 'IDX_PluginConfig_host_name'.
+func PluginConfigsByHostName(db XODB, hostName string) ([]*PluginConfig, error) {
+	var err error
+
+	// sql query
+	const sqlstr = `SELECT ` +
+		"id, host_ip, host_name, plugin_name, `interval`, timeout, updated_at " +
+		`FROM monitor.plugin_config ` +
+		`WHERE host_name = ?`
+
+	// run query
+	XOLog(sqlstr, hostName)
+	q, err := db.Query(sqlstr, hostName)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	// load results
+	res := []*PluginConfig{}
+	for q.Next() {
+		pc := PluginConfig{
+			_exists: true,
+		}
+
+		// scan
+		err = q.Scan(&pc.ID, &pc.HostIP, &pc.HostName, &pc.PluginName, &pc.Interval, &pc.Timeout, &pc.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, &pc)
+	}
+
+	return res, nil
 }
 
 // PluginConfigByPluginNameHostName retrieves a row from 'monitor.plugin_config' as a PluginConfig.
@@ -178,7 +217,7 @@ func PluginConfigByPluginNameHostName(db XODB, pluginName string, hostName strin
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, host_ip, host_name, plugin_name, interval, timeout, updated_at ` +
+		"id, host_ip, host_name, plugin_name, `interval`, timeout, updated_at " +
 		`FROM monitor.plugin_config ` +
 		`WHERE plugin_name = ? AND host_name = ?`
 
@@ -204,7 +243,7 @@ func PluginConfigByID(db XODB, id int64) (*PluginConfig, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, host_ip, host_name, plugin_name, interval, timeout, updated_at ` +
+		"id, host_ip, host_name, plugin_name, `interval`, timeout, updated_at " +
 		`FROM monitor.plugin_config ` +
 		`WHERE id = ?`
 

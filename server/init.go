@@ -25,6 +25,10 @@ var conf = struct {
 	}
 	WchatURL string
 	EmailURL string
+	Agent    struct {
+		HTTPPort int
+		Scheme   string
+	}
 }{}
 
 var monitorDB *sql.DB

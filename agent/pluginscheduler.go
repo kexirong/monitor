@@ -15,12 +15,14 @@ import (
 	"github.com/kexirong/monitor/common"
 	"github.com/kexirong/monitor/common/packetparse"
 	"github.com/kexirong/monitor/common/queue"
+	"github.com/kexirong/monitor/server/models"
 )
 
 func scriptPluginScheduler(qe *queue.BytesQueue) {
 	res, err := http.Post(fmt.Sprintf("http://%s/plugin_config", conf.ServerHTTP),
 		"application/json",
-		strings.NewReader(`{"method":"getown"}`),
+		strings.NewReader(
+			fmt.Sprintf(`{"method":"getlist","cause":{"host_name":"%s"}}`, _hostname)),
 	)
 	if err != nil {
 		Logger.Warning.Println("The server may be down!")
@@ -34,29 +36,36 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 	}
 
 	var resp common.HttpResp
-	var scs []*common.ScriptConf
-	resp.Result = &scs
-
+	var pcs []*models.PluginConfig
+	resp.Result = &pcs
+	fmt.Println(string(body))
 	json.Unmarshal(body, &resp)
 	if resp.Code != 200 {
 		log.Fatal(errors.New(resp.Msg))
 	}
+
 	downloadurl := fmt.Sprintf("http://%s/scriptdownloads/", conf.ServerHTTP)
-	for _, sc := range scs {
-		if sc.HostName != _hostname {
+
+	for _, pc := range pcs {
+
+		if pc.HostName != _hostname {
 			continue
 		}
-		fmt.Println(sc.FileName)
-		err := scriptplugin.CheckDownloads(downloadurl, filepath.Join(scriptPath, sc.FileName), false)
+		if pc.Plugin == nil {
+			Logger.Error.Println("pc.Plugin == nil, ", pc)
+			continue
+		}
+		err := scriptplugin.CheckDownloads(downloadurl, filepath.Join(scriptPath, pc.FileName), true)
 
 		if err != nil {
 			Logger.Error.Println(err)
 			continue
 		}
-		tasker := scriptplugin.NewScripter(filepath.Join(scriptPath, sc.FileName),
-			time.Duration(sc.Timeout)*time.Second)
+		Logger.Info.Println("add task: ", pc.FileName)
+		tasker := scriptplugin.NewScripter(filepath.Join(scriptPath, pc.FileName),
+			time.Duration(pc.Timeout)*time.Second)
 
-		scriptScheduled.AddTask(time.Duration(sc.Interval)*time.Second, tasker)
+		scriptScheduled.AddTask(time.Duration(pc.Interval)*time.Second, tasker)
 	}
 
 	var callback = func(b []byte, err error) {
@@ -68,7 +77,7 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 			Logger.Error.Println("callback error arg b is nil")
 			return
 		}
-		Logger.Info.Println(string(b))
+		Logger.Info.Print(string(b))
 
 		var tps packetparse.TargetPackets
 		err = tps.UnmarshalJSON(b)
@@ -85,7 +94,7 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 	}
 
 	Logger.Info.Println("activePluginScheduler staring")
-	scriptScheduled.Star(callback)
+	scriptScheduled.Start(callback)
 }
 
 //gopluginScheduler

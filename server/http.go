@@ -1,12 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/kexirong/monitor/common"
@@ -47,6 +47,7 @@ func startHTTPsrv() {
 			if err != nil && !(req.Method == "add" || req.Method == "getlist") {
 				ret.Code = 400
 				ret.Msg = err.Error()
+				goto end
 			}
 			switch req.Method {
 
@@ -76,16 +77,21 @@ func startHTTPsrv() {
 				}
 
 			case "getlist":
-				ret.Result, err = models.PluginAll(monitorDB)
+				ret.Result, err = models.PluginsAll(monitorDB)
 				if err != nil {
 					ret.Code = 400
 					ret.Msg = err.Error()
 				}
+			default:
+				ret.Code = 400
+				ret.Msg = "unkown method"
+
 			}
 		} else {
 			ret.Code = 400
 			ret.Msg = "bad request"
 		}
+	end:
 		bret, _ := json.Marshal(ret)
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Content-Type", "application/json")
@@ -114,11 +120,11 @@ func startHTTPsrv() {
 		json.Unmarshal(body, &req)
 
 		if r.Method == "POST" {
-
 			npc, err := models.PluginConfigByID(monitorDB, pc.ID)
-			if err != nil && !(req.Method == "add" || req.Method == "getlist" || req.Method == "getown") {
+			if err != nil && !(req.Method == "add" || req.Method == "getlist") {
 				ret.Code = 400
 				ret.Msg = err.Error()
+				goto end
 			}
 
 			switch req.Method {
@@ -140,40 +146,119 @@ func startHTTPsrv() {
 				if err != nil {
 					ret.Code = 400
 					ret.Msg = err.Error()
-				} else {
-
-					//taskScheduled.
+					break
 				}
+				clt := activeplugin.NewHTTPClient(5 * time.Second)
+				err := npc.LoadPlugin(monitorDB)
+				if err != nil {
+					ret.Code = 400
+					ret.Msg = "query associate plugin failed"
+					break
+				}
+				req := common.HttpReq{
+					Method: "add",
+					Cause:  npc,
+				}
+				bts, _ := json.Marshal(req)
+				body := bytes.NewReader(bts)
+				rsp, err := clt.Post(
+					fmt.Sprintf("%s://%s:%d/scriptplugin",
+						conf.Agent.Scheme,
+						npc.HostIP,
+						conf.Agent.HTTPPort),
+					"application/json",
+					body)
+				if err != nil {
+					ret.Code = 400
+					ret.Msg = err.Error()
+					break
+				}
+				defer rsp.Body.Close()
+				rbts, _ := ioutil.ReadAll(rsp.Body)
+
+				json.Unmarshal(rbts, &ret)
+				//taskScheduled
 
 			case "delete":
 				err = npc.Delete(monitorDB)
 				if err != nil {
 					ret.Code = 400
 					ret.Msg = err.Error()
-				} else {
-
-					//taskScheduled.
+					break
 				}
+				clt := activeplugin.NewHTTPClient(5 * time.Second)
+				err := npc.LoadPlugin(monitorDB)
+				if err != nil {
+					ret.Code = 400
+					ret.Msg = "query associate plugin failed"
+					break
+				}
+				req := common.HttpReq{
+					Method: "delete",
+					Cause:  npc,
+				}
+				bts, _ := json.Marshal(req)
+				body := bytes.NewReader(bts)
+				rsp, err := clt.Post(
+					fmt.Sprintf("%s://%s:%d/scriptplugin",
+						conf.Agent.Scheme,
+						npc.HostIP,
+						conf.Agent.HTTPPort),
+					"application/json",
+					body)
+				if err != nil {
+					ret.Code = 400
+					ret.Msg = err.Error()
+					break
+				}
+				defer rsp.Body.Close()
+				rbts, _ := ioutil.ReadAll(rsp.Body)
+
+				json.Unmarshal(rbts, &ret)
 
 			case "getlist":
-				ret.Result, err = models.PluginConfigsAll(monitorDB)
-				if err != nil {
-					ret.Code = 400
-					ret.Msg = err.Error()
-				}
+				/*	ret.Result, err = models.PluginConfigsAll(monitorDB)
+						if err != nil {
+							ret.Code = 400
+							ret.Msg = err.Error()
+						}
 
-			case "getown":
-				ip := strings.Split(r.RemoteAddr, ":")[0]
-				ret.Result, err = models.GetPluginConfigsByHostIP(monitorDB, ip)
+					case "getown":
+				*/
+				var err error
+				var pcs []*models.PluginConfig
+				if pc.HostName != "" {
+					pcs, err = models.PluginConfigsByHostName(monitorDB, pc.HostName)
+				} else {
+					pcs, err = models.PluginConfigsAll(monitorDB)
+				}
 				if err != nil {
 					ret.Code = 400
 					ret.Msg = err.Error()
+					break
 				}
+				for i := range pcs {
+					err = pcs[i].LoadPlugin(monitorDB)
+					if err != nil {
+						break
+					}
+				}
+				if err != nil {
+					ret.Code = 400
+					ret.Msg = err.Error()
+				} else {
+					ret.Result = pcs
+				}
+			default:
+				ret.Code = 400
+				ret.Msg = "unkown method"
+
 			}
 		} else {
 			ret.Code = 400
 			ret.Msg = "bad request"
 		}
+	end:
 		bret, _ := json.Marshal(ret)
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Content-Type", "application/json")
@@ -208,6 +293,7 @@ func startHTTPsrv() {
 				Logger.Error.Println(err.Error())
 				ret.Code = 400
 				ret.Msg = err.Error()
+				goto end
 			}
 
 			switch req.Method {
@@ -215,7 +301,7 @@ func startHTTPsrv() {
 				ret.Result = nap
 			case "getlist":
 
-				ret.Result, err = models.ActiveProbeAll(monitorDB)
+				ret.Result, err = models.ActiveProbesAll(monitorDB)
 				if err != nil {
 					ret.Code = 400
 					ret.Msg = err.Error()
@@ -290,12 +376,16 @@ func startHTTPsrv() {
 					ret.Code = 200
 					ret.Msg = "ok"
 				}
+			default:
+				ret.Code = 400
+				ret.Msg = "unkown method"
 
 			}
 		} else {
 			ret.Code = 400
 			ret.Msg = "bad request"
 		}
+	end:
 		bret, _ := json.Marshal(ret)
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Content-Type", "application/json")
@@ -331,6 +421,7 @@ func startHTTPsrv() {
 			if err != nil && !(req.Method == "add" || req.Method == "getlist") {
 				ret.Code = 400
 				ret.Msg = err.Error()
+				goto end
 			}
 
 			switch req.Method {
@@ -427,12 +518,15 @@ func startHTTPsrv() {
 					ret.Code = 400
 					ret.Msg = err.Error()
 				}
+			default:
+				ret.Code = 400
+				ret.Msg = "unkown method"
 			}
 		} else {
 			ret.Code = 400
 			ret.Msg = "bad request"
 		}
-
+	end:
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -471,6 +565,7 @@ func startHTTPsrv() {
 			if err != nil && !(req.Method == "add" || req.Method == "getlist") {
 				ret.Code = 400
 				ret.Msg = err.Error()
+				goto end
 			}
 
 			switch req.Method {
@@ -513,12 +608,16 @@ func startHTTPsrv() {
 					ret.Msg = err.Error()
 
 				}
+			default:
+				ret.Code = 400
+				ret.Msg = "unkown method"
 
 			}
 		} else {
 			ret.Code = 400
 			ret.Msg = "bad request"
 		}
+	end:
 		bret, _ := json.Marshal(ret)
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Content-Type", "application/json")
@@ -551,13 +650,14 @@ func startHTTPsrv() {
 			ret.Code = 400
 			ret.Msg = err.Error()
 		}
-		fmt.Println(err)
+
 		if r.Method == "POST" {
 
 			naj, err := models.AlarmJudgeByID(monitorDB, aj.ID)
 			if err != nil && !(req.Method == "add" || req.Method == "getlist") {
 				ret.Code = 400
 				ret.Msg = err.Error()
+				goto end
 			}
 
 			switch req.Method {
@@ -599,11 +699,16 @@ func startHTTPsrv() {
 					ret.Code = 400
 					ret.Msg = err.Error()
 				}
+			default:
+				ret.Code = 400
+				ret.Msg = "unkown method"
 			}
+
 		} else {
 			ret.Code = 400
 			ret.Msg = "bad request"
 		}
+	end:
 		bret, _ := json.Marshal(ret)
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Content-Type", "application/json")

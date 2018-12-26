@@ -26,7 +26,7 @@ type ProcessProbe struct {
 //NewProcessProbe return *ProcessProbe built-in *http.Client
 func NewProcessProbe(hostname, ip string) *ProcessProbe {
 	return &ProcessProbe{
-		client:     NewHTTPClient(),
+		client:     NewHTTPClient(3 * time.Second),
 		hostName:   hostname,
 		ip:         ip,
 		pluginName: "process_probe",

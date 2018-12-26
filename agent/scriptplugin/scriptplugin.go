@@ -51,11 +51,11 @@ func CheckDownloads(url, filePath string, check bool) error {
 	}
 	res, err := http.Get(url + path.Base(filePath))
 	if err != nil {
-
 		return err
 	}
-	robots, _ := ioutil.ReadAll(res.Body)
 	defer res.Body.Close()
+	robots, _ := ioutil.ReadAll(res.Body)
+
 	if res.StatusCode != 200 {
 		return errors.New(res.Status)
 	}

@@ -41,14 +41,14 @@ func (p *Plugin) Insert(db XODB) error {
 
 	// sql insert query, primary key must be provided
 	const sqlstr = `INSERT INTO monitor.plugin (` +
-		`plugin_name, plugin_type, file_name, comment, created_at` +
+		`plugin_name, plugin_type, file_name, comment` +
 		`) VALUES (` +
-		`?, ?, ?, ?, ?` +
+		`?, ?, ?, ?` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, p.PluginName, p.PluginType, p.FileName, p.Comment, p.CreatedAt)
-	_, err = db.Exec(sqlstr, p.PluginName, p.PluginType, p.FileName, p.Comment, p.CreatedAt)
+	XOLog(sqlstr, p.PluginName, p.PluginType, p.FileName, p.Comment)
+	_, err = db.Exec(sqlstr, p.PluginName, p.PluginType, p.FileName, p.Comment)
 	if err != nil {
 		return err
 	}
@@ -75,12 +75,12 @@ func (p *Plugin) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE monitor.plugin SET ` +
-		`plugin_type = ?, file_name = ?, comment = ?, created_at = ?` +
+		`plugin_type = ?, file_name = ?, comment = ?` +
 		` WHERE plugin_name = ?`
 
 	// run query
-	XOLog(sqlstr, p.PluginType, p.FileName, p.Comment, p.CreatedAt, p.PluginName)
-	_, err = db.Exec(sqlstr, p.PluginType, p.FileName, p.Comment, p.CreatedAt, p.PluginName)
+	XOLog(sqlstr, p.PluginType, p.FileName, p.Comment, p.PluginName)
+	_, err = db.Exec(sqlstr, p.PluginType, p.FileName, p.Comment, p.PluginName)
 	return err
 }
 

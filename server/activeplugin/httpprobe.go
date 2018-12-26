@@ -36,7 +36,7 @@ type target struct {
 //NewHTTPProbe return *HTTPProbe built-in *http.Client
 func NewHTTPProbe(hostname string) *HTTPProbe {
 	return &HTTPProbe{
-		client:     NewHTTPClient(),
+		client:     NewHTTPClient(3 * time.Second),
 		hostName:   hostname,
 		pluginName: "http_probe",
 	}
@@ -161,7 +161,7 @@ func (h *HTTPProbe) Post(url string, contentType string, data string) ([]byte, e
 	return ioutil.ReadAll(rsp.Body)
 }
 
-func NewHTTPClient() *http.Client {
+func NewHTTPClient(timeout time.Duration) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -169,7 +169,7 @@ func NewHTTPClient() *http.Client {
 			},
 			DisableCompression: true,
 			Dial: func(netw, addr string) (net.Conn, error) {
-				c, err := net.DialTimeout(netw, addr, time.Second*2)
+				c, err := net.DialTimeout(netw, addr, timeout)
 				if err != nil {
 					return nil, err
 				}

@@ -5,6 +5,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -24,6 +25,18 @@ type AlarmEvent struct {
 
 	// xo fields
 	_exists, _deleted bool
+}
+
+func (ae *AlarmEvent) String() string {
+	return fmt.Sprintf(`
+	[%s]
+	seq: %d, 
+	Time: %s,
+	HostName: %s,
+	AnchorPoint: %s,
+	Value: %g,
+	Message: %s`,
+		ae.Level, ae.ID, ae.CreatedAt, ae.HostName, ae.AnchorPoint, ae.Value, ae.Message)
 }
 
 // Exists determines if the AlarmEvent exists in the database.
@@ -47,14 +60,14 @@ func (ae *AlarmEvent) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by autoincrement
 	const sqlstr = `INSERT INTO monitor.alarm_event (` +
-		`host_name, anchor_point, rule, value, message, level, stat, handle_man, created_at, updated_at` +
+		`host_name, anchor_point, rule, value, message, level, stat, handle_man` +
 		`) VALUES (` +
-		`?, ?, ?, ?, ?, ?, ?, ?, ?, ?` +
+		`?, ?, ?, ?, ?, ?, ?, ?` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan, ae.CreatedAt, ae.UpdatedAt)
-	res, err := db.Exec(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan, ae.CreatedAt, ae.UpdatedAt)
+	XOLog(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan)
+	res, err := db.Exec(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan)
 	if err != nil {
 		return err
 	}
@@ -88,12 +101,12 @@ func (ae *AlarmEvent) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE monitor.alarm_event SET ` +
-		`host_name = ?, anchor_point = ?, rule = ?, value = ?, message = ?, level = ?, stat = ?, handle_man = ?, created_at = ?, updated_at = ?` +
+		`host_name = ?, anchor_point = ?, rule = ?, value = ?, message = ?, level = ?, stat = ?, handle_man = ?` +
 		` WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan, ae.CreatedAt, ae.UpdatedAt, ae.ID)
-	_, err = db.Exec(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan, ae.CreatedAt, ae.UpdatedAt, ae.ID)
+	XOLog(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan, ae.ID)
+	_, err = db.Exec(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan, ae.ID)
 	return err
 }
 

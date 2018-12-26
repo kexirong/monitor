@@ -12,7 +12,7 @@ import (
 var taskScheduled = scheduler.New()
 
 func activePluginScheduler() {
-	aps, err := models.ActiveProbeAll(monitorDB)
+	aps, err := models.ActiveProbesAll(monitorDB)
 	if err != nil {
 		panic(err)
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/kexirong/monitor/agent/scriptplugin"
 	"github.com/kexirong/monitor/common"
+	"github.com/kexirong/monitor/server/models"
 )
 
 func startHTTPsrv() {
@@ -18,6 +19,7 @@ func startHTTPsrv() {
 	})
 
 	http.HandleFunc("/scriptplugin", func(w http.ResponseWriter, r *http.Request) {
+		Logger.Info.Println("/scriptplugin")
 		var req common.HttpReq
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -30,51 +32,59 @@ func startHTTPsrv() {
 			Code: 200,
 			Msg:  "ok",
 		}
-		var sc common.ScriptConf
-		req.Cause = &sc
+		var pc models.PluginConfig
+		req.Cause = &pc
 		//不需要对Unmarshal 失败的错误信息进行处理
 		json.Unmarshal(body, &req)
+		Logger.Info.Println("/scriptplugin:", req.Cause)
+		Logger.Info.Println("/scriptplugin:", pc.Plugin)
+		if r.Method == "POST" && (pc.Plugin != nil || req.Method == "getlist") {
 
-		if r.Method == "POST" {
-
-			if sc.HostName != _hostname {
+			if pc.HostName != _hostname {
 				ret.Code = 400
 				ret.Msg = "hostname not is " + _hostname
+				goto end
 			}
 
 			switch req.Method {
-
 			case "add":
 				downloadurl := fmt.Sprintf("http://%s/scriptdownloads/", conf.ServerHTTP)
-				err := scriptplugin.CheckDownloads(downloadurl, path.Join(scriptPath, sc.FileName), false)
+				err := scriptplugin.CheckDownloads(downloadurl, path.Join(scriptPath, pc.FileName), true)
 				if err != nil {
 					Logger.Error.Println(err)
 					break
 				}
-				tasker := scriptplugin.NewScripter(path.Join(scriptPath, sc.FileName),
-					time.Duration(sc.Timeout)*time.Second)
+				tasker := scriptplugin.NewScripter(path.Join(scriptPath, pc.FileName),
+					time.Duration(pc.Timeout)*time.Second)
 
-				scriptScheduled.AddTask(time.Second*time.Duration(sc.Interval), tasker)
+				scriptScheduled.AddTask(time.Second*time.Duration(pc.Interval), tasker)
 
 			case "delete":
-				tasker := scriptplugin.NewScripter(path.Join(scriptPath, sc.FileName),
-					time.Duration(sc.Timeout)*time.Second)
+				tasker := scriptplugin.NewScripter(path.Join(scriptPath, pc.FileName),
+					time.Duration(pc.Timeout)*time.Second)
 
 				scriptScheduled.DeleteTask(tasker.Name())
 
 			case "getlist":
-
-				ret.Result = scriptScheduled.EcheTaskList()
-				if err != nil {
+				taskList := scriptScheduled.EcheTaskList()
+				if err := json.Unmarshal([]byte(taskList), &ret.Result); err != nil {
 					ret.Code = 400
 					ret.Msg = err.Error()
+					ret.Result = nil
 				}
+			default:
+				ret.Code = 400
+				ret.Msg = "unkown method"
 			}
 		} else {
 			ret.Code = 400
 			ret.Msg = "bad request"
 		}
+	end:
 		bret, _ := json.Marshal(ret)
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Write(bret)
 
 	})

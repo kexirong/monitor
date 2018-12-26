@@ -44,14 +44,14 @@ func (apc *ActiveProbeConfig) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by autoincrement
 	const sqlstr = `INSERT INTO monitor.active_probe_config (` +
-		`active_probe_id, target, arg1, arg2, updated_at` +
+		`active_probe_id, target, arg1, arg2` +
 		`) VALUES (` +
-		`?, ?, ?, ?, ?` +
+		`?, ?, ?, ?` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2, apc.UpdatedAt)
-	res, err := db.Exec(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2, apc.UpdatedAt)
+	XOLog(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2)
+	res, err := db.Exec(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2)
 	if err != nil {
 		return err
 	}
@@ -85,12 +85,12 @@ func (apc *ActiveProbeConfig) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE monitor.active_probe_config SET ` +
-		`active_probe_id = ?, target = ?, arg1 = ?, arg2 = ?, updated_at = ?` +
+		`active_probe_id = ?, target = ?, arg1 = ?, arg2 = ?` +
 		` WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2, apc.UpdatedAt, apc.ID)
-	_, err = db.Exec(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2, apc.UpdatedAt, apc.ID)
+	XOLog(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2, apc.ID)
+	_, err = db.Exec(sqlstr, apc.ActiveProbeID, apc.Target, apc.Arg1, apc.Arg2, apc.ID)
 	return err
 }
 
@@ -163,10 +163,10 @@ func ActiveProbeConfigsAll(db XODB) ([]*ActiveProbeConfig, error) {
 } // ActiveProbe returns the ActiveProbe associated with the ActiveProbeConfig's ActiveProbeID (active_probe_id).
 //
 // Generated from foreign key 'active_probe_config_ibfk_1'.
-func (apc *ActiveProbeConfig) ActiveProbeByActiveProbeID(db XODB) (*ActiveProbe, error) {
+func (apc *ActiveProbeConfig) LoadActiveProbe(db XODB) error {
 	var err error
 	apc.ActiveProbe, err = ActiveProbeByID(db, apc.ActiveProbeID)
-	return apc.ActiveProbe, err
+	return err
 }
 
 // ActiveProbeConfigsByActiveProbeID retrieves a row from 'monitor.active_probe_config' as a ActiveProbeConfig.

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-//easyjson:json
+/*easyjson:json
 type ScriptConf struct {
 	ID         int    `json:"id"`          // id
 	HostIP     string `json:"host_ip"`     // host_ip
@@ -18,15 +18,14 @@ type ScriptConf struct {
 	FileName   string `json:"file_name"`
 	PluginType string `json:"plugin_type"`
 }
+*/
 
-//easyjson:json
 type HttpResp struct {
 	Code   int         `json:"code"`
 	Msg    string      `json:"msg"`
 	Result interface{} `json:"result,omitempty"`
 }
 
-//easyjson:json
 type HttpReq struct {
 	Method string      `json:"method"`
 	Cause  interface{} `json:"cause,omitempty"`

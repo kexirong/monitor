@@ -45,11 +45,11 @@ type channels struct {
 	wchats []string
 }
 
-func sendAlarm(aq *models.AlarmEvent) {
+func sendAlarm(ae *models.AlarmEvent) {
 
 	var chans channels
 
-	al, err := models.AlarmSendByAnchorPoint(monitorDB, aq.AnchorPoint)
+	al, err := models.AlarmSendByAnchorPoint(monitorDB, ae.AnchorPoint)
 
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -114,7 +114,7 @@ func sendAlarm(aq *models.AlarmEvent) {
 		return
 	}
 	if al.Channel&1 == 1 && len(chans.emails) > 0 {
-		data := fmt.Sprintf("to=%s&subject=MonitorAlarm&content=%s", strings.Join(chans.emails, ","), aq.String())
+		data := fmt.Sprintf("to=%s&subject=MonitorAlarm&content=%s", strings.Join(chans.emails, ","), ae.String())
 		//Logger.Info.Println(data)
 		ret, err := http.Post(conf.EmailURL, "application/x-www-form-urlencoded", strings.NewReader(data))
 		if err != nil {
@@ -122,8 +122,8 @@ func sendAlarm(aq *models.AlarmEvent) {
 		}
 
 		//Logger.Info.Println(ret)
-		aq.Stat = 1
-		err = aq.Save(monitorDB)
+		ae.Stat = 1
+		err = ae.Save(monitorDB)
 		if err != nil {
 			Logger.Error.Println(err)
 		}
@@ -131,15 +131,15 @@ func sendAlarm(aq *models.AlarmEvent) {
 
 	}
 	if al.Channel&2 == 2 && len(chans.wchats) > 0 {
-		data := fmt.Sprintf("to=%s&content=%s", strings.Join(chans.wchats, "|"), aq.String())
+		data := fmt.Sprintf("to=%s&content=%s", strings.Join(chans.wchats, "|"), ae.String())
 		//Logger.Info.Println(data)
 		ret, err := http.Post(conf.WchatURL, "application/x-www-form-urlencoded", strings.NewReader(data))
 		if err != nil {
 			Logger.Error.Println(err)
 		}
 		//Logger.Info.Println(ret)
-		aq.Stat = 1
-		err = aq.Save(monitorDB)
+		ae.Stat = 1
+		err = ae.Save(monitorDB)
 		if err != nil {
 			Logger.Error.Println(err)
 		}
