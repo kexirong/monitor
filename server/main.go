@@ -15,5 +15,7 @@ func main() {
 	go activePluginScheduler()
 
 	Logger.Info.Println("runing, listen:,", conf.Service)
+	Logger.Info.Printf("Judge:%v\n", Judge)
+
 	startTCPsrv()
 }

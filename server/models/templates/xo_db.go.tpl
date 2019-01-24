@@ -10,3 +10,4 @@ type XODB interface {
 
 // XOLog provides the log func used by generated queries.
 var XOLog = func(string, ...interface{}) { }
+

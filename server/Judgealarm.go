@@ -11,6 +11,9 @@ import (
 	"github.com/kexirong/monitor/server/models"
 )
 
+// 发送周期
+const sendTick = 1
+
 //Judge 全局线程安全
 var Judge *judge.Judge
 
@@ -31,7 +34,7 @@ func judgeInit() *judge.Judge {
 
 func judgeAlarm(tp *packetparse.TargetPacket) {
 	if Judge == nil {
-
+		Logger.Error.Println("the Judge is null")
 	}
 	ret := Judge.DoJudge(tp)
 
@@ -48,7 +51,19 @@ type channels struct {
 func sendAlarm(ae *models.AlarmEvent) {
 
 	var chans channels
-
+	aes, err := models.AlarmEventsByHostNameAnchorPointRule(monitorDB, ae.HostName, ae.AnchorPoint, ae.Rule)
+	if err != nil {
+		Logger.Error.Println(err)
+		return
+	}
+	if len(aes) > 0 {
+		aes[0].Count++
+		aes[0].Value = ae.Value
+		aes[0].Level = ae.Level
+		aes[0].Message = ae.Message
+		ae = aes[0]
+	}
+	ae.Save(monitorDB)
 	al, err := models.AlarmSendByAnchorPoint(monitorDB, ae.AnchorPoint)
 
 	if err != nil {
@@ -56,6 +71,17 @@ func sendAlarm(ae *models.AlarmEvent) {
 			Logger.Error.Println(err)
 		}
 		return
+	}
+	if al.SendTick > 1 {
+		if ae.Count%al.SendTick != 0 {
+			Logger.Info.Printf("#SendTick check# id:%d, sendtick:%d, count:%d ->ignore\n", ae.ID, al.SendTick, ae.Count)
+			return
+		}
+	}
+	ae.Stat = 2
+	err = ae.Save(monitorDB)
+	if err != nil {
+		Logger.Error.Println(err)
 	}
 	if al.Channel == 0 {
 		return
@@ -66,14 +92,14 @@ func sendAlarm(ae *models.AlarmEvent) {
 	}
 	switch al.Type {
 	case models.TypeTeam:
-		teams := strings.Split(al.List, ",")
+		teams := strings.Split(al.List, ";")
 
 		s := strings.Join(teams, "','")
 		//Logger.Info.Println(s)
-		rows, err := monitorDB.Query(`SELECT b.email,b.wechat FROM opsmgt.monitor_staff_group a 
-			join opsmgt.monitor_staff b on a.staff_id=b.staffid 
-			join opsmgt.monitor_staffgroup c on c.id=a.staffgroup_id 
-			WHERE c.groupname = (?) `, s)
+		rows, err := monitorDB.Query(`SELECT a.email,a.wxwork FROM dashboard.user a 
+			join dashboard.user_groups b on a.username=b.user_id 
+			join dashboard.auth_group c on c.id=b.group_id 
+			WHERE c.name in (?) `, s)
 		if err != nil {
 			Logger.Error.Println(err)
 			return
@@ -94,7 +120,8 @@ func sendAlarm(ae *models.AlarmEvent) {
 		staffs := strings.Split(al.List, ";")
 
 		s := strings.Join(staffs, "','")
-		rows, err := monitorDB.Query("SELECT b.email,b.wechat FROM  opsmgt.monitor_staff b WHERE b.staffid in (?)", s)
+		fmt.Println(s)
+		rows, err := monitorDB.Query("SELECT b.email,b.wxwork FROM  dashboard.user b WHERE b.username in (?)", s)
 		if err != nil {
 			Logger.Error.Println(err)
 			return
@@ -110,7 +137,7 @@ func sendAlarm(ae *models.AlarmEvent) {
 			}
 		}
 	default:
-		Logger.Error.Printf("sendAlarm: invalid type field in alarm_link table AnchorPoint=%s", al.AnchorPoint)
+		Logger.Error.Printf("sendAlarm: invalid type field in alarm_link table AnchorPoint=%s \n", al.AnchorPoint)
 		return
 	}
 	if al.Channel&1 == 1 && len(chans.emails) > 0 {
@@ -122,7 +149,7 @@ func sendAlarm(ae *models.AlarmEvent) {
 		}
 
 		//Logger.Info.Println(ret)
-		ae.Stat = 1
+		ae.Stat = 2
 		err = ae.Save(monitorDB)
 		if err != nil {
 			Logger.Error.Println(err)
@@ -138,7 +165,7 @@ func sendAlarm(ae *models.AlarmEvent) {
 			Logger.Error.Println(err)
 		}
 		//Logger.Info.Println(ret)
-		ae.Stat = 1
+		ae.Stat = 2
 		err = ae.Save(monitorDB)
 		if err != nil {
 			Logger.Error.Println(err)

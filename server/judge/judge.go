@@ -1,11 +1,11 @@
 package judge
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/kexirong/monitor/common/packetparse"
@@ -21,18 +21,8 @@ avg(${cpu0},3): 对于最新的3个点，其平均值满足阈值条件则报警
 diff(${cpu0},3,1): 拿最新push上来的点（被减数），与历史最新的3个点（3个减数）相减，得到3个差，只要有一个差满足阈值条件则报警
 pdiff(${cpu0},3,1): 拿最新push上来的点，与历史最新的3个点相减，得到3个差，再将3个差值分别除以减数乘100（相当于增长率），只要有1个商值满足阈值则报警
 */
-
-type nodeType uint
-
 const reExpr = `(?P<func>\w+)\((?P<formula>\(?[^,]+\)?),(?P<total>\d+),?(?P<limit>\d*)?\)(?P<operator>[<!=>]+)(?P<compare>[-]?\d+(?:\.\d+)?$)`
 const storeCap = 12
-
-const (
-	operator nodeType = 1 << iota
-	digit
-	variable
-	bracket
-)
 
 //Judge 实现告警判断
 type Judge struct {
@@ -63,10 +53,14 @@ func (j *Judge) AddRule(aj *models.AlarmJudge) error {
 	if judger == nil {
 		judger = newJuger()
 	}
+
 	dt, err := parseExpress(aj.Express, j.parser)
+	//fmt.Println(dt)
 	if err == nil {
+		dt.level = aj.Level
+		dt.title = aj.Title
 		judger.deters[aj.Express] = dt
-		judger.level = aj.Level
+		j.judgers[aj.AnchorPoint] = judger
 	}
 	j.mu.Unlock()
 	return err
@@ -81,34 +75,43 @@ func (j *Judge) DelRule(aj *models.AlarmJudge) {
 }
 
 //DoJudge 对数据包进行告警判定
-func (j *Judge) DoJudge(tp *packetparse.TargetPacket) []*models.AlarmEvent {
-	//[*].cpu.cpu0:percent
-
-	var results []*models.AlarmEvent
+func (j *Judge) DoJudge(tp *packetparse.TargetPacket) (result []*models.AlarmEvent) {
+	//anchorPoint 格式，[*].cpu.cpu0:percent
+	//var results []*models.AlarmEvent
+	var point string
+	if tp.Instance != "" {
+		point = fmt.Sprintf("%s.%s:%s", tp.Plugin, tp.Instance, tp.Type)
+	} else {
+		point = fmt.Sprintf("%s:%s", tp.Plugin, tp.Type)
+	}
 	j.mu.Lock()
-
-	anchorPoint := fmt.Sprintf("[%s].%s.%s:%s", tp.HostName, tp.Plugin, tp.Instance, tp.Type)
+	anchorPoint := fmt.Sprintf("[%s].%s", tp.HostName, point)
 	judger := j.judgers[anchorPoint]
 	if judger == nil {
-		anchorPoint = fmt.Sprintf("[*].%s.%s:%s", tp.Plugin, tp.Instance, tp.Type)
+		anchorPoint = "[*]." + point
 		judger = j.judgers[anchorPoint]
 	}
 	j.mu.Unlock()
+
 	if judger != nil {
-		ret := judger.doJudge()
-		for k, v := range ret {
-			var result = &models.AlarmEvent{
-				HostName:    tp.HostName,
-				AnchorPoint: anchorPoint,
-				Rule:        k,
-				Value:       v,
-				Level:       judger.level,
-				Message:     tp.Message,
-			}
-			results = append(results, result)
+		data := make(map[string]float64)
+
+		sl := strings.Split(tp.VlTags, "|")
+
+		for idx, value := range tp.Value {
+			data[sl[idx]] = value
+
+		}
+		result = judger.doJudge(data)
+		for i := 0; i < len(result); i++ {
+			result[i].HostName = tp.HostName
+			result[i].AnchorPoint = anchorPoint
+			result[i].Stat = 1
+			result[i].Count = 1
+			result[i].Message = tp.Message
 		}
 	}
-	return results
+	return
 }
 
 /*
@@ -117,8 +120,9 @@ serious 严重
 disaster 灾难
 */
 type judger struct {
-	store  *ringNode
-	level  models.Level
+	store *ringNode
+	//level  models.Level
+	//title  string
 	deters map[string]*deter //[key]*deter
 }
 
@@ -130,6 +134,8 @@ func newJuger() *judger {
 }
 
 type deter struct {
+	level    models.Level
+	title    string
 	total    int
 	limit    int
 	operator string
@@ -138,23 +144,26 @@ type deter struct {
 	method   func(datas []float64, operator string, compare float64, limit int) bool
 }
 
-func (j *judger) doJudge() map[string]float64 {
-	var result = make(map[string]float64)
+func (j *judger) doJudge(data map[string]float64) (result []*models.AlarmEvent) {
+	//result = make(map[string]float64)
+	j.store = j.store.store(data)
 	for key, deter := range j.deters {
 		ds := j.store.pull(deter.total)
-		datas := make([]float64, deter.total)
-		for i, d := range ds {
-			if d == nil {
-				break
-			}
-			datas[i] = deter.arg.calculate(d)
-		}
-		if len(datas) < deter.total {
+		if len(ds) < deter.total {
 			continue
 		}
-		if deter.method(datas, deter.operator, deter.compare, deter.limit) {
-			result[key] = datas[len(datas)-1]
+		datas := make([]float64, deter.total)
+
+		for i, d := range ds {
+			datas[i] = deter.arg.calculate(d)
 		}
+
+		if deter.method(datas, deter.operator, deter.compare, deter.limit) {
+			//result[key] = datas[len(datas)-1]
+			result = append(result, &models.AlarmEvent{Rule: key, Value: datas[len(datas)-1], Title: deter.title, Level: deter.level})
+		} //else {
+		//fmt.Printf("deter.method(datas:%v, operator:%v, compare:%v, limit:%v)\n", datas, deter.operator, deter.compare, deter.limit)
+		//}
 	}
 	return result
 }
@@ -163,7 +172,7 @@ func parseExpress(express string, parser *regexp.Regexp) (*deter, error) {
 	if parser == nil {
 		return nil, errors.New("regexp is nil")
 	}
-	out := parser.FindStringSubmatch(string(bytes.Trim([]byte(express), " ")))
+	out := parser.FindStringSubmatch(strings.Replace(express, " ", "", -1))
 	l := len(out)
 	if l == 0 {
 		return nil, errors.New("express parse failed")
@@ -175,15 +184,15 @@ func parseExpress(express string, parser *regexp.Regexp) (*deter, error) {
 		case "func":
 			switch out[i] {
 			case "all":
-				dt.method = nil
+				dt.method = all
 			case "sum":
-				dt.method = nil
+				dt.method = sum
 			case "avg":
-				dt.method = nil
+				dt.method = avg
 			case "diff":
-				dt.method = nil
+				dt.method = diff
 			case "pdiff":
-				dt.method = nil
+				dt.method = pDiff
 			default:
 				return nil, fmt.Errorf("unknow judge method %s", out[i])
 			}
@@ -211,7 +220,7 @@ func parseExpress(express string, parser *regexp.Regexp) (*deter, error) {
 				if err != nil {
 					return nil, fmt.Errorf("total Atoi failed %s", out[i])
 				}
-				dt.total = t
+				dt.limit = t
 			}
 
 		case "operator":
@@ -220,6 +229,7 @@ func parseExpress(express string, parser *regexp.Regexp) (*deter, error) {
 			}
 			switch out[i] {
 			case ">", "<", "==", "!=":
+				dt.operator = out[i]
 			default:
 				return nil, fmt.Errorf("%s operator invalid ", out[i])
 			}
@@ -269,9 +279,9 @@ func (r *ringNode) store(data map[string]float64) *ringNode {
 
 func (r *ringNode) pull(n int) []map[string]float64 {
 	var data []map[string]float64
-	leng := r.len() + 1
+	leng := r.len()
 	c := r
-	for i := 1; i < leng; i++ {
+	for i := 1; i < leng+1; i++ {
 		c = c.pNext
 		if i > leng-n {
 			data = append(data, c.data)

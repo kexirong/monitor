@@ -6,6 +6,17 @@ import (
 	"strconv"
 )
 
+type nodeType uint
+
+var errFormat = errors.New("invalid formula format")
+
+const (
+	operator nodeType = 1 << iota
+	digit
+	variable
+	bracket
+)
+
 type binTreeNode struct {
 	key    string
 	flag   nodeType
@@ -77,7 +88,6 @@ func isLower(top, newTop string) bool {
 func genBinTreeFormula(formula string) (*binTreeNode, error) {
 	bs := []byte(formula)
 	stack1, stack2 := stack{}, stack{}
-	//root := &binTreeNode{}
 	l := len(bs)
 	for i := 0; i < l; i++ {
 		switch bs[i] {
@@ -98,17 +108,16 @@ func genBinTreeFormula(formula string) (*binTreeNode, error) {
 					item.pRight = v1
 					stack1.Push(item)
 				} else {
-					return nil, errors.New("invalid formula format")
+					return nil, errFormat
 				}
-
 			}
 		case '$':
 			if bs[i+1] != '{' {
-				return nil, errors.New("invalid formula format")
+				return nil, errFormat
 			}
 			n := bytes.IndexByte(bs[i+2:], '}')
 			if n == -1 || n == i+2 {
-				return nil, errors.New("invalid formula format")
+				return nil, errFormat
 			}
 
 			stack1.Push(&binTreeNode{
@@ -126,11 +135,11 @@ func genBinTreeFormula(formula string) (*binTreeNode, error) {
 					top.pLeft = v2
 					top.pRight = v1
 					stack1.Push(top)
-					//stack2.Pop()
+					stack2.Pop()
 				} else {
-					return nil, errors.New("invalid formula format")
+					return nil, errFormat
 				}
-				stack2.Pop()
+				//stack2.Pop()
 			}
 			// 低优先级的运算符入栈
 			stack2.Push(&binTreeNode{
@@ -146,7 +155,7 @@ func genBinTreeFormula(formula string) (*binTreeNode, error) {
 					continue
 				}
 				if n == 0 {
-					return nil, errors.New("invalid formula format")
+					return nil, errFormat
 				}
 				break
 			}
@@ -154,7 +163,7 @@ func genBinTreeFormula(formula string) (*binTreeNode, error) {
 				key:  string(bs[i : i+n]),
 				flag: digit,
 			})
-			i += n
+			i += n - 1
 		}
 	}
 	for !stack2.IsEmpty() {
@@ -164,12 +173,11 @@ func genBinTreeFormula(formula string) (*binTreeNode, error) {
 			item.pRight = v1
 			stack1.Push(item)
 		} else {
-			return nil, errors.New("invalid formula format")
+			return nil, errFormat
 		}
 	}
-
-	if stack1.Len() != 1 {
-		return nil, errors.New("invalid formula format")
+	if stack1.Len() > 1 {
+		return nil, errFormat
 	}
 	r := stack1.Pop()
 
@@ -182,6 +190,18 @@ type stack struct {
 
 func (s *stack) Push(item *binTreeNode) {
 	s.items = append(s.items, item)
+}
+func (s *stack) String() string {
+	st := "["
+	for _, v := range s.items {
+		if len(st) > 1 {
+			st += ", "
+		}
+		st += v.toFormula()
+
+	}
+	st += "]"
+	return st
 }
 
 func (s *stack) Pop() *binTreeNode {

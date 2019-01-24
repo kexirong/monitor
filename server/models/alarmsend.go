@@ -13,6 +13,7 @@ type AlarmSend struct {
 	List        string `json:"list"`         // list
 	Type        Type   `json:"type"`         // type
 	Channel     int    `json:"channel"`      // channel
+	SendTick    int    `json:"send_tick"`    // send_tick
 
 	// xo fields
 	_exists, _deleted bool
@@ -39,14 +40,14 @@ func (as *AlarmSend) Insert(db XODB) error {
 
 	// sql insert query, primary key must be provided
 	const sqlstr = `INSERT INTO monitor.alarm_send (` +
-		`anchor_point, list, type, channel` +
+		`anchor_point, list, type, channel, send_tick` +
 		`) VALUES (` +
-		`?, ?, ?, ?` +
+		`?, ?, ?, ?, ?` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, as.AnchorPoint, as.List, as.Type, as.Channel)
-	_, err = db.Exec(sqlstr, as.AnchorPoint, as.List, as.Type, as.Channel)
+	XOLog(sqlstr, as.AnchorPoint, as.List, as.Type, as.Channel, as.SendTick)
+	_, err = db.Exec(sqlstr, as.AnchorPoint, as.List, as.Type, as.Channel, as.SendTick)
 	if err != nil {
 		return err
 	}
@@ -73,12 +74,12 @@ func (as *AlarmSend) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE monitor.alarm_send SET ` +
-		`list = ?, type = ?, channel = ?` +
+		`list = ?, type = ?, channel = ?, send_tick = ?` +
 		` WHERE anchor_point = ?`
 
 	// run query
-	XOLog(sqlstr, as.List, as.Type, as.Channel, as.AnchorPoint)
-	_, err = db.Exec(sqlstr, as.List, as.Type, as.Channel, as.AnchorPoint)
+	XOLog(sqlstr, as.List, as.Type, as.Channel, as.SendTick, as.AnchorPoint)
+	_, err = db.Exec(sqlstr, as.List, as.Type, as.Channel, as.SendTick, as.AnchorPoint)
 	return err
 }
 
@@ -123,7 +124,7 @@ func (as *AlarmSend) Delete(db XODB) error {
 
 func AlarmSendsAll(db XODB) ([]*AlarmSend, error) {
 	const sqlstr = `SELECT ` +
-		`anchor_point, list, type, channel ` +
+		`anchor_point, list, type, channel, send_tick ` +
 		`FROM monitor.alarm_send `
 	q, err := db.Query(sqlstr)
 	if err != nil {
@@ -139,7 +140,7 @@ func AlarmSendsAll(db XODB) ([]*AlarmSend, error) {
 		}
 
 		// scan
-		err = q.Scan(&as.AnchorPoint, &as.List, &as.Type, &as.Channel)
+		err = q.Scan(&as.AnchorPoint, &as.List, &as.Type, &as.Channel, &as.SendTick)
 		if err != nil {
 			return nil, err
 		}
@@ -148,7 +149,9 @@ func AlarmSendsAll(db XODB) ([]*AlarmSend, error) {
 	}
 
 	return res, nil
-} // AlarmSendByAnchorPoint retrieves a row from 'monitor.alarm_send' as a AlarmSend.
+}
+
+// AlarmSendByAnchorPoint retrieves a row from 'monitor.alarm_send' as a AlarmSend.
 //
 // Generated from index 'alarm_send_anchor_point_pkey'.
 func AlarmSendByAnchorPoint(db XODB, anchorPoint string) (*AlarmSend, error) {
@@ -156,7 +159,7 @@ func AlarmSendByAnchorPoint(db XODB, anchorPoint string) (*AlarmSend, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`anchor_point, list, type, channel ` +
+		`anchor_point, list, type, channel, send_tick ` +
 		`FROM monitor.alarm_send ` +
 		`WHERE anchor_point = ?`
 
@@ -166,7 +169,7 @@ func AlarmSendByAnchorPoint(db XODB, anchorPoint string) (*AlarmSend, error) {
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, anchorPoint).Scan(&as.AnchorPoint, &as.List, &as.Type, &as.Channel)
+	err = db.QueryRow(sqlstr, anchorPoint).Scan(&as.AnchorPoint, &as.List, &as.Type, &as.Channel, &as.SendTick)
 	if err != nil {
 		return nil, err
 	}

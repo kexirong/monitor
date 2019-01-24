@@ -8,6 +8,7 @@ import (
 	"github.com/kexirong/monitor/server/models"
 )
 
+//暂时先这样临时实现，待改成收到数据就更新心跳数据，而不是单独的心跳包，将cmdb数据进行字段扩展，quic
 var ipHeartRecorde = make(map[string]int64) //time.Now().Unix()
 var ipHostnameMap = make(map[string]string)
 
@@ -45,25 +46,28 @@ func hostIPMapAdd(hostname, ip string) bool {
 
 func heartdeamo() {
 	scanAssetdb()
-	var ae models.AlarmEvent
+
 	for range time.Tick(time.Second * 10) {
 		now := time.Now().Unix()
 		for k, v := range ipHeartRecorde {
 			if now-v > 30 {
-				//av.AlarmName = "heartbeat"
+				ae := &models.AlarmEvent{}
+				ae.Stat = 1
 				ae.AnchorPoint = "heartbeat.timeout"
 				ae.HostName = ipHostnameMap[k]
 				ae.CreatedAt = time.Unix(now, 0)
 				ae.Level = models.LevelWarning
 				ae.Value = float64(now - v)
-				go func(ip string, ae models.AlarmEvent) {
+
+				go func(ip string, ae *models.AlarmEvent) {
 					out, err := activeplugin.HostPinger(4000, ip)
 					if err == nil {
 						ae.Message = fmt.Sprintf("heartbeat lost %g；ping ok", ae.Value)
 					} else {
 						ae.Message = fmt.Sprintf("heartbeat lost %g；ping %s", ae.Value, out)
 					}
-					ae.Insert(monitorDB)
+					//ae.Insert(monitorDB)
+					sendAlarm(ae)
 				}(k, ae)
 			}
 		}

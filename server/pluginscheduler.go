@@ -78,6 +78,6 @@ func activePluginScheduler() {
 		}
 	}
 	Logger.Info.Println("activePluginScheduler staring")
-	taskScheduled.Star(callback)
+	taskScheduled.Start(callback)
 
 }

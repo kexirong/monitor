@@ -1,10 +1,12 @@
 package judge
 
-import "math"
+import (
+	"math"
+)
 
 /*
 函数签名: func (datas []float64, operator string, compare float64, limit int) bool
-limit 为满足判定条件数据条数，非比用
+limit 为满足判定条件数据条数，非必用
 datas 数据顺序为:旧到新,datas[len(datas)-1]为最新数据
 */
 
@@ -30,7 +32,8 @@ func all(datas []float64, operator string, compare float64, limit int) bool {
 			count++
 		}
 	}
-	return limit < count
+
+	return count >= limit
 }
 func sum(datas []float64, operator string, compare float64, limit int) bool {
 	var sum float64
@@ -55,7 +58,7 @@ func diff(datas []float64, operator string, compare float64, limit int) bool {
 			count++
 		}
 	}
-	return limit < count
+	return count >= limit
 }
 
 func pDiff(datas []float64, operator string, compare float64, limit int) bool {
@@ -66,5 +69,5 @@ func pDiff(datas []float64, operator string, compare float64, limit int) bool {
 			count++
 		}
 	}
-	return limit < count
+	return count >= limit
 }

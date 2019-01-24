@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -31,7 +30,7 @@ type  TargetPacket struct {
     Message   string       	`json:"message"`
 }
 */
-//由于float64的精度问题所以保留到毫秒，舍弃纳秒部分
+//由于float64的精度问题所以保留到毫秒，舍弃微秒纳秒部分
 func timestamp2Time(ts float64) time.Time {
 	if ts < 0 {
 		return time.Now().Round(time.Millisecond)
@@ -71,10 +70,11 @@ func (db *Influxdb) Write(tp *packetparse.TargetPacket) error {
 		tags["instance"] = tp.Instance
 	}
 	fields := make(map[string]interface{})
-	if len(tp.Value) == 0 {
-		return fmt.Errorf("value error: %v", tp.Value)
-	}
-
+	/*
+		if len(tp.Value) == 0 {
+			return fmt.Errorf("value error: %v", tp.Value)
+		}
+	*/
 	sl := strings.Split(tp.VlTags, "|")
 
 	for idx, value := range tp.Value {

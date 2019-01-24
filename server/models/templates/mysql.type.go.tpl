@@ -210,3 +210,4 @@ func {{ .Name }}sAll (db XODB)([]*{{ .Name }}, error){
 
 	return res, nil
 }
+
