@@ -19,6 +19,7 @@ type AlarmEvent struct {
 	Message     string    `json:"message"`      // message
 	Level       Level     `json:"level"`        // level
 	Stat        int       `json:"stat"`         // stat
+	Count       int       `json:"count"`        // count
 	HandleMan   string    `json:"handle_man"`   // handle_man
 	CreatedAt   time.Time `json:"created_at"`   // created_at
 	UpdatedAt   time.Time `json:"updated_at"`   // updated_at
@@ -30,13 +31,14 @@ type AlarmEvent struct {
 func (ae *AlarmEvent) String() string {
 	return fmt.Sprintf(`
 	[%s]
-	seq: %d, 
-	Time: %s,
+	Seq: %d, 
+	Time: %s -> %s,
+	Count: %d,
 	HostName: %s,
 	AnchorPoint: %s,
-	Value: %g,
+	Value: %.2f,
 	Message: %s`,
-		ae.Level, ae.ID, ae.CreatedAt, ae.HostName, ae.AnchorPoint, ae.Value, ae.Message)
+		ae.Level, ae.ID, ae.CreatedAt.Format("2006-01-02 15:04:05"), ae.UpdatedAt.Format("2006-01-02 15:04:05"), ae.Count, ae.HostName, ae.AnchorPoint, ae.Value, ae.Message)
 }
 
 // Exists determines if the AlarmEvent exists in the database.
@@ -101,12 +103,12 @@ func (ae *AlarmEvent) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE monitor.alarm_event SET ` +
-		`host_name = ?, anchor_point = ?, rule = ?, value = ?, message = ?, level = ?, stat = ?, handle_man = ?` +
+		`host_name = ?, anchor_point = ?, rule = ?, value = ?, message = ?, level = ?, stat = ?,count = ?, handle_man = ?` +
 		` WHERE id = ?`
 
 	// run query
-	XOLog(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan, ae.ID)
-	_, err = db.Exec(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.HandleMan, ae.ID)
+	XOLog(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.Count, ae.HandleMan, ae.ID)
+	_, err = db.Exec(sqlstr, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message, ae.Level, ae.Stat, ae.Count, ae.HandleMan, ae.ID)
 	return err
 }
 
@@ -151,7 +153,7 @@ func (ae *AlarmEvent) Delete(db XODB) error {
 
 func AlarmEventsAll(db XODB) ([]*AlarmEvent, error) {
 	const sqlstr = `SELECT ` +
-		`id, host_name, anchor_point, rule, value, message, level, stat, handle_man, created_at, updated_at ` +
+		`id, host_name, anchor_point, rule, value, message, level, stat, count, handle_man, created_at, updated_at ` +
 		`FROM monitor.alarm_event `
 	q, err := db.Query(sqlstr)
 	if err != nil {
@@ -167,7 +169,7 @@ func AlarmEventsAll(db XODB) ([]*AlarmEvent, error) {
 		}
 
 		// scan
-		err = q.Scan(&ae.ID, &ae.HostName, &ae.AnchorPoint, &ae.Rule, &ae.Value, &ae.Message, &ae.Level, &ae.Stat, &ae.HandleMan, &ae.CreatedAt, &ae.UpdatedAt)
+		err = q.Scan(&ae.ID, &ae.HostName, &ae.AnchorPoint, &ae.Rule, &ae.Value, &ae.Message, &ae.Level, &ae.Stat, &ae.Count, &ae.HandleMan, &ae.CreatedAt, &ae.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -176,7 +178,49 @@ func AlarmEventsAll(db XODB) ([]*AlarmEvent, error) {
 	}
 
 	return res, nil
-} // AlarmEventsByStat retrieves a row from 'monitor.alarm_event' as a AlarmEvent.
+}
+
+// AlarmEventsByHostNameAnchorPointRule retrieves a row from 'monitor.alarm_event' as a AlarmEvent.
+//
+// Generated from index 'IDX_AlarmEvent_hostname_achorpoint_rule'.
+// has a filter: stat in (1,2)
+func AlarmEventsByHostNameAnchorPointRule(db XODB, hostName string, anchorPoint string, rule string) ([]*AlarmEvent, error) {
+	var err error
+
+	// sql query
+	const sqlstr = `SELECT ` +
+		`id, host_name, anchor_point, rule, value, message, level, stat, count, handle_man, created_at, updated_at ` +
+		`FROM monitor.alarm_event ` +
+		`WHERE host_name = ? AND anchor_point = ? AND rule = ? AND stat in (1,2)`
+
+	// run query
+	XOLog(sqlstr, hostName, anchorPoint, rule)
+	q, err := db.Query(sqlstr, hostName, anchorPoint, rule)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	// load results
+	res := []*AlarmEvent{}
+	for q.Next() {
+		ae := AlarmEvent{
+			_exists: true,
+		}
+
+		// scan
+		err = q.Scan(&ae.ID, &ae.HostName, &ae.AnchorPoint, &ae.Rule, &ae.Value, &ae.Message, &ae.Level, &ae.Stat, &ae.Count, &ae.HandleMan, &ae.CreatedAt, &ae.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, &ae)
+	}
+
+	return res, nil
+}
+
+// AlarmEventsByStat retrieves a row from 'monitor.alarm_event' as a AlarmEvent.
 //
 // Generated from index 'IDX_AlarmEvent_stat'.
 func AlarmEventsByStat(db XODB, stat int) ([]*AlarmEvent, error) {
@@ -184,7 +228,7 @@ func AlarmEventsByStat(db XODB, stat int) ([]*AlarmEvent, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, host_name, anchor_point, rule, value, message, level, stat, handle_man, created_at, updated_at ` +
+		`id, host_name, anchor_point, rule, value, message, level, stat, count, handle_man, created_at, updated_at ` +
 		`FROM monitor.alarm_event ` +
 		`WHERE stat = ?`
 
@@ -204,7 +248,7 @@ func AlarmEventsByStat(db XODB, stat int) ([]*AlarmEvent, error) {
 		}
 
 		// scan
-		err = q.Scan(&ae.ID, &ae.HostName, &ae.AnchorPoint, &ae.Rule, &ae.Value, &ae.Message, &ae.Level, &ae.Stat, &ae.HandleMan, &ae.CreatedAt, &ae.UpdatedAt)
+		err = q.Scan(&ae.ID, &ae.HostName, &ae.AnchorPoint, &ae.Rule, &ae.Value, &ae.Message, &ae.Level, &ae.Stat, &ae.Count, &ae.HandleMan, &ae.CreatedAt, &ae.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -223,7 +267,7 @@ func AlarmEventByID(db XODB, id int64) (*AlarmEvent, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, host_name, anchor_point, rule, value, message, level, stat, handle_man, created_at, updated_at ` +
+		`id, host_name, anchor_point, rule, value, message, level, stat, count, handle_man, created_at, updated_at ` +
 		`FROM monitor.alarm_event ` +
 		`WHERE id = ?`
 
@@ -233,7 +277,7 @@ func AlarmEventByID(db XODB, id int64) (*AlarmEvent, error) {
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, id).Scan(&ae.ID, &ae.HostName, &ae.AnchorPoint, &ae.Rule, &ae.Value, &ae.Message, &ae.Level, &ae.Stat, &ae.HandleMan, &ae.CreatedAt, &ae.UpdatedAt)
+	err = db.QueryRow(sqlstr, id).Scan(&ae.ID, &ae.HostName, &ae.AnchorPoint, &ae.Rule, &ae.Value, &ae.Message, &ae.Level, &ae.Stat, &ae.Count, &ae.HandleMan, &ae.CreatedAt, &ae.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
