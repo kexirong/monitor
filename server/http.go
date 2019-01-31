@@ -587,6 +587,7 @@ func startHTTPsrv() {
 					nal.Channel = al.Channel
 					nal.List = al.List
 					nal.Type = al.Type
+					nal.SendTick = al.SendTick
 
 				}
 				err = nal.Save(monitorDB)
@@ -681,6 +682,7 @@ func startHTTPsrv() {
 					naj.AnchorPoint = aj.AnchorPoint
 					naj.Express = aj.Express
 					naj.Level = aj.Level
+					naj.Title = aj.Title
 				}
 				err = naj.Save(monitorDB)
 				if err != nil {

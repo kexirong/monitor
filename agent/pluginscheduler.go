@@ -38,7 +38,7 @@ func scriptPluginScheduler(qe *queue.BytesQueue) {
 	var resp common.HttpResp
 	var pcs []*models.PluginConfig
 	resp.Result = &pcs
-	fmt.Println(string(body))
+	//fmt.Println(string(body))
 	json.Unmarshal(body, &resp)
 	if resp.Code != 200 {
 		log.Fatal(errors.New(resp.Msg))

@@ -31,15 +31,16 @@ type AlarmEvent struct {
 
 func (ae *AlarmEvent) String() string {
 	return fmt.Sprintf(`
-	[%s]
-	Seq: %d, 
-	Time: %s -> %s,
-	Count: %d,
-	HostName: %s,
-	AnchorPoint: %s,
-	Value: %.2f,
+	[%s]%s
+	Seq: %d
+	Time: %s -> %s
+	Count: %d
+	HostName: %s
+	AnchorPoint: %s
+	Rule: %s
+	Value: %.2f
 	Message: %s`,
-		ae.Level, ae.ID, ae.CreatedAt.Format("2006-01-02 15:04:05"), ae.UpdatedAt.Format("2006-01-02 15:04:05"), ae.Count, ae.HostName, ae.AnchorPoint, ae.Value, ae.Message)
+		ae.Title, ae.Level, ae.ID, ae.CreatedAt.Format("2006-01-02 15:04:05"), ae.UpdatedAt.Format("2006-01-02 15:04:05"), ae.Count, ae.HostName, ae.AnchorPoint, ae.Rule, ae.Value, ae.Message)
 }
 
 // Exists determines if the AlarmEvent exists in the database.

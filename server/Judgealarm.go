@@ -59,6 +59,7 @@ func sendAlarm(ae *models.AlarmEvent) {
 	if len(aes) > 0 {
 		aes[0].Count++
 		aes[0].Value = ae.Value
+		aes[0].Stat = ae.Stat
 		aes[0].Level = ae.Level
 		aes[0].Message = ae.Message
 		ae = aes[0]
@@ -148,9 +149,6 @@ func sendAlarm(ae *models.AlarmEvent) {
 			Logger.Error.Println(err)
 		}
 
-		//Logger.Info.Println(ret)
-		ae.Stat = 2
-		err = ae.Save(monitorDB)
 		if err != nil {
 			Logger.Error.Println(err)
 		}
@@ -165,8 +163,7 @@ func sendAlarm(ae *models.AlarmEvent) {
 			Logger.Error.Println(err)
 		}
 		//Logger.Info.Println(ret)
-		ae.Stat = 2
-		err = ae.Save(monitorDB)
+
 		if err != nil {
 			Logger.Error.Println(err)
 		}
