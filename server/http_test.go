@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kexirong/monitor/common"
-	"github.com/kexirong/monitor/server/models"
+	"monitor/common"
+	"monitor/server/models"
 )
 
 func Test_httplisent(t *testing.T) {

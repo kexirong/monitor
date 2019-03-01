@@ -3,10 +3,10 @@ package main
 import (
 	"time"
 
-	"github.com/kexirong/monitor/common/packetparse"
-	"github.com/kexirong/monitor/common/scheduler"
-	"github.com/kexirong/monitor/server/activeplugin"
-	"github.com/kexirong/monitor/server/models"
+	"monitor/common/packetparse"
+	"monitor/common/scheduler"
+	"monitor/server/activeplugin"
+	"monitor/server/models"
 )
 
 var taskScheduled = scheduler.New()

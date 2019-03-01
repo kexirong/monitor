@@ -13,7 +13,7 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/kexirong/monitor/common/packetparse"
+	"monitor/common/packetparse"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary

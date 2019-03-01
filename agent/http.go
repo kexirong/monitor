@@ -8,9 +8,9 @@ import (
 	"path"
 	"time"
 
-	"github.com/kexirong/monitor/agent/scriptplugin"
-	"github.com/kexirong/monitor/common"
-	"github.com/kexirong/monitor/server/models"
+	"monitor/agent/scriptplugin"
+	"monitor/common"
+	"monitor/server/models"
 )
 
 func startHTTPsrv() {

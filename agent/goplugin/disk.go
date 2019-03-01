@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kexirong/monitor/common/packetparse"
+	"monitor/common/packetparse"
 )
 
 const (

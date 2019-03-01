@@ -8,7 +8,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/kexirong/monitor/common"
+	"monitor/common"
 )
 
 //Scripter   implement scheduler.Tasker interface

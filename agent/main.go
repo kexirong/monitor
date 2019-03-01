@@ -5,7 +5,7 @@ import (
 	"runtime"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/kexirong/monitor/common/queue"
+	"monitor/common/queue"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary

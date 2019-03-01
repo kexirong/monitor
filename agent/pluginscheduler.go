@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kexirong/monitor/agent/goplugin"
-	"github.com/kexirong/monitor/agent/scriptplugin"
-	"github.com/kexirong/monitor/common"
-	"github.com/kexirong/monitor/common/packetparse"
-	"github.com/kexirong/monitor/common/queue"
-	"github.com/kexirong/monitor/server/models"
+	"monitor/agent/goplugin"
+	"monitor/agent/scriptplugin"
+	"monitor/common"
+	"monitor/common/packetparse"
+	"monitor/common/queue"
+	"monitor/server/models"
 )
 
 func scriptPluginScheduler(qe *queue.BytesQueue) {

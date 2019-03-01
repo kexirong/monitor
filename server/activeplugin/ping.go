@@ -4,7 +4,7 @@ package activeplugin
 import (
 	"time"
 
-	"github.com/kexirong/monitor/common"
+	"monitor/common"
 )
 
 //HostPinger  timeout 单位s，host为域名或者ip

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kexirong/monitor/common/packetparse"
-	"github.com/kexirong/monitor/server/models"
+	"monitor/common/packetparse"
+	"monitor/server/models"
 )
 
 /*

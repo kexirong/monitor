@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kexirong/monitor/common"
+	"monitor/common"
 )
 
 /*

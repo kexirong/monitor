@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/kexirong/monitor/server/models"
+	"monitor/server/models"
 )
 
 func Test_activePluginScheduler(t *testing.T) {

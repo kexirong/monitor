@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kexirong/monitor/common/packetparse"
-	"github.com/kexirong/monitor/server/judge"
-	"github.com/kexirong/monitor/server/models"
+	"monitor/common/packetparse"
+	"monitor/server/judge"
+	"monitor/server/models"
 )
 
 // 发送周期

@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/kexirong/monitor/common/queue"
+	"monitor/common/queue"
 )
 
 func Test_scriptPluginScheduler(t *testing.T) {

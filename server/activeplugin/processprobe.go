@@ -9,9 +9,9 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/kexirong/monitor/common"
+	"monitor/common"
 
-	"github.com/kexirong/monitor/common/packetparse"
+	"monitor/common/packetparse"
 )
 
 //ProcessProbe built-in *http.Client ,and implement scheduler.Tasker interface

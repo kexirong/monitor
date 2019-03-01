@@ -8,8 +8,8 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/kexirong/monitor/common"
-	"github.com/kexirong/monitor/common/scheduler"
+	"monitor/common"
+	"monitor/common/scheduler"
 )
 
 var scriptScheduled = scheduler.New()

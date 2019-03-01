@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kexirong/monitor/server/activeplugin"
-	"github.com/kexirong/monitor/server/models"
+	"monitor/server/activeplugin"
+	"monitor/server/models"
 )
 
 //暂时先这样临时实现，待改成收到数据就更新心跳数据，而不是单独的心跳包，将cmdb数据进行字段扩展，quic

@@ -4,8 +4,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/kexirong/monitor/common/packetparse"
-	"github.com/kexirong/monitor/common/queue"
+	"monitor/common/packetparse"
+	"monitor/common/queue"
 )
 
 func sendStart(servers []string, queue *queue.BytesQueue) {

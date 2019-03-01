@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kexirong/monitor/common"
-	"github.com/kexirong/monitor/common/scheduler"
-	"github.com/kexirong/monitor/server/activeplugin"
-	"github.com/kexirong/monitor/server/models"
+	"monitor/common"
+	"monitor/common/scheduler"
+	"monitor/server/activeplugin"
+	"monitor/server/models"
 )
 
 func startHTTPsrv() {

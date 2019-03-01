@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/kexirong/monitor/common/scheduler"
+	"monitor/common/scheduler"
 )
 
 //var sp *scriptplugin.ScriptPlugin

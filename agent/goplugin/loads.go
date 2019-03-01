@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kexirong/monitor/common/packetparse"
+	"monitor/common/packetparse"
 )
 
 var (
