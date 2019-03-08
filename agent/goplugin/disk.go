@@ -80,19 +80,18 @@ func (d *DISK) collect() (procvalue, error) {
 	var ret = procvalue{}
 	var value []float64
 	fs := syscall.Statfs_t{}
-	for _, v := range d.devmtp {
+	for k := range d.devmtp {
 		value = make([]float64, 3)
-		err := syscall.Statfs(v, &fs)
+		err := syscall.Statfs(k, &fs)
 		if err != nil {
 			return nil, err
 		}
 		value[0] = float64(fs.Blocks * uint64(fs.Bsize))
 		value[1] = float64((fs.Blocks - fs.Bfree) * uint64(fs.Bsize))
 		value[2] = float64(fs.Bavail * uint64(fs.Bsize))
-		ret[v] = value
+		ret[k] = value
 	}
 	return ret, nil
-
 }
 
 func getfilesystem() (map[string]bool, error) {
@@ -126,11 +125,13 @@ func getmtpmap() (map[string]string, error) {
 			continue
 		}
 		sline := strings.Fields(line)
-		if len(sline) < 4 {
-			continue
-		}
-		if _, ok := fs[sline[2]]; ok && strings.HasPrefix(sline[3], "rw") {
-			mtp[sline[0]] = sline[1]
+		/*
+			if len(sline) < 4 {
+				continue
+			}
+		*/
+		if _, ok := fs[sline[2]]; ok {
+			mtp[sline[1]] = sline[0]
 		}
 	}
 	if len(mtp) > 0 {

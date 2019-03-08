@@ -18,9 +18,16 @@ func Test_goplugin(t *testing.T) {
 	}
 }
 
-func Test_cpuplugin(t *testing.T) {
+func Test_cpuPlugin(t *testing.T) {
 	var cpu = new(CPU)
 	cpu.init()
 	time.Sleep(time.Second * 1)
 	t.Log(cpu.Gather())
+}
+
+func Test_diskPlugin(t *testing.T) {
+	var disk = new(DISK)
+	disk.init()
+	time.Sleep(time.Second * 1)
+	t.Log(disk.Gather())
 }
